@@ -163,3 +163,8 @@
 .mm-present button{width:32px;height:32px;border:0;border-radius:8px;background:rgba(255,255,255,.1);color:#fff;cursor:pointer;display:grid;place-items:center}.mm-present button:first-of-type svg{transform:rotate(180deg)}.mm-present button:disabled{opacity:.35;cursor:default}.mm-present b{min-width:56px;text-align:center;font-variant-numeric:tabular-nums}.mm-present .x{width:auto;padding:0 12px;background:#fff;color:#191812;font-weight:600;margin-left:8px}
 .mi-app.presenting .mi-canvas{background-image:none;background-color:#f7f7f7}
 .mb-offline{background:#8a5a00;top:auto;bottom:70px}
+
+/* --- live session: cursors + avatars --- */
+.lv-cursors{position:absolute;inset:0;pointer-events:none;z-index:28;overflow:hidden}.lv-cur{position:absolute;left:0;top:0;transition:transform .08s linear;display:flex;align-items:flex-start}.lv-cur span{margin:12px 0 0 -4px;padding:2px 8px;border-radius:10px;color:#fff;font-size:12px;font-weight:600;white-space:nowrap;font-family:var(--ids-font-sans)}
+.lv-avs{display:inline-flex;align-items:center;margin:0 4px}.lv-avs i{width:26px;height:26px;border-radius:50%;border:2px solid #fff;margin-left:-8px;display:inline-grid;place-items:center;color:#fff;font-style:normal;font-size:11px;font-weight:700}.lv-avs i:first-child{margin-left:0}.lv-avs b{margin-left:6px;font-size:13px;font-weight:600;color:#333}
+.lv-sel{position:absolute;border:2px solid;border-radius:4px;pointer-events:none;z-index:27;opacity:.8}

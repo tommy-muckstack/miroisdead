@@ -54,7 +54,8 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 | Board | Presentation mode (Present button / Frames panel: full screen, frame-by-frame with arrows/space, bottom bar, Esc exits) | match | S3 | PR #8 |
 | Board | Grouping (⌘G / ⌘⇧G, toolbar button, click selects the group, click again drills into a member) | match | — | PR #8 |
 | Board | ⌘K command palette (create, view, edit, board, facilitation, help commands) | match | S3 | PR #8 |
-| Board | Rotation handle, images/file upload, tables/docs/slides formats, stickers, collaborator cursors, real-time sync | missing | S1 | Follow-ups; multiplayer needs a sync channel (Firestore listeners would add reads; see cost note). |
+| Board | Live collaboration: collaborator cursors with name chips, avatar stack in the header, selection highlights, document relay | match | S3 | Zero-cost design: WebSocket relay in a Vercel Function with in-memory rooms (nothing stored, session-only) + BroadcastChannel for same-browser tabs; a reconnect or a new instance re-syncs from the saved board. Last-writer-wins. PR #10 |
+| Board | Rotation handle, images/file upload, tables/docs/slides formats, stickers | missing | S1 | Next PRs. |
 | Share | Invite tab (email field, link row with Can edit/view, Copy team invite link, Board access, Anyone with the link) | match | — | "Anyone with the link" really works: No access / Can view / Can edit persisted on the board; public URL `/b/{id}` with a read-only viewer or guest editing. Emails aren't sent (no mail service); the link is copied for you to send. PR #6 |
 | Share | Embed tab (private notice, start view Board/First frame, View only, preview, Embed code, Copy code / Copy link) | match | — | iframe embeds the public viewer (`?embed=1`). PR #6 |
 | Share | Publish tab (community template / custom template cards) | match | S3 | Custom templates are free (saved locally); community publishing opens a GitHub issue. PR #6 |
@@ -68,7 +69,7 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 - Paid Miro features are built as free equivalents; Upgrade/Free-plan chrome stays for look only and never gates anything.
 
 ## Open items needing a human decision
-1. **Multiplayer**: live cursors and real-time sync need a sync channel. Firestore `onSnapshot` listeners would work with the existing project but add reads per collaborator; a WebSocket relay on Vercel Functions is the zero-Firestore alternative. Not built pending that call.
+1. **Multiplayer**: built as a session-only WebSocket relay on Vercel Functions (PR #10). Rooms live in function memory, so with heavy load collaborators can land on different instances; for guaranteed rooms at scale add a Redis pub/sub behind `app/api/live` (costs money, so not wired).
 2. **Mega-menus** on the marketing nav (Product / Use Cases / Solutions / Resources): Miro opens large hover panels; the owner scoped logged-out parity to the home page + sign-in, so they are left as plain anchors.
 3. **Logos, photos and store badges**: text stand-ins instead of third-party marks (trademark). Keep, or commission original illustrations.
 4. **Email invites**: no mail service; the Share dialog copies the link instead. Wire a provider only if you accept the cost.

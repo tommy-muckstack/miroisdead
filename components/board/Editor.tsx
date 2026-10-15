@@ -12,7 +12,7 @@ import { LINE_HEIGHT, fitFontSize, wrapText } from "@/lib/canvas/text";
 import { checkpoint, commit, createHistory, redo, replace, undo, canRedo, canUndo, type History } from "@/lib/canvas/history";
 import { MAX_ZOOM, MIN_ZOOM, fitView, panBy, screenToWorld, worldToScreen, zoomAt } from "@/lib/canvas/viewport";
 import { describeScene } from "@/lib/canvas/scene";
-import { serialize } from "@/lib/canvas/board";
+import { serialize, sanitizeDoc } from "@/lib/canvas/board";
 import { KEY_TO_TOOL, TOOLS, type Tool } from "@/lib/shortcuts";
 import type { BoardStore } from "@/lib/store";
 import { Defs, Scene, shapePath, penPath } from "./Scene";
@@ -26,6 +26,8 @@ import { Minimap } from "./Minimap";
 import { CommandPalette, PresentBar, type Command, ContextMenu, EmojiPicker, ExportMenu, FramesPanel, HelpMenu, MainMenu, ShortcutsPanel, StickyPicker, ToolsPanel, ZoomMenu, type ToolEntry } from "./Menus";
 import { svgToPngBlob, boardToCsv, saveCustomTemplate, openPrintWindow } from "./exportMore";
 import { CommentThread, CommentsPanel } from "./Comments";
+import { LiveChannel, PEER_COLORS, type LiveMsg, type Peer } from "@/lib/live";
+import { PeerCursors, PeerAvatars, type PeerState } from "./Live";
 import { FacilitationPopover, Reactions, TimerPanel, TimerChip, VotingPanel, NotePanel, type Timer, type Voting } from "./Facilitation";
 
 type Gesture =
@@ -90,6 +92,24 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const [thread, setThread] = useState<Id | null>(null);
   const [palette, setPalette] = useState(false);
   const [, setTick] = useState(0);
+  // ---- live session (cursors, presence, document relay) ----
+  const me = useRef<Peer>({ id: Math.random().toString(36).slice(2, 10), name: who.split("@")[0] || "Guest", color: PEER_COLORS[Math.floor(Math.random() * PEER_COLORS.length)] });
+  const live = useRef<LiveChannel | null>(null);
+  const [peers, setPeers] = useState<Record<string, PeerState>>({});
+  const remoteRev = useRef(0), localRev = useRef(0), applyingRemote = useRef(false), lastCursor = useRef(0), docTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const proto = location.protocol === "https:" ? "wss:" : "ws:"; const ch = new LiveChannel(`${proto}//${location.host}${BP}/api/live/${initial.id}`, initial.id, me.current); live.current = ch;
+    const off = ch.on((m: LiveMsg) => {
+      if (m.t === "leave") { const id = m.id ?? m.from?.id; if (id) setPeers(p => { const n = { ...p }; delete n[id]; return n; }); return; }
+      const from = m.from; setPeers(p => ({ ...p, [from.id]: { ...from, ...(p[from.id] ?? {}), seen: Date.now(), ...(m.t === "cursor" ? { x: m.x, y: m.y } : {}), ...(m.t === "sel" ? { sel: m.ids } : {}) } }));
+      if (m.t === "hello") ch.send({ t: "hello", from: me.current });
+      if (m.t === "doc" && m.rev > remoteRev.current) { remoteRev.current = m.rev; applyingRemote.current = true; setHist(h => replace(h, sanitizeDoc(m.doc))); }
+    });
+    const sweep = setInterval(() => setPeers(p => { const n: typeof p = {}; for (const k in p) if (Date.now() - p[k].seen < 30000) n[k] = p[k]; return Object.keys(n).length === Object.keys(p).length ? p : n; }), 10000);
+    return () => { off(); clearInterval(sweep); ch.close(); live.current = null; };
+  }, [initial.id]);
+  useEffect(() => { if (applyingRemote.current) { applyingRemote.current = false; return; } if (first.current) return; if (docTimer.current) clearTimeout(docTimer.current); docTimer.current = setTimeout(() => { localRev.current = Math.max(localRev.current, remoteRev.current) + 1; remoteRev.current = localRev.current; live.current?.send({ t: "doc", from: me.current, doc: hist.present, rev: localRev.current }); }, 150); }, [hist.present]);
+  useEffect(() => { live.current?.send({ t: "sel", from: me.current, ids: sel }); }, [sel]);
   const [online, setOnline] = useState(true);
   const [present, setPresent] = useState<{ i: number } | null>(null);
   const [commentsPanel, setCommentsPanel] = useState(false);
@@ -276,6 +296,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
+    if (live.current && Date.now() - lastCursor.current > 50) { lastCursor.current = Date.now(); const w = toWorld(e); live.current.send({ t: "cursor", from: me.current, x: w.x, y: w.y }); }
     const gg = g.current; if (!gg) return;
     const { doc: d, view: v } = R.current;
     if (gg.k === "pan") { setView(panBy(gg.v, e.clientX - gg.sx, e.clientY - gg.sy)); return; }
@@ -481,7 +502,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
         {fac && <FacilitationPopover onClose={() => setFac(false)} onReact={react} timer={timer} onTimer={() => setTimerOpen(true)} voting={voting} onVoting={() => setVotingOpen(true)} priv={priv} onPrivate={() => { setPriv(p => !p); flash(priv ? "Private mode off: new stickies are visible to everyone" : "Private mode on: new stickies stay hidden until you reveal them"); }} onNote={() => setNoteOpen(true)} />}</span>
       <button className={"mb-i hm" + (commentsPanel ? " on" : "")} aria-label="Comments" aria-expanded={commentsPanel} onClick={() => setCommentsPanel(p => !p)}>{X.chat}{doc.order.some(i => doc.objects[i].type === "comment" && !(doc.objects[i] as CommentObj).resolved) && <i className="mb-badge" />}</button>
       <button className="mb-i hm" aria-label="Start a call" onClick={() => flash("Calls aren't part of MiroIsDead")}>{X.video}</button>
-      <span className="mi-menuwrap"><button className="mb-av" aria-label="Account" aria-expanded={prof} onClick={() => setProf(p => !p)}><i>{(who.split("@")[0][0] ?? "T").toUpperCase()}</i>{X.chev}</button>
+      <span className="mi-menuwrap"><button className="mb-av" aria-label="Account" aria-expanded={prof} onClick={() => setProf(p => !p)}><PeerAvatars peers={Object.values(peers)} me={me.current} />{X.chev}</button>
         {prof && <div className="mi-menu mb-menu" role="menu" style={{ right: 0 }} onPointerDown={e => e.stopPropagation()}><div className="mb-menu-h">{who}</div>
           <Link href="/app" role="menuitem" className="mb-link">All boards</Link>
           {signOutAction && <form action={signOutAction}><button role="menuitem">Sign out</button></form>}</div>}</span>
@@ -548,6 +569,8 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
           {draft?.kind === "conn" && <path d={`M${draft.a.x} ${draft.a.y}L${draft.b.x} ${draft.b.y}`} stroke="#4262FF" strokeWidth={px(2)} strokeDasharray={`${px(6)} ${px(4)}`} fill="none" />}
         </g>
       </svg>
+      <PeerCursors peers={Object.values(peers)} toScreen={p => worldToScreen(view, size, p)} />
+      {Object.values(peers).filter(p => p.sel?.length).map(p => p.sel!.filter(i => doc.objects[i]).map(i => { const b = boundsOf(doc, doc.objects[i]); const a = worldToScreen(view, size, { x: b.x, y: b.y }); return <div key={p.id + i} className="lv-sel" style={{ left: a.x - 2, top: a.y - 2, width: b.w * z + 4, height: b.h * z + 4, borderColor: p.color }} aria-hidden />; }))}
       {edit && doc.objects[edit.id] && <TextEditor key={edit.id} doc={doc} id={edit.id} view={view} size={size} onDone={finishEdit} />}
       {sBox && !edit && !g.current && tool === "select" && one?.type !== "comment" && <SelectionToolbar doc={doc} ids={sel} screenBox={sBox} canvas={size} patch={patchSel} onDelete={del} onDuplicate={dup} onFront={() => commitDoc(bringToFront(doc, sel))} onBack={() => commitDoc(sendToBack(doc, sel))} onFrame={frameSel} onAlign={(a: Align) => commitDoc(align(doc, sel, a))} onDistribute={a => commitDoc(distribute(doc, sel, a))} onGroup={() => (selObjs.some(o => o.group) ? ungroupSel() : groupSel())} />}
     </div>
