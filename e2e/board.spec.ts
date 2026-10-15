@@ -19,8 +19,8 @@ test("demo login, dashboard seeded, board opens", async ({ page }) => {
   await expect(page.getByTestId("board-editor")).toBeVisible(); await expect(objs(page)).toHaveCount(14);
 });
 
-test("login page is unauthenticated-only and app redirects to login", async ({ page, context }) => {
-  await context.clearCookies(); await page.goto("/miroisdead/app"); await expect(page).toHaveURL(/\/miroisdead\/(login|signup)/);
+test("visitors without a session land in the app as guests", async ({ page, context }) => {
+  await context.clearCookies(); await page.goto("/miroisdead/app"); await expect(page).toHaveURL(/\/miroisdead\/app/); await expect(page.getByText(/Sign in to save/)).toBeVisible(); // guest sessions (PR #17)
 });
 
 test("sticky: N, click, type, Esc; autosaves and survives reload; tool reverts to select", async ({ page }) => {
@@ -121,9 +121,10 @@ test("zoom: ctrl+wheel zooms at the cursor, buttons, 100% reset and fit", async 
 
 test("pan with Space+drag and hand tool changes the view", async ({ page }) => {
   await newBoard(page, "welcome");
-  const before = await page.locator("svg > g").first().getAttribute("transform");
+  const view = page.locator("[data-testid=canvas] svg > g").first(); // the brand mark is an earlier svg with its own <g>
+  const before = await view.getAttribute("transform"); expect(before).not.toBeNull();
   await page.keyboard.down("Space"); await drag(page, 0, 0, 120, 80); await page.keyboard.up("Space");
-  expect(await page.locator("svg > g").first().getAttribute("transform")).not.toBe(before);
+  expect(await view.getAttribute("transform")).not.toBe(before);
 });
 
 test("shortcut sheet, minimap toggle and command keys", async ({ page }) => {
@@ -182,9 +183,9 @@ test("export menu offers a board backup and CSV", async ({ page }) => {
   expect(fs.readFileSync((await csv.path())!, "utf8")).toContain("Is it urgent?");
 });
 
-test("sign out returns to the marketing page and protects the app", async ({ page }) => {
+test("sign out returns to the marketing page; the app then opens as a guest, not the demo account", async ({ page }) => {
   await demo(page); await page.getByLabel("Account").click(); await page.getByRole("menuitem", { name: /Log out/ }).click(); await page.waitForURL(/\/miroisdead\/?$/);
-  await page.goto("/miroisdead/app"); await expect(page).toHaveURL(/login/);
+  await page.goto("/miroisdead/app"); await expect(page).toHaveURL(/\/miroisdead\/app/); await expect(page.getByText(/Sign in to save/)).toBeVisible(); await expect(page.getByText("Demo account")).toHaveCount(0);
 });
 
 test.describe("marketing page", () => {
