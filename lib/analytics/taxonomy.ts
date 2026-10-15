@@ -23,6 +23,9 @@ export const EVENTS = {
   auth_completed: "auth_completed",                // method, mode
   auth_failed: "auth_failed",                      // method, mode, reason (error code only)
   auth_signed_out: "auth_signed_out",
+  auth_verification_shown: "auth_verification_shown",     // after email sign-up: the "check your email" step
+  auth_verification_result: "auth_verification_result",   // verified (bool), action ("continue" | "skip" | "resend")
+  auth_onboarding_completed: "auth_onboarding_completed", // use ("product" | …), team_size, skipped (bool)
   // ---- workspace / dashboard ----
   app_page_viewed: "app_page_viewed",              // path
   app_board_created: "app_board_created",          // template, source ("strip" | "create_menu" | "templates_modal" | "custom_template" | "import")
