@@ -16,6 +16,7 @@ import { Pop, Item, Hr } from "@/components/board/Menus";
 import { BP } from "@/lib/basepath";
 import { X } from "@/components/mxi";
 import "./midash.css";
+import { track, identify, resetIdentity, EVENTS } from "@/lib/analytics";
 
 export type Who = { kind: "demo" | "firebase"; uid: string; name: string };
 export function makeStore(who: Who): BoardStore { const local = new LocalBoardStore(who.uid); return who.kind === "firebase" ? new CloudBoardStore(BP, local) : local; }
@@ -90,14 +91,14 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
   const setPrefs = (f: (p: Prefs) => Prefs) => setPrefsState(p => { const n = f(p); try { localStorage.setItem(prefsKey(who.uid), JSON.stringify(n)); } catch { /* quota */ } return n; });
   const [menu, setMenu] = useState<"" | "create" | "profile" | "tplfor">("");
   const [rowMenu, setRowMenu] = useState<string | null>(null);
-  const [tm, setTm] = useState(false);
+  const [tm, setTmState] = useState(false); const setTm = (v: boolean) => { if (v) track(EVENTS.app_templates_modal_opened); setTmState(v); };
   const [view, setView] = useState<"list" | "grid">("list");
   const [nav, setNav] = useState<Nav>("home");
   const [q, setQ] = useState("");
   const [greeting, setGreeting] = useState(GREETINGS[0]);
   useEffect(() => { setGreeting(GREETINGS[Math.floor(Math.random() * GREETINGS.length)]); }, []); // picked after mount so SSR markup matches
   const refresh = () => store.list().then(setBoards, () => setBoards([]));
-  useEffect(() => { setPrefsState(loadPrefs(who.uid)); }, [who.uid]);
+  useEffect(() => { setPrefsState(loadPrefs(who.uid)); identify(who.uid, { account_type: who.kind }); }, [who.uid, who.kind]);
   useEffect(() => {
     (async () => {
       let list = await store.list().catch(() => []);
@@ -107,15 +108,15 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
   }, [store, who.kind]);
   useEffect(() => { if (!menu && !rowMenu) return; const f = (e: MouseEvent) => { if (!(e.target as Element).closest("[data-menu]")) { setMenu(""); setRowMenu(null); } }; window.addEventListener("mousedown", f); return () => window.removeEventListener("mousedown", f); }, [menu, rowMenu]);
   const open = (id: string) => router.push(`/app/board/${id}`);
-  const create = async (t: TemplateId, space?: string) => { const b = boardFromTemplate(t); await store.save(b).catch(() => {}); if (space) setPrefs(p => ({ ...p, spaceOf: { ...p.spaceOf, [b.id]: space } })); open(b.id); };
-  const createCustom = async (t: CustomTemplate) => { try { const b = parseBoard(t.board); b.title = t.name; await store.save(b); open(b.id); } catch (e) { setErr((e as Error).message); } };
-  const rename = async (m: BoardMeta) => { const t = window.prompt("Rename board", m.title); if (!t?.trim()) return; const b = await store.load(m.id); if (b) { await store.save({ ...b, title: t.trim(), updatedAt: Date.now() }); refresh(); } };
-  const copy = async (m: BoardMeta) => { const b = await store.load(m.id); if (b) { await store.save({ ...b, id: nid(), title: `${b.title} copy`, createdAt: Date.now(), updatedAt: Date.now() }); refresh(); } };
-  const remove = async (m: BoardMeta) => { if (!window.confirm(`Delete “${m.title}”? This can't be undone.`)) return; await store.remove(m.id).catch(() => setErr("Couldn't delete that board.")); refresh(); };
-  const exportJson = async (m: BoardMeta) => { const b = await store.load(m.id); if (!b) return; const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([serialize(b)], { type: "application/json" })); a.download = `${b.title}.miroisdead.json`; a.click(); };
-  const onImport = async (f: File | undefined) => { if (!f) return; setErr(""); try { const b = parseBoard(await f.text()); await store.save(b); open(b.id); } catch (e) { setErr((e as Error).message); } };
-  const star = (id: string) => setPrefs(p => ({ ...p, starred: p.starred.includes(id) ? p.starred.filter(x => x !== id) : [...p.starred, id] }));
-  const newSpace = () => { const name = window.prompt("Name your space", "New space"); if (!name?.trim()) return; const sp = { id: nid(), name: name.trim() }; setPrefs(p => ({ ...p, spaces: [...p.spaces, sp] })); setNav({ space: sp.id }); };
+  const create = async (t: TemplateId, space?: string, source = "strip") => { const b = boardFromTemplate(t); await store.save(b).catch(() => {}); if (space) setPrefs(p => ({ ...p, spaceOf: { ...p.spaceOf, [b.id]: space } })); track(EVENTS.app_board_created, { template: t, source, in_space: !!space }); open(b.id); };
+  const createCustom = async (t: CustomTemplate) => { try { const b = parseBoard(t.board); b.title = t.name; await store.save(b); track(EVENTS.app_board_created, { template: "custom", source: "custom_template" }); open(b.id); } catch (e) { setErr((e as Error).message); } };
+  const rename = async (m: BoardMeta) => { const t = window.prompt("Rename board", m.title); if (!t?.trim()) return; const b = await store.load(m.id); if (b) { await store.save({ ...b, title: t.trim(), updatedAt: Date.now() }); track(EVENTS.app_board_renamed); refresh(); } };
+  const copy = async (m: BoardMeta) => { const b = await store.load(m.id); if (b) { await store.save({ ...b, id: nid(), title: `${b.title} copy`, createdAt: Date.now(), updatedAt: Date.now() }); track(EVENTS.app_board_duplicated); refresh(); } };
+  const remove = async (m: BoardMeta) => { if (!window.confirm(`Delete “${m.title}”? This can't be undone.`)) return; await store.remove(m.id).catch(() => setErr("Couldn't delete that board.")); track(EVENTS.app_board_deleted); refresh(); };
+  const exportJson = async (m: BoardMeta) => { const b = await store.load(m.id); if (!b) return; const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([serialize(b)], { type: "application/json" })); a.download = `${b.title}.miroisdead.json`; a.click(); track(EVENTS.app_board_exported, { format: "json" }); };
+  const onImport = async (f: File | undefined) => { if (!f) return; setErr(""); try { const b = parseBoard(await f.text()); await store.save(b); track(EVENTS.app_board_created, { template: "import", source: "import" }); open(b.id); } catch (e) { setErr((e as Error).message); } };
+  const star = (id: string) => { track(EVENTS.app_board_starred, { starred: !prefs.starred.includes(id) }); setPrefs(p => ({ ...p, starred: p.starred.includes(id) ? p.starred.filter(x => x !== id) : [...p.starred, id] })); };
+  const newSpace = () => { const name = window.prompt("Name your space", "New space"); if (!name?.trim()) return; const sp = { id: nid(), name: name.trim() }; setPrefs(p => ({ ...p, spaces: [...p.spaces, sp] })); track(EVENTS.app_space_created); setNav({ space: sp.id }); };
   const moveTo = (bid: string, sid: string | null) => setPrefs(p => { const spaceOf = { ...p.spaceOf }; if (sid) spaceOf[bid] = sid; else delete spaceOf[bid]; return { ...p, spaceOf }; });
   const user = who.name.split("@")[0];
   const initials = (user.slice(0, 2) || "me").toUpperCase();
@@ -146,7 +147,7 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
             {menu === "profile" && <div className="mx-pop mx-prof" role="menu"><div className="mx-prof-h"><span className="mx-av sm">{initials[0]}</span><b>{user}</b></div>
               <a role="menuitem">{X.user} Profile</a><a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead#readme" target="_blank" rel="noreferrer">{X.ai} Connect your AI tools</a><a role="menuitem">{X.gear} Admin Console</a><hr />
               <a role="menuitem">{X.trash} Trash</a><a role="menuitem" onClick={() => { void create("welcome"); }}>{X.learn} Learning Center</a><a role="menuitem">{X.apps} iOS, Android, Desktop Apps</a><hr />
-              <a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead" target="_blank" rel="noreferrer">{X.dev} Developer Hub</a><a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead" target="_blank" rel="noreferrer">{X.market} MiroIsDead Marketplace</a>              <form action={signOutAction}><button role="menuitem">{X.logout} Log out</button></form></div>}
+              <a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead" target="_blank" rel="noreferrer">{X.dev} Developer Hub</a><a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead" target="_blank" rel="noreferrer">{X.market} MiroIsDead Marketplace</a>              <form action={signOutAction} onSubmit={() => { track(EVENTS.auth_signed_out); resetIdentity(); }}><button role="menuitem">{X.logout} Log out</button></form></div>}
           </span>
         </header>
         <div className="mx-col">
@@ -171,7 +172,7 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
               <div className={"mx-list " + view} data-testid="boards">
                 {view === "list" && <div className="mx-th"><span>Name</span><span>Online users</span><span>Space</span><span>Last opened</span><span>Owner</span></div>}
                 {shown.map(m => <article key={m.id} className="mx-rowb" data-testid="board-card">
-                  <Link href={`/app/board/${m.id}`} className="mx-name"><span className="mx-bic">{m.emoji ? <span className="mx-emoji">{m.emoji}</span> : <Thumb store={store} id={m.id} />}</span><span><b>{m.title}</b><small>Modified by {user}</small></span></Link>
+                  <Link href={`/app/board/${m.id}`} className="mx-name" onClick={() => track(EVENTS.app_board_opened, { source: nav === "home" ? "recents" : nav === "starred" ? "starred" : nav === "browse" ? "browse" : "space" })}><span className="mx-bic">{m.emoji ? <span className="mx-emoji">{m.emoji}</span> : <Thumb store={store} id={m.id} />}</span><span><b>{m.title}</b><small>Modified by {user}</small></span></Link>
                   <span className="mx-c">{""}</span><span className="mx-c">{spaceName(prefs.spaceOf[m.id])}</span><span className="mx-c">{when(m.updatedAt)}</span><span className="mx-c">{user}</span>
                   <div className="mx-acts" data-menu>
                     <button className={"mx-ic sm" + (prefs.starred.includes(m.id) ? " starred" : "")} aria-label={prefs.starred.includes(m.id) ? "Unstar" : "Star"} aria-pressed={prefs.starred.includes(m.id)} onClick={() => star(m.id)}>{X.star}</button>

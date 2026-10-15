@@ -7,6 +7,7 @@ import { STICKY_COLORS, isBox } from "@/lib/canvas/types";
 import { DIR, OPPOSITE, anchorPoint, boxOf, normBox, simplify, snapBox, unionBox, type Guide } from "@/lib/canvas/geometry";
 import { prepareImage, isImageFile } from "@/lib/image";
 import { StickerPanel } from "./Stickers";
+import { track, EVENTS } from "@/lib/analytics";
 import { addObjects, align, bringToFront, cloneObjects, connector, createConnected, distribute, frame, frameAround, groupObjects, moveObjects, nid, pasteObjects, pen, removeObjects, resizeObject, sendToBack, shape, sticky, textObj, ungroupObjects, updateObjects, withFrameChildren, withGroups, type Align } from "@/lib/canvas/doc";
 import { boundsOf, resolveConnector, routeConnector } from "@/lib/canvas/connectors";
 import { hitTest, marquee } from "@/lib/canvas/hit";
@@ -132,7 +133,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const [note, setNote] = useState(initial.note ?? "");
   const [noteOpen, setNoteOpen] = useState(false);
   const [reacts, setReacts] = useState<{ id: number; e: string; x: number }[]>([]);
-  const react = (e: string) => { const id = Date.now() + Math.random(); setReacts(r => [...r, { id, e, x: 44 + Math.random() * 12 }]); setTimeout(() => setReacts(r => r.filter(x => x.id !== id)), 2200); };
+  const react = (e: string) => { track(EVENTS.board_reaction_sent, { emoji: e }); const id = Date.now() + Math.random(); setReacts(r => [...r, { id, e, x: 44 + Math.random() * 12 }]); setTimeout(() => setReacts(r => r.filter(x => x.id !== id)), 2200); };
   const doc = hist.present;
 
   const box = useRef<HTMLDivElement>(null);
@@ -188,8 +189,8 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const del = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; commitDoc(removeObjects(d, s)); setSel([]); };
   const regroup = (objs: Obj[]): Obj[] => { const map = new Map<string, string>(); return objs.map(o => { if (!o.group) return o; if (!map.has(o.group)) map.set(o.group, nid()); return { ...o, group: map.get(o.group) } as Obj; }); };
   const dup = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; const c = cloneObjects(d, s); commitDoc(addObjects(d, regroup(c.objs))); setSel(c.ids); };
-  const groupSel = () => { const { doc: d, sel: s } = R.current; if (s.length < 2) { flash("Select two or more objects to group"); return; } commitDoc(groupObjects(d, s)); flash("Grouped"); };
-  const ungroupSel = () => { const { doc: d, sel: s } = R.current; if (!s.some(i => d.objects[i]?.group)) return; commitDoc(ungroupObjects(d, s)); flash("Ungrouped"); };
+  const groupSel = () => { const { doc: d, sel: s } = R.current; if (s.length < 2) { flash("Select two or more objects to group"); return; } commitDoc(groupObjects(d, s)); track(EVENTS.board_group_changed, { action: "group", count: s.length }); flash("Grouped"); };
+  const ungroupSel = () => { const { doc: d, sel: s } = R.current; if (!s.some(i => d.objects[i]?.group)) return; commitDoc(ungroupObjects(d, s)); track(EVENTS.board_group_changed, { action: "ungroup" }); flash("Ungrouped"); };
   const copy = (cut: boolean) => { const { doc: d, sel: s } = R.current; if (!s.length) return; const set = new Set(s); clip.current = d.order.filter(i => set.has(i)).map(i => d.objects[i]); pasteN.current = 0; navigator.clipboard?.writeText("MiroIsDead board objects").catch(() => {}); if (cut) del(); else flash(`Copied ${s.length} object${s.length > 1 ? "s" : ""}`); };
   const paste = () => { if (!clip.current.length) return false; pasteN.current++; const o = 24 * pasteN.current; const r = pasteObjects(R.current.doc, clip.current, o, o); commitDoc(r.doc); setSel(r.ids); return true; };
   const fitAll = () => { const { doc: d, size: s } = R.current; setView(fitView(unionBox(d.order.map(i => boundsOf(d, d.objects[i]))), s)); };
@@ -198,12 +199,12 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const zoomTo = (zz: number) => setView(v => zoomAt(v, R.current.size, { x: R.current.size.w / 2, y: R.current.size.h / 2 }, zz));
   const fullscreen = () => { const el = box.current?.closest(".mi-app") as HTMLElement | null; if (document.fullscreenElement) void document.exitFullscreen(); else void el?.requestFullscreen?.(); };
   const jumpTo = (id: Id) => { const o = R.current.doc.objects[id]; if (!o) return; setView(fitView(boundsOf(R.current.doc, o), R.current.size, 120)); setSel([id]); };
-  const exportPdf = () => openPrintWindow(title || "board", boardToSvg(doc));
-  const exportPng = async () => { try { const blob = await svgToPngBlob(boardToSvg(doc), 2); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${title || "board"}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); } catch { flash("Couldn't render the image"); } };
-  const exportCsv = () => download(`${title || "board"}.csv`, "text/csv", boardToCsv(doc));
-  const exportBackup = () => download(`${title || "board"}.miroisdead.json`, "application/json", serialize(boardRef.current));
-  const saveTemplate = () => { saveCustomTemplate(boardRef.current); flash("Saved as a custom template. Find it under Create ▸ Explore templates."); };
-  const copyScene = () => navigator.clipboard?.writeText(JSON.stringify(describeScene(boardRef.current), null, 2)).then(() => flash("Scene JSON copied"), () => flash("Couldn't copy"));
+  const exportPdf = () => { track(EVENTS.board_exported, { format: "pdf" }); openPrintWindow(title || "board", boardToSvg(doc)); };
+  const exportPng = async () => { track(EVENTS.board_exported, { format: "png" }); try { const blob = await svgToPngBlob(boardToSvg(doc), 2); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${title || "board"}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); } catch { flash("Couldn't render the image"); } };
+  const exportCsv = () => { track(EVENTS.board_exported, { format: "csv" }); download(`${title || "board"}.csv`, "text/csv", boardToCsv(doc)); };
+  const exportBackup = () => { track(EVENTS.board_exported, { format: "json" }); download(`${title || "board"}.miroisdead.json`, "application/json", serialize(boardRef.current)); };
+  const saveTemplate = () => { track(EVENTS.board_exported, { format: "template" }); saveCustomTemplate(boardRef.current); flash("Saved as a custom template. Find it under Create ▸ Explore templates."); };
+  const copyScene = () => { track(EVENTS.board_exported, { format: "scene_json" }); return navigator.clipboard?.writeText(JSON.stringify(describeScene(boardRef.current), null, 2)).then(() => flash("Scene JSON copied"), () => flash("Couldn't copy")); };
   const copyLink = (id?: Id) => navigator.clipboard?.writeText(location.origin + location.pathname + (id ? `?moveToWidget=${id}` : "")).then(() => flash("Link copied"), () => flash("Couldn't copy"));
   const copyImage = async () => { const { doc: d, sel: s } = R.current; if (!s.length) return; const set = new Set(s); const sub = { objects: Object.fromEntries(s.map(i => [i, d.objects[i]])), order: d.order.filter(i => set.has(i)) }; try { const blob = await svgToPngBlob(boardToSvg(sub as Doc), 2); await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); flash("Copied as image"); } catch { flash("Couldn't copy the image here"); } };
   const copyStyle = () => { const o = R.current.doc.objects[R.current.sel[0]]; if (!o) return; const p: Record<string, unknown> = {}; for (const k of ["color", "fill", "stroke", "filled", "dashed", "fontSize", "bold", "width", "style"]) if (k in o) p[k] = (o as unknown as Record<string, unknown>)[k]; styleClip.current = p as Partial<Obj>; flash("Style copied"); };
@@ -238,7 +239,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const frameIds = () => R.current.doc.order.filter(i => R.current.doc.objects[i].type === "frame");
   const fitFrame = (b: Box) => { const sz = R.current.size, pad = 48; const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min((sz.w - pad * 2) / Math.max(1, b.w), (sz.h - pad * 2) / Math.max(1, b.h)))); setView({ zoom, x: b.x + b.w / 2, y: b.y + b.h / 2 }); };
   const presentGo = (dir: number) => setPresent(p => { if (!p) return p; const fs = frameIds(); const i = Math.max(0, Math.min(fs.length - 1, p.i + dir)); if (fs[i]) fitFrame(boundsOf(R.current.doc, R.current.doc.objects[fs[i]])); return { i }; });
-  const startPresent = () => { const fs = frameIds(); setSel([]); setEdit(null); setTool("select"); setPresent({ i: 0 }); if (fs[0]) fitFrame(boundsOf(R.current.doc, R.current.doc.objects[fs[0]])); else fitAll(); const el = box.current?.closest(".mi-app") as HTMLElement | null; void el?.requestFullscreen?.().catch(() => {}); };
+  const startPresent = () => { const fs = frameIds(); track(EVENTS.board_present_started, { frames: fs.length }); setSel([]); setEdit(null); setTool("select"); setPresent({ i: 0 }); if (fs[0]) fitFrame(boundsOf(R.current.doc, R.current.doc.objects[fs[0]])); else fitAll(); const el = box.current?.closest(".mi-app") as HTMLElement | null; void el?.requestFullscreen?.().catch(() => {}); };
   const exitPresent = () => { setPresent(null); if (document.fullscreenElement) void document.exitFullscreen().catch(() => {}); };
   useEffect(() => { const f = () => { if (!document.fullscreenElement) setPresent(null); }; document.addEventListener("fullscreenchange", f); return () => document.removeEventListener("fullscreenchange", f); }, []);
   const frameSel = () => { const { doc: d, sel: s } = R.current; const r = frameAround(d, s.filter(i => d.objects[i]?.type !== "frame")); if (r) { commitDoc(r.doc); setSel([r.id]); } };
@@ -497,6 +498,14 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const gridSize = 80 * z, bgPos = `${size.w / 2 - view.x * z}px ${size.h / 2 - view.y * z}px`;
   const statusText = status === "saving" ? "Saving…" : status === "saved" ? (store.kind === "cloud" ? "Saved to your account" : "Saved on this device") : status === "device" ? "Saved on this device · sync failed" : "Couldn't save";
 
+  // ---- analytics (taxonomy in lib/analytics/taxonomy.ts): new objects by type, tool changes, live peers ----
+  const seenIds = useRef<Set<Id> | null>(null);
+  useEffect(() => { const prev = seenIds.current; const cur = new Set(doc.order); if (prev) { const counts: Record<string, number> = {}; for (const id of doc.order) if (!prev.has(id)) { const t = doc.objects[id]?.type; if (t) counts[t] = (counts[t] ?? 0) + 1; } for (const [t, n] of Object.entries(counts)) track(EVENTS.board_object_created, { object_type: t, count: n, remote: applyingRemote.current }); } seenIds.current = cur; }, [doc]);
+  const firstTool = useRef(true);
+  useEffect(() => { if (firstTool.current) { firstTool.current = false; return; } if (tool !== "select") track(EVENTS.board_tool_selected, { tool }); }, [tool]);
+  const peerCount = Object.keys(peers).length; const maxPeers = useRef(0);
+  useEffect(() => { if (peerCount > maxPeers.current) { maxPeers.current = peerCount; track(EVENTS.board_live_peer_connected, { peers: peerCount }); } }, [peerCount]);
+  useEffect(() => { if (guest) track(EVENTS.board_guest_viewed, { access: readOnly ? "view" : "edit", embed }); }, [guest, readOnly, embed]);
   const commands: Command[] = [
     { id: "sticky", label: "Sticky note", kbd: "N", group: "Create", icon: X.sticky, run: () => setTool("sticky") }, { id: "text", label: "Text", kbd: "T", group: "Create", icon: X.text, run: () => setTool("text") }, { id: "rect", label: "Rectangle", kbd: "R", group: "Create", icon: X.rect, run: () => setTool("rect") }, { id: "ellipse", label: "Oval", kbd: "O", group: "Create", icon: X.oval, run: () => setTool("ellipse") }, { id: "diamond", label: "Rhombus", kbd: "D", group: "Create", icon: X.rhombus, run: () => setTool("diamond") }, { id: "line", label: "Connection line", kbd: "L", group: "Create", icon: X.arrow, run: () => setTool("connector") }, { id: "pen", label: "Pen", kbd: "P", group: "Create", icon: X.pen, run: () => setTool("pen") }, { id: "frame", label: "Frame", kbd: "F", group: "Create", icon: X.frame, run: () => setTool("frame") }, { id: "comment", label: "Comment", kbd: "C", group: "Create", icon: X.comment, run: () => setTool("comment") },
     { id: "fit", label: "Zoom to fit", kbd: "⌥1", group: "View", icon: X.fit, run: fitAll }, { id: "100", label: "Zoom to 100%", kbd: "⌘0", group: "View", icon: X.zoomIn, run: () => zoomTo(1) }, { id: "grid", label: grid ? "Hide grid" : "Show grid", kbd: "G", group: "View", icon: X.grid2, run: () => setGrid(g => !g) }, { id: "map", label: map ? "Hide minimap" : "Show minimap", kbd: "M", group: "View", icon: X.map, run: () => setMap(m => !m) }, { id: "full", label: "Enter full screen", group: "View", icon: X.fullscreen, run: fullscreen }, { id: "present", label: "Present", group: "View", icon: X.play, run: startPresent }, { id: "frames", label: "Frames panel", group: "View", icon: X.frame, run: () => setFrames(true) }, { id: "comments", label: "Comments panel", group: "View", icon: X.chat, run: () => setCommentsPanel(true) },
@@ -532,7 +541,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
           <Link href="/app" role="menuitem" className="mb-link">All boards</Link>
           {signOutAction && <form action={signOutAction}><button role="menuitem">Sign out</button></form>}</div>}</span>
       <button className="mb-play hm" aria-label="Present" title="Present" onClick={startPresent}>{X.play}</button>
-      {!guest && <button className="mb-sharebtn" onClick={() => setShare("Invite")} data-testid="share">Share</button>}
+      {!guest && <button className="mb-sharebtn" onClick={() => { setShare("Invite"); track(EVENTS.board_share_opened, { tab: "Invite" }); }} data-testid="share">Share</button>}
     </div>}
 
     {!readOnly && !embed && !present && <nav className="mb-rail" data-ui aria-label="Tools" style={{ top: compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0)) }}>
@@ -618,24 +627,24 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     {frames && <FramesPanel doc={doc} onClose={() => setFrames(false)} onJump={jumpTo} onCreate={createFrame} onRename={id => startEdit(id)} onPresent={startPresent} />}
     {ctx && <ContextMenu x={ctx.x} y={ctx.y} canvas={size} onClose={() => setCtx(null)} target={ctx.id ? doc.objects[ctx.id] : null} a={{ copy: () => copy(false), copyLink: () => copyLink(ctx.id ?? undefined), copyImage: () => void copyImage(), dup, del, comment: () => { const o = ctx.id ? doc.objects[ctx.id] : null; if (!o || !isBox(o)) return; const c: CommentObj = { id: nid(), type: "comment", x: o.x + o.w - 20, y: o.y - 36, w: 40, h: 36, thread: [] }; commitDoc(addObjects(doc, [c])); setSel([c.id]); setThread(c.id); setHideComments(false); }, copyStyle, pasteStyle, canPasteStyle: !!styleClip.current, clear: clearContent, front: () => commitDoc(bringToFront(doc, sel)), back: () => commitDoc(sendToBack(doc, sel)), forward, backward, link: () => flash("Links on objects aren't in MiroIsDead yet"), lock: toggleLock, locked: !!(ctx.id && (doc.objects[ctx.id] as { locked?: boolean }).locked), frame: frameSel, template: saveTemplate, csv: exportCsv, paste: () => void paste(), canPaste: clip.current.length > 0, selectAll: () => setSel(doc.order.slice()), fit: fitAll, grid: () => setGrid(g => !g), gridOn: grid }} />}
     {tool === "sticky" && <StickyPicker top={compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 250 + (banner ? 56 : 0))} value={last.current.stickyColor} onPick={c => { last.current.stickyColor = c; if (sel.length) patchSel({ color: c } as Partial<Obj>); setTool(t => t); }} />}
-    {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
+    {palette && <CommandPalette commands={commands.map(c => ({ ...c, run: () => { track(EVENTS.board_command_run, { command: c.id }); c.run(); } }))} onClose={() => setPalette(false)} />}
     {present && <PresentBar index={present.i} total={frameIds().length} onPrev={() => presentGo(-1)} onNext={() => presentGo(1)} onExit={exitPresent} title={title || "Untitled"} />}
     <Reactions items={reacts} />
     {thread && doc.objects[thread]?.type === "comment" && <CommentThread c={doc.objects[thread] as CommentObj} view={view} size={size} who={who} onClose={() => setThread(null)}
-      onReply={text => commitDoc(updateObjects(doc, [thread], o => ({ thread: [...(o as CommentObj).thread, { by: who, text, at: Date.now() }] }) as Partial<Obj>))}
+      onReply={text => { track(EVENTS.board_comment_posted, { reply: (doc.objects[thread] as CommentObj).thread.length > 0 }); commitDoc(updateObjects(doc, [thread], o => ({ thread: [...(o as CommentObj).thread, { by: who, text, at: Date.now() }] }) as Partial<Obj>)); }}
       onResolve={() => commitDoc(updateObjects(doc, [thread], o => ({ resolved: !(o as CommentObj).resolved }) as Partial<Obj>))}
       onDelete={() => { commitDoc(removeObjects(doc, [thread])); setThread(null); setSel([]); }}
       onDeleteReply={i => commitDoc(updateObjects(doc, [thread], o => ({ thread: (o as CommentObj).thread.filter((_, n) => n !== i) }) as Partial<Obj>))} />}
     {commentsPanel && <CommentsPanel doc={doc} onClose={() => setCommentsPanel(false)} onJump={id => { jumpTo(id); setThread(id); }} hidden={hideComments} onToggleHidden={() => setHideComments(h => !h)} />}
-    {timerOpen && <TimerPanel timer={timer} setTimer={setTimer} onClose={() => setTimerOpen(false)} />}
-    {votingOpen && <VotingPanel doc={doc} voting={voting} setVoting={v => { setVoting(v); if (v?.running) setSel([]); }} onClose={() => setVotingOpen(false)} onJump={jumpTo} />}
+    {timerOpen && <TimerPanel timer={timer} setTimer={t => { if (t?.endsAt && !timer?.endsAt) track(EVENTS.board_timer_started, { minutes: Math.round(t.total / 60000) }); setTimer(t); }} onClose={() => setTimerOpen(false)} />}
+    {votingOpen && <VotingPanel doc={doc} voting={voting} setVoting={v => { if (v?.running && !voting?.running) track(EVENTS.board_voting_started, { votes_per_person: v.perPerson }); if (v && !v.running && voting?.running) track(EVENTS.board_voting_ended, { votes_cast: Object.values(v.votes).reduce((a, b) => a + b, 0) }); setVoting(v); if (v?.running) setSel([]); }} onClose={() => setVotingOpen(false)} onJump={jumpTo} />}
     {noteOpen && <NotePanel value={note} onChange={setNote} onClose={() => setNoteOpen(false)} />}
     {priv && <div className="mm-privbar" data-ui>{X.privateMode} Private mode: new stickies are hidden from others until revealed <button onClick={() => { commitDoc(updateObjects(doc, doc.order.filter(i => (doc.objects[i] as { private?: boolean }).private), { private: false } as Partial<Obj>)); setPriv(false); flash("Stickies revealed"); }}>Reveal all</button></div>}
     {stickers && <StickerPanel top={compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0))} onPick={addSticker} onClose={() => setStickers(false)} />}
     <input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden data-testid="upload-input" onChange={e => { void addImages([...(e.target.files ?? [])]); e.target.value = ""; }} />
     {tools && <ToolsPanel top={compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0))} onClose={() => setTools(false)} tools={toolEntries} />}
     {(status === "device" || status === "error") && <div className="mb-save" data-ui role="status">{statusText}</div>}
-    {share && <ShareModal tab={share} setTab={setShare} onClose={() => setShare("")} who={who} doc={doc} title={title} boardId={initial.id} access={access} setAccess={setAccess} canShare={store.kind === "cloud" && !guest} onTemplate={saveTemplate} onScene={() => void copyScene()} flash={flash} />}
+    {share && <ShareModal tab={share} setTab={setShare} onClose={() => setShare("")} who={who} doc={doc} title={title} boardId={initial.id} access={access} setAccess={a => { setAccess(a); track(EVENTS.board_share_access_changed, { access: a }); }} canShare={store.kind === "cloud" && !guest} onTemplate={saveTemplate} onScene={() => void copyScene()} flash={flash} />}
     {map && <Minimap doc={doc} view={view} size={size} onJump={(x, y) => setView(v => ({ ...v, x, y }))} />}
     {help && <ShortcutsPanel onClose={() => setHelp(false)} />}
     {toast && <div className="mi-toast" role="status">{toast}</div>}
