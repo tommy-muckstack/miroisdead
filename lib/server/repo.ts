@@ -38,15 +38,19 @@ export class FirestoreRepo implements BoardRepo {
     return this.fromDoc(id, d.data()!);
   }
   private fromDoc(id: string, x: any): Board { const p = JSON.parse(x.payload); return { id, title: x.title, createdAt: x.createdAt, updatedAt: x.updatedAt, ...(x.emoji ? { emoji: x.emoji } : {}), ...(p.note ? { note: String(p.note).slice(0, 20000) } : {}), ...(x.access && x.access !== "none" ? { access: x.access } : {}), doc: sanitizeDoc(p.doc), view: p.view }; }
+  /** Public lookups go through a small top-level map (miroisdead_public/{id} → uid) so no collection-group index is needed. */
   async getPublic(id: string) {
-    const snap = await (await this.db).collectionGroup("miroisdead_boards").where("id", "==", id).limit(1).get();
-    const d = snap.docs[0]; if (!d) return null; const uid = d.ref.parent.parent?.id; if (!uid) return null;
+    const m = await (await this.db).collection("miroisdead_public").doc(id).get(); if (!m.exists) return null;
+    const uid = String(m.data()?.uid ?? ""); if (!uid) return null;
+    const d = await (await this.col(uid)).doc(id).get(); if (!d.exists) return null;
     return { uid, board: this.fromDoc(d.id, d.data()) };
   }
   async put(uid: string, b: Board) {
+    const pub = (await this.db).collection("miroisdead_public").doc(b.id);
+    if (b.access && b.access !== "none") await pub.set({ uid, access: b.access, updatedAt: b.updatedAt }); else await pub.delete().catch(() => {});
     await (await this.col(uid)).doc(b.id).set({ id: b.id, access: b.access ?? "none", title: b.title, createdAt: b.createdAt, updatedAt: b.updatedAt, objectCount: b.doc.order.length, emoji: b.emoji ?? "", payload: JSON.stringify({ doc: b.doc, view: b.view, ...(b.note ? { note: b.note } : {}) }) });
   }
-  async del(uid: string, id: string) { await (await this.col(uid)).doc(id).delete(); }
+  async del(uid: string, id: string) { await (await this.col(uid)).doc(id).delete(); await (await this.db).collection("miroisdead_public").doc(id).delete().catch(() => {}); }
 }
 let repo: BoardRepo | null = null;
 export const getRepo = (): BoardRepo => (repo ??= process.env["FIREBASE_SERVICE_ACCOUNT_JSON"] ? new FirestoreRepo() : new MemoryRepo());
