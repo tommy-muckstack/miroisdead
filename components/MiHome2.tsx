@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BP } from "@/lib/basepath";
 import { Cursor } from "@/components/MiMk";
+import { Mark } from "@/components/board/icons";
 import { track, EVENTS } from "@/lib/analytics";
 import "./mihome2.css";
 
@@ -79,7 +80,7 @@ export function MiFooter() {
     <p className="mh-rev">20,000+ reviews from Capterra, G2 and Trustradius</p>
     <div className="mh-rule" />
     <div className="mh-fmid"><div className="mh-soc">{SOC.map(([n, d]) => <a key={n} href="#" aria-label={n}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d={d} /></svg></a>)}<span className="mh-lang"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></svg>English <i>⌄</i></span></div><div className="mh-store"><span><small>Download on the</small>App Store</span><span><small>GET IT ON</small>Google Play</span></div></div>
-    <div className="mh-legal"><b className="mh-flogo" /> MiroIsDead © 2026 <a href="#">Terms of Service</a><a href="#">Privacy Policy</a><a href="#">Manage Cookies</a><a href="#">Do Not Sell or Share My Personal Information</a><a href={GH}>Source (Apache-2.0)</a></div>
+    <div className="mh-legal"><Mark size={16} /> MiroIsDead © 2026 <a href="#">Terms of Service</a><a href="#">Privacy Policy</a><a href="#">Manage Cookies</a><a href="#">Do Not Sell or Share My Personal Information</a><a href={GH}>Source (Apache-2.0)</a></div>
     <p className="mh-disc">MiroIsDead is an independent open-source project. It is not affiliated with, endorsed by or sponsored by RealtimeBoard, Inc. (Miro). Miro is a trademark of its owner.</p>
   </div></footer>;
 }
