@@ -8,8 +8,8 @@
 .ma-su .ma-demo{position:absolute;left:50%;transform:translateX(-50%);top:880px;color:#fff;border-color:#bbb}
 .ma-su .ma-hd{border-bottom:0}
 .ma-su .ma-card{border:0;border-radius:12px;margin-top:0;position:absolute;left:50%;top:198px;transform:translateX(-50%);width:574px}
-.ma h1{margin:0;font-family:var(--ids-font-display),sans-serif;font-weight:400;font-size:48px;line-height:56px;letter-spacing:-.02em}
-.ma-si h1{margin-bottom:26px}.ma-sub{font-size:19px;line-height:25px;margin:18px 0 28px;color:#1c1c1e}
+.ma h1{margin:0;font-family:var(--ids-font-display),sans-serif;font-weight:400;font-size:44px;line-height:51px;letter-spacing:-.02em}
+.ma-si h1{margin-bottom:24px}.ma-sub{font-size:19px;line-height:25px;margin:18px 0 28px;color:#1c1c1e}
 .ma-row{display:grid;grid-template-columns:1fr 1fr 50px;gap:16px}.ma-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:20px}
 .ma-pb{height:50px;border:1px solid #3d3d3f;border-radius:8px;background:#fff;font:inherit;font-size:18px;display:flex;gap:8px;align-items:center;justify-content:center;cursor:pointer;color:#1c1c1e}
 .ma-pb:hover{background:#f4f4f6}.ma-sq{font-size:24px}.ma-full{width:100%;margin-top:16px}
@@ -22,11 +22,10 @@
 .ma-ck input:checked+span{background:#2e4de6;border-color:#2e4de6;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.500l4.5 4.500L19 7'/%3E%3C/svg%3E");background-size:90%;background-position:center;background-repeat:no-repeat}
 .ma-go{width:100%;height:50px;border:0;border-radius:8px;background:#2e4de6;color:#fff;font:inherit;font-size:18px;cursor:pointer}.ma-go:hover{background:#2540c4}.ma-su .ma-h{margin:10px 0 16px}
 .ma-or{display:flex;align-items:center;gap:16px;margin-top:30px;color:#c4c4c9;font-size:16px}.ma-or::before,.ma-or::after{content:"";flex:1;border-top:1px solid #dcdce0}
-.ma-alt{margin:28px 0 0;font-size:19px}.ma-alt a{color:#1c1c1e;text-decoration:none}.ma-fine{font-size:14px;color:#6b6b73;margin:24px 0 0}.ma-fine a{color:#2e4de6}
+.ma-alt{margin:16px 0 0;font-size:18px;line-height:24px}.ma-alt a{color:#1c1c1e;text-decoration:none}.ma-fine{font-size:14px;color:#6b6b73;margin:24px 0 0}.ma-fine a{color:#2e4de6}
 .ma-err{color:#b3261e;font-size:14px;margin:12px 0 0}.ma-note{color:#0f6b4f;font-size:14px;margin:12px 0 0}
 .ma-demo{display:block;margin:18px auto 40px;width:200px;height:38px;border:1px dashed #8b8b93;border-radius:8px;background:transparent;font:inherit;font-size:14px;cursor:pointer;color:#555}
-.ma-tbar{position:absolute;left:0;right:0;top:96px;height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;color:#fff;opacity:.35;font-weight:600}.ma-tbar i{width:70px;height:28px;border-radius:6px;background:#fff;opacity:.5;margin-left:auto}.ma-tbar i:first-of-type{margin-left:auto}
-.ma-rail{position:absolute;left:16px;top:56%;transform:translateY(-50%);display:flex;flex-direction:column;gap:12px;opacity:.35}.ma-rail i{width:34px;height:34px;border-radius:8px;background:#fff}
+
 @media (max-width:640px){.ma-si .ma-card{border:0;background:transparent;width:100%;max-width:100%;margin-top:28px;padding:0 24px}.ma-card{padding:28px 20px;margin-top:24px}.ma-logo{font-size:22px}.ma h1{font-size:34px;line-height:40px}.ma-hd{padding:0 16px;height:72px}.ma-r{gap:12px}.ma-su .ma-demo{position:absolute;left:50%;transform:translateX(-50%);top:880px;color:#fff;border-color:#bbb}
 .ma-su .ma-card{top:120px;width:calc(100% - 24px)}.ma-row3{grid-template-columns:1fr}.ma-row{grid-template-columns:1fr 1fr 44px;gap:8px}.ma-rail{display:none}}
 @media (max-width:640px){
@@ -38,3 +37,17 @@
 .ma-si .ma-l{margin-bottom:12px;line-height:16px}.ma-si .ma-in{height:48px}.ma-si .ma-h{font-size:16px;line-height:21.6px;margin:8px 0 20px}
 .ma-si .ma-ck{margin-bottom:28px}.ma-si .ma-go{height:50px}.ma-si .ma-alt{margin-top:22px;font-size:18px;line-height:24px}.ma-si .ma-fine{font-size:14px;margin-top:16px}
 }
+
+/* --- parity pass 2026-10-15 --- */
+.ma-trouble{display:flex;align-items:center;gap:8px;margin:24px 0 0;padding:0 16px;height:46px;background:#f2f2f4;border-radius:8px;font-size:14px}.ma-trouble a{color:#1c1c1e;text-decoration:underline}
+.ma-si .ma-fine{margin-top:24px;color:#6c7173}.ma-demo-hidden{display:none}
+.ma-su{background-color:#4b4b4d}
+.ma-fake{position:absolute;left:0;right:0;top:96px;bottom:0;color:#1c1c1e;font-size:14px}
+.ma-ftl,.ma-ftr{position:absolute;top:8px;height:48px;background:#fff;border-radius:16px;box-shadow:0 2px 4px rgba(34,36,40,.08);display:flex;align-items:center;gap:6px;padding:0 10px}.ma-ftl{left:8px}.ma-ftr{right:16px}
+.ma-fi{width:36px;height:36px;border-radius:12px;display:inline-grid;place-items:center;color:#191812}.ma-fi.on{background:#eeeeeb}
+.ma-flogo{font-family:var(--ids-font-display);font-weight:800;font-size:22px;letter-spacing:-.05em;margin:0 6px}.ma-fdot{width:18px;height:18px;border-radius:50%;background:#e2422b;border:4px solid #f8c7bf}.ma-ftl em{font-style:normal;font-size:11px;background:#fff0a6;border:1px solid #e6c04e;border-radius:4px;padding:1px 6px;color:#6b5000;margin-left:4px}
+.ma-favs{display:inline-flex;align-items:center;gap:4px;margin:0 6px}.ma-favs i{width:26px;height:26px;border-radius:50%;background:#c9c3ff;border:2px solid #fff;margin-right:-10px}.ma-favs i:nth-child(2){background:#9fd8d3}.ma-favs i:nth-child(3){background:#ffc2a3}.ma-favs i:nth-child(4){background:#f3b3d8;margin-right:6px}
+.ma-fpres{display:inline-flex;gap:6px;align-items:center;height:32px;padding:0 12px;border-radius:8px;background:#eeeeeb;font-weight:600}.ma-fshare{height:32px;padding:0 12px;border-radius:8px;background:#4262ff;color:#fff;font-weight:600;display:inline-flex;align-items:center}
+.ma-frail{position:absolute;left:8px;top:160px;display:flex;flex-direction:column;gap:12px;align-items:center}.ma-fai{width:48px;height:48px;border-radius:50%;background:#7a3cf0;color:#fff;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(122,60,240,.25)}
+.ma-frl{background:#fff;border-radius:16px;padding:4px;display:flex;flex-direction:column;gap:4px;box-shadow:0 2px 4px rgba(34,36,40,.08)}.ma-frl .ma-fi.plus{background:#191812;color:#fff;border-radius:8px;width:28px;height:28px;margin:4px}.ma-frl.sm .ma-fi{color:#8c8b85}
+@media (max-width:640px){.ma-fake{top:56px}.ma-ftr,.ma-frail{display:none}.ma-trouble{font-size:13px}}

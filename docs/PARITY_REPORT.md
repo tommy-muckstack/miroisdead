@@ -25,9 +25,9 @@ Last full pass: 2026-10-15. Scope per the owner: the logged-out surface is the h
 | Landing | Mobile 390 (burger nav, stacked hero, cookie sheet) | match | S3 | Hero heading wraps on 3 lines like Miro. |
 | Landing | Mega-menus on Product/Use Cases/Solutions/Resources | missing | S2 | Hover menus not built (logged-out scope is home + login per owner; open question). |
 | Pricing | Hero, toggle, 4 cards, Guard, compare matrix, trust, security, FAQ | match | S3 | Prior pass. Known: nav is sticky here but not on miro.com/pricing; Business CTA order (Try for free / or buy now) reversed; "Ccontentful" typo. Out of the owner's logged-out scope; left as-is. |
-| Auth | Sign-in card (providers row, SSO, email, Remember me, CTA) | match | S3 | Heading 48 vs 44px; helper copy differs ("No password required." isn't true here). PR auth |
-| Auth | Sign-in extras (region link, magic-link box, reCAPTCHA note, chat bubble) | differs | S3 | Magic-link box mapped to password reset; region/reCAPTCHA not applicable. PR auth |
-| Auth | Sign-up page (fake board chrome behind the card) | differs | S2 | Clone uses grey placeholder blocks; Miro shows a real board header + rail. PR auth |
+| Auth | Sign-in card (providers row, SSO, email, Remember me, CTA) | match | — | 44px heading, 18px controls; helper copy kept truthful (password sign-in). PR #2 |
+| Auth | Sign-in extras (arrow link, grey "Trouble signing in?" box, fine print) | match | S3 | Arrow link = demo sign-in (when enabled); box requests a password reset; reCAPTCHA line replaced by "New to MiroIsDead?" (exception: no CAPTCHA, no support chat bubble). PR #2 |
+| Auth | Sign-up page (board chrome behind the card) | match | S3 | Real header pill, right pill with avatars/Present/Share, AI button and tool rail drawn behind the card. Providers are Google/Microsoft/SSO vs Google/Office365/Slack (exception). PR #2 |
 | Auth | Google button | match | — | Official G mark, Google Sans Medium (prior pass). |
 | Dashboard | Shell: left rail (workspace, search, Home/Starred/Browse, Spaces, AI promo), top bar, serif greeting, template strip, recents list | match | S3 | Greeting rotates; avatar is round; dates use "Dec 3, 2025" style. PR dashboard |
 | Dashboard | Create menu, profile menu, templates modal | match | — | Verified against signed-in capture. |
