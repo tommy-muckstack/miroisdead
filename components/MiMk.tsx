@@ -6,12 +6,12 @@ import { BP } from "@/lib/basepath";
 import { MegaNav } from "@/components/MegaMenu";
 import "./mimk.css";
 import { track, EVENTS } from "@/lib/analytics";
-export function MiNav() {
+export function MiNav({ signedIn = false }: { signedIn?: boolean } = {}) {
   const [menu, setMenu] = useState(false);
   return <header className="mk-nav"><button className="mk-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><i /><i /><i /></button><Link href="/" className="mk-logo"><Mark size={40} />MiroIsDead</Link>
     <MegaNav />
-    <div className="mk-act"><Link href="/login" className="mk-login">Login</Link><a className="mk-ghost" href="https://github.com/tommy-muckstack/miroisdead">View source</a><Link className="mk-cta" href="/signup" onClick={() => track(EVENTS.site_cta_clicked, { cta: "nav_get_started" })}>Get started free</Link></div>
-    {menu && <div className="mk-mmenu"><a href={BP + "/#product"}>Product</a><a href={BP + "/#templates"}>Use Cases</a><a href={BP + "/#solutions"}>Solutions</a><a href={BP + "/#resources"}>Resources</a><a href={BP + "/pricing"}>Pricing</a><Link href="/login">Login</Link><Link className="mk-cta" href="/signup">Get started free</Link></div>}</header>;
+    <div className="mk-act">{signedIn ? <><a className="mk-ghost" href="https://github.com/tommy-muckstack/miroisdead">View source</a><Link className="mk-cta" href="/app" onClick={() => track(EVENTS.site_cta_clicked, { cta: "nav_go_to_dashboard" })}>Go to dashboard</Link></> : <><Link href="/login" className="mk-login">Login</Link><a className="mk-ghost" href="https://github.com/tommy-muckstack/miroisdead">View source</a><Link className="mk-cta" href="/signup" onClick={() => track(EVENTS.site_cta_clicked, { cta: "nav_get_started" })}>Get started free</Link></>}</div>
+    {menu && <div className="mk-mmenu"><a href={BP + "/#product"}>Product</a><a href={BP + "/#templates"}>Use Cases</a><a href={BP + "/#solutions"}>Solutions</a><a href={BP + "/#resources"}>Resources</a><a href={BP + "/pricing"}>Pricing</a>{signedIn ? <Link className="mk-cta" href="/app">Go to dashboard</Link> : <><Link href="/login">Login</Link><Link className="mk-cta" href="/signup">Get started free</Link></>}</div>}</header>;
 }
 const Card = ({ x, y, w, children, t, icon }: { x: number; y: number; w: number; children?: React.ReactNode; t: string; icon?: string }) => <div className="mk-c" style={{ left: x, top: y, width: w }}><span className="mk-ct"><i style={{ background: icon ?? "#2e8b57" }} />{t}</span><div className="mk-cb">{children}</div></div>;
 /** Collaborator cursor chip (names are placeholders, not real people). */

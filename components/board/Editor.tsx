@@ -87,6 +87,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const [share, setShare] = useState<"" | ShareTab>("");
   const [titlePrompt, setTitlePrompt] = useState<string | null>(null); // "Give your board a title" before the first Share (Miro)
   const [imgOpts, setImgOpts] = useState<null | { area: "board" | "selection"; quality: "small" | "medium" | "large"; bg: boolean }>(null);
+  useEffect(() => { if (location.hash === "#share" && !guest) { setShare("Invite"); history.replaceState(null, "", location.pathname + location.search); } }, [guest]); // dashboard row menu › Share
   const [prof, setProf] = useState(false);
   const [chips, setChips] = useState(true);
   const [main, setMain] = useState(false);

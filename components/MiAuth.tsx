@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { FirebaseClientConfig } from "@/lib/isdead-auth/config";
-import { signInWithEmail, signUpWithEmail, signInWithGoogle, resetPassword, authErrorMessage } from "@/lib/isdead-auth/client";
+import { signInWithEmail, signUpWithEmail, signInWithGoogle, resetPassword, authErrorMessage, isEmailVerified, resendVerification, setDisplayName } from "@/lib/isdead-auth/client";
 import { BP } from "@/lib/basepath";
 import { GOOGLE_G_SVG } from "@/vendor/isdead-design/src/google";
 import { Mark } from "@/components/board/icons";
@@ -15,13 +15,41 @@ export function MiAuth({ config, demo, to, mode, guestUid = null }: Props) {
   const su = mode === "signup";
   const [step, setStep] = useState(0), [email, setEmail] = useState(""), [pw, setPw] = useState(""), [rem, setRem] = useState(true), [reset, setReset] = useState(false);
   const [busy, setBusy] = useState(false), [err, setErr] = useState(""), [note, setNote] = useState("");
+  const [after, setAfter] = useState<"" | "verify" | "onboard">("");
+  useEffect(() => { if (process.env.NODE_ENV === "production") return; const m = location.search.match(/[?&]preview=(verify|onboard)/); if (m) setAfter(m[1] as "verify" | "onboard"); }, []); // ?preview= is dev-only, for screenshots (set after mount so SSR markup matches)
+  const [verified, setVerified] = useState(false), [name, setName] = useState(""), [use, setUse] = useState(""), [team, setTeam] = useState("");
+  useEffect(() => { if (after !== "verify" || !config) return; track(EVENTS.auth_verification_shown); let t: ReturnType<typeof setInterval> | undefined; const poll = () => isEmailVerified(config).then(v => { if (v) { setVerified(true); clearInterval(t); } }); t = setInterval(poll, 4000); void poll(); return () => clearInterval(t); }, [after, config]);
   const session = `${BP}/api/session`; const done = () => { if (guestUid) { try { localStorage.setItem("miroisdead:migrate-from", guestUid); } catch {} } window.location.assign(to); };
   const authMode = su ? "signup" : "signin";
   const run = async (f: () => Promise<void>, method?: string) => { setBusy(true); setErr(""); setNote(""); if (method) track(EVENTS.auth_started, { method, mode: authMode }); try { await f(); if (method) track(EVENTS.auth_completed, { method, mode: authMode }); } catch (e) { if (method) track(EVENTS.auth_failed, { method, mode: authMode, reason: String((e as { code?: string })?.code ?? "error") }); setErr(authErrorMessage(e)); } finally { setBusy(false); } };
   const submit = (e: React.FormEvent) => { e.preventDefault(); if (!config) { setErr("Sign-in isn't configured on this deployment yet."); return; }
     if (reset) return run(async () => { await resetPassword(config, email); setNote("If that email has an account, a reset link is on its way."); setReset(false); });
     if (step === 0) { if (email) setStep(1); return; }
-    run(async () => { if (su) await signUpWithEmail(config, session, email, pw); else await signInWithEmail(config, session, email, pw); done(); }, "email"); };
+    run(async () => { if (su) { await signUpWithEmail(config, session, email, pw); setAfter("verify"); } else { await signInWithEmail(config, session, email, pw); done(); } }, "email"); };
+  const finishOnboarding = (skipped: boolean) => { track(EVENTS.auth_onboarding_completed, { use: use || "unset", team_size: team || "unset", skipped }); try { localStorage.setItem("miroisdead:onboarding", JSON.stringify({ name, use, team, at: Date.now() })); } catch { /* ignore */ } if (!skipped && name.trim() && config) void setDisplayName(config, name.trim()).catch(() => {}); done(); };
+  const USES: [string, string][] = [["product", "Product management"], ["design", "Design & UX"], ["engineering", "Engineering"], ["marketing", "Marketing"], ["education", "Education"], ["personal", "Personal projects"]];
+  const TEAMS: [string, string][] = [["1", "Just me"], ["2-10", "2–10"], ["11-50", "11–50"], ["51+", "51 or more"]];
+  const verifyCard = <main className="ma-card" data-testid="verify-step">
+    <h1>Check your email</h1><p className="ma-sub">We sent a verification link to <b>{email || "your inbox"}</b>. Open it, then come back here.</p>
+    <div className={"ma-vstate" + (verified ? " ok" : "")} role="status">{verified ? "Email verified" : "Waiting for you to click the link…"}</div>
+    <button type="button" className="ma-go" disabled={busy || !verified} onClick={() => { track(EVENTS.auth_verification_result, { verified: true, action: "continue" }); setAfter("onboard"); }}>Continue</button>
+    <p className="ma-alt"><a href="#" onClick={e => { e.preventDefault(); if (!config) return; track(EVENTS.auth_verification_result, { verified, action: "resend" }); void resendVerification(config).then(() => setNote("Sent again. Check spam if it's not there in a minute."), () => setErr("Couldn't resend right now.")); }}>→ Resend the email</a></p>
+    <p className="ma-alt"><a href="#" onClick={e => { e.preventDefault(); track(EVENTS.auth_verification_result, { verified, action: "skip" }); setAfter("onboard"); }}>→ Skip for now (you can verify later)</a></p>
+    {err && <p role="alert" className="ma-err">{err}</p>}{note && <p role="status" className="ma-note">{note}</p>}
+    <p className="ma-fine">Verification uses a free email link instead of a code; nothing else leaves MiroIsDead.</p>
+  </main>;
+  const onboardCard = <main className="ma-card" data-testid="onboard-step">
+    <h1>Tell us a little about you</h1><p className="ma-sub">We’ll pick starter templates to match. You can change any of this later.</p>
+    <form onSubmit={e => { e.preventDefault(); finishOnboarding(false); }}>
+      <label className="ma-l" htmlFor="ma-name">What should we call you?</label><div className="ma-in"><input id="ma-name" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" autoFocus maxLength={60} /></div>
+      <p className="ma-l" style={{ marginTop: 18 }}>What will you use MiroIsDead for?</p>
+      <div className="ma-chips" role="group" aria-label="Use">{USES.map(([v, l]) => <button type="button" key={v} className={use === v ? "on" : ""} aria-pressed={use === v} onClick={() => setUse(v)}>{l}</button>)}</div>
+      <p className="ma-l" style={{ marginTop: 18 }}>How big is your team?</p>
+      <div className="ma-chips" role="group" aria-label="Team size">{TEAMS.map(([v, l]) => <button type="button" key={v} className={team === v ? "on" : ""} aria-pressed={team === v} onClick={() => setTeam(v)}>{l}</button>)}</div>
+      <button className="ma-go" style={{ marginTop: 22 }} disabled={busy}>Take me to my canvas</button>
+    </form>
+    <p className="ma-alt"><a href="#" onClick={e => { e.preventDefault(); finishOnboarding(true); }}>→ Skip these questions</a></p>
+  </main>;
   const demoLogin = () => run(async () => { const r = await fetch(`${BP}/api/session/demo`, { method: "POST" }); if (!r.ok) throw new Error("Demo sign-in failed"); done(); }, "demo");
   const google = () => config ? run(async () => { await signInWithGoogle(config, session); done(); }, "google") : setErr("Sign-in isn't configured on this deployment yet.");
   const G = <span dangerouslySetInnerHTML={{ __html: GOOGLE_G_SVG }} style={{ display: "inline-flex" }} />;
@@ -36,7 +64,7 @@ export function MiAuth({ config, demo, to, mode, guestUid = null }: Props) {
   return <div className={"ma " + (su ? "ma-su" : "ma-si")}>
     <header className="ma-hd"><Link href="/" className="ma-logo"><Mark size={34} />MiroIsDead</Link><div className="ma-r"><span className="ma-en"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" strokeWidth="1.6" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></svg>EN</span><Link className="ma-ob" href={su ? "/login" : "/signup"}>{su ? "Sign in" : "Sign up"}</Link></div></header>
     {su && <FakeBoard />}
-    <main className="ma-card">
+    {after === "verify" ? verifyCard : after === "onboard" ? onboardCard : <main className="ma-card">
       <h1>{su ? "Your canvas is ready" : "Sign in to MiroIsDead"}</h1>
       {su && <p className="ma-sub">Start building, collaborating and bringing your ideas to life.</p>}
       {!su && <><button type="button" className="ma-pb ma-full" onClick={google}>{G}Continue with Google</button><hr /></>}
@@ -46,8 +74,8 @@ export function MiAuth({ config, demo, to, mode, guestUid = null }: Props) {
       {su ? <p className="ma-alt">→ <Link href="/login">Already have an account? Sign in</Link></p> : demo ? <p className="ma-alt"><a href="#" onClick={e => { e.preventDefault(); demoLogin(); }}>→ Sign in with the demo account instead</a></p> : null}
       {!su && <p className="ma-trouble"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M4 20l5-1 10-10-4-4L5 15zM13 7l4 4M15 3l1 2M20 8l-2 1" /></svg>Trouble signing in? <a href="#" onClick={e => { e.preventDefault(); setReset(!reset); setStep(1); }}>{reset ? "Back to sign in" : "Request a password reset link"}</a></p>}
       {!su && <p className="ma-fine">New to MiroIsDead? <Link href="/signup">Create an account</Link>. No bots, no CAPTCHA.</p>}
-      {su && <p className="ma-fine">By signing up, you agree to the <a href="https://github.com/tommy-muckstack/miroisdead/blob/main/LICENSE">license</a>. MiroIsDead is independent and not affiliated with Miro.</p>}
-    </main>
+      {su && <p className="ma-fine">By signing up, you agree to the <Link href="/terms">terms</Link> and <Link href="/privacy">privacy policy</Link>. MiroIsDead is independent and not affiliated with Miro.</p>}
+    </main>}
     {demo && su && <button type="button" className="ma-demo" disabled={busy} onClick={demoLogin}>Use the demo account</button>}</div>;
 }
 /** Decorative board chrome behind the sign-up card (matches the editor's header, rail and right pill). */

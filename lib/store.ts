@@ -34,7 +34,7 @@ export class CloudBoardStore implements BoardStore {
   kind = "cloud" as const;
   constructor(private base: string, private cache: LocalBoardStore, private f: typeof fetch = (...a) => fetch(...a)) {}
   async list(): Promise<BoardMeta[]> {
-    try { const r = await this.f(`${this.base}/api/boards`); if (!r.ok) throw new Error(String(r.status)); return (await r.json()).boards as BoardMeta[]; }
+    try { const r = await this.f(`${this.base}/api/boards`, { cache: "no-store" }); if (!r.ok) throw new Error(String(r.status)); return (await r.json()).boards as BoardMeta[]; }
     catch { return this.cache.list(); }
   }
   async load(id: string): Promise<Board | null> {
