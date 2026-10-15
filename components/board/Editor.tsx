@@ -29,6 +29,8 @@ import { CommandPalette, PresentBar, type Command, ContextMenu, EmojiPicker, Exp
 import { svgToPngBlob, boardToCsv, saveCustomTemplate, openPrintWindow } from "./exportMore";
 import { CommentThread, CommentsPanel } from "./Comments";
 import { LiveChannel, PEER_COLORS, type LiveMsg, type Peer } from "@/lib/live";
+import { RtcMesh } from "@/lib/rtc";
+import type { FirebaseClientConfig } from "@/lib/isdead-auth/config";
 import { PeerCursors, PeerAvatars, type PeerState } from "./Live";
 import { FacilitationPopover, Reactions, TimerPanel, TimerChip, VotingPanel, NotePanel, type Timer, type Voting } from "./Facilitation";
 
@@ -56,7 +58,7 @@ const textOf = (o: Obj) => (o.type === "frame" ? o.name : o.type === "connector"
 const download = (name: string, mime: string, data: string) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: mime })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
 const textHeight = (text: string, w: number, size: number, bold: boolean) => Math.max(size * 1.6, wrapText(text || " ", w, size, undefined, bold).length * size * LINE_HEIGHT + 8);
 
-export function Editor({ initial, store, who, signOutAction, readOnly = false, guest = false, embed = false, startFrame }: { initial: Board; store: BoardStore; who: string; signOutAction?: () => void | Promise<void>; readOnly?: boolean; guest?: boolean; embed?: boolean; startFrame?: string }) {
+export function Editor({ initial, store, who, signOutAction, readOnly = false, guest = false, embed = false, startFrame, rtc = null }: { initial: Board; store: BoardStore; who: string; signOutAction?: () => void | Promise<void>; readOnly?: boolean; guest?: boolean; embed?: boolean; startFrame?: string; rtc?: FirebaseClientConfig | null }) {
   const [hist, setHist] = useState<History<Doc>>(() => createHistory(initial.doc));
   const [view, setView] = useState<View>(initial.view);
   const [title, setTitle] = useState(initial.title);
@@ -111,11 +113,13 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
       if (m.t === "hello") ch.send({ t: "hello", from: me.current });
       if (m.t === "doc" && m.rev > remoteRev.current) { remoteRev.current = m.rev; applyingRemote.current = true; setHist(h => replace(h, sanitizeDoc(m.doc))); }
     });
+    if (rtc) { const mesh = new RtcMesh(initial.id, me.current); void mesh.start(rtc, `${BP}/api/session/token`).then(ok => { if (ok && live.current === ch) ch.attachMesh(mesh); else mesh.close(); }); }
     const sweep = setInterval(() => setPeers(p => { const n: typeof p = {}; for (const k in p) if (Date.now() - p[k].seen < 30000) n[k] = p[k]; return Object.keys(n).length === Object.keys(p).length ? p : n; }), 10000);
     return () => { off(); clearInterval(sweep); ch.close(); live.current = null; };
-  }, [initial.id]);
+  }, [initial.id, rtc]);
   useEffect(() => { if (applyingRemote.current) { applyingRemote.current = false; return; } if (first.current) return; if (docTimer.current) clearTimeout(docTimer.current); docTimer.current = setTimeout(() => { localRev.current = Math.max(localRev.current, remoteRev.current) + 1; remoteRev.current = localRev.current; live.current?.send({ t: "doc", from: me.current, doc: hist.present, rev: localRev.current }); }, 150); }, [hist.present]);
   useEffect(() => { live.current?.send({ t: "sel", from: me.current, ids: sel }); }, [sel]);
+  useEffect(() => { const i = setInterval(() => live.current?.send({ t: "hello", from: me.current }), 15000); return () => clearInterval(i); }, []);
   const [online, setOnline] = useState(true);
   const [present, setPresent] = useState<{ i: number } | null>(null);
   const [commentsPanel, setCommentsPanel] = useState(false);
