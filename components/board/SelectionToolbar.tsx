@@ -9,7 +9,7 @@ import { X } from "@/components/mxi";
 type Props = {
   doc: Doc; ids: Id[]; screenBox: Box; canvas: { w: number; h: number };
   patch: (p: Partial<Obj> | ((o: Obj) => Partial<Obj>), remember?: Record<string, unknown>) => void;
-  onDelete: () => void; onDuplicate: () => void; onFront: () => void; onBack: () => void; onFrame: () => void; onAlign: (a: Align) => void; onDistribute: (axis: "h" | "v") => void; onGroup?: () => void;
+  onDelete: () => void; onDuplicate: () => void; onFront: () => void; onBack: () => void; onFrame: () => void; onAlign: (a: Align) => void; onDistribute: (axis: "h" | "v") => void; onGroup?: () => void; onConvert?: (t: "sticky" | "shape" | "text") => void;
 };
 const Swatches = ({ colors, value, onPick, label }: { colors: readonly string[]; value?: string; onPick: (c: string) => void; label: string }) =>
   <div className="mi-swatches" role="group" aria-label={label}>{colors.map(c => <button key={c} type="button" className={"mi-sw" + (value?.toLowerCase() === c.toLowerCase() ? " on" : "")} style={{ background: c }} aria-label={`${label} ${c}`} onClick={() => onPick(c)} />)}</div>;
@@ -21,13 +21,14 @@ const SIZES = ["auto", 14, 20, 28] as const;
 const Sep = () => <span className="mi-sep" />;
 const SHAPES: { k: ShapeKind; label: string; i: React.ReactNode }[] = [{ k: "rect", label: "Rectangle", i: I.rect }, { k: "round", label: "Rounded", i: I.rect }, { k: "ellipse", label: "Ellipse", i: I.ellipse }, { k: "diamond", label: "Diamond", i: I.diamond }, { k: "triangle", label: "Triangle", i: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d="M12 4l9 16H3z" /></svg> }];
 
-export function SelectionToolbar({ doc, ids, screenBox, canvas, patch, onDelete, onDuplicate, onFront, onBack, onFrame, onAlign, onDistribute, onGroup }: Props) {
-  const [pal, setPal] = React.useState(false), [more, setMore] = React.useState(false);
+export function SelectionToolbar({ doc, ids, screenBox, canvas, patch, onDelete, onDuplicate, onFront, onBack, onFrame, onAlign, onDistribute, onGroup, onConvert }: Props) {
+  const [pal, setPal] = React.useState(false), [more, setMore] = React.useState(false), [convert, setConvert] = React.useState(false);
   const objs = ids.map(i => doc.objects[i]).filter(Boolean);
   if (!objs.length) return null;
   const types = new Set(objs.map(o => o.type)), one = objs.length === 1 ? objs[0] : null;
   const W = types0(objs) ? 560 : 340, left = Math.min(Math.max(8, screenBox.x + screenBox.w / 2 - W / 2), canvas.w - W - 8);
-  const above = screenBox.y - 62, top = above < 8 ? Math.min(canvas.h - 60, screenBox.y + screenBox.h + 14) : above;
+  const below = screenBox.y + screenBox.h + 14, above = screenBox.y - 62, preferBelow = objs.length > 1 || one?.type === "sticky";
+  const top = preferBelow ? (below > canvas.h - 60 ? Math.max(8, above) : below) : above < 8 ? Math.min(canvas.h - 60, below) : above;
   const stop = (e: React.SyntheticEvent) => e.stopPropagation();
   return <div className="mi-floattb" style={{ left, top }} data-testid="selection-toolbar" onPointerDown={stop} onDoubleClick={stop}>
     {types.size === 1 && one?.type === "sticky" && <>
@@ -64,7 +65,9 @@ export function SelectionToolbar({ doc, ids, screenBox, canvas, patch, onDelete,
     </>}
     {types.size === 1 && one?.type === "frame" && <span className="mi-tbnote">Frame · double-click to rename</span>}
     {objs.length > 1 && <>
-      <span className="mi-tbnote" data-testid="selection-count">{objs.length} selected</span><Sep />
+      <span className="mi-menuwrap"><button type="button" className={"mi-tb mi-tbwide" + (convert ? " on" : "")} aria-expanded={convert} onClick={() => setConvert(c => !c)}>Convert to {X.chev}</button>
+        {convert && <div className="mb-more" role="menu">{([["sticky", "Sticky notes", I.sticky], ["shape", "Shapes", I.rect], ["text", "Text", I.text]] as const).map(([t, l, ic]) => <button key={t} type="button" onClick={() => { onConvert?.(t); setConvert(false); }}>{ic} {l}</button>)}</div>}</span>
+      <span className="mi-tb mi-tbwide dec" data-testid="selection-count" title="Filter">{X.funnel} {objs.length} objects</span><Sep />
       {([["left", "Align left"], ["center", "Align centre"], ["right", "Align right"], ["top", "Align top"], ["middle", "Align middle"], ["bottom", "Align bottom"]] as [Align, string][]).map(([a, t]) =>
         <Btn key={a} title={t} onClick={() => onAlign(a)}><b style={{ fontSize: 11 }}>{({ left: "⇤", center: "↔", right: "⇥", top: "⤒", middle: "↕", bottom: "⤓" })[a]}</b></Btn>)}
       <Btn title="Distribute horizontally" onClick={() => onDistribute("h")}><b style={{ fontSize: 11 }}>⇹</b></Btn>

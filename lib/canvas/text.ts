@@ -33,7 +33,7 @@ export function wrapText(text: string, maxWidth: number, fontSize: number, measu
 }
 
 /** Miro-style "Auto" size: the largest font size (28 → 10, steps of 2) whose wrapped text fits the box. */
-export function fitFontSize(text: string, w: number, h: number, measure: Measure = measureText, pad = 14, max = 28, min = 10): number {
+export function fitFontSize(text: string, w: number, h: number, measure: Measure = measureText, pad = 14, max = 48, min = 10): number {
   const words = (text || " ").split(/\s+/);
   const unbroken = (s: number) => words.every(wd => measure(wd, s) <= w - pad * 2); // never split a word mid-way while a smaller size avoids it
   for (const strict of [true, false]) for (let s = max; s > min; s -= 2) {

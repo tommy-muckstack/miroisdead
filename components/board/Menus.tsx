@@ -23,7 +23,7 @@ export const Item = ({ icon, label, kbd, onClick, sub, disabled, info, right, on
 export const Hr = () => <hr className="mm-hr" />;
 
 // ---------- export ----------
-export type ExportActions = { pdf: () => void; image: () => void; template: () => void; csv: () => void; backup: () => void; embed: () => void; drive: () => void; scene: () => void };
+export type ExportActions = { pdf: () => void; image: () => void; template: () => void; csv: () => void; backup: () => void; embed: () => void; drive: () => void };
 export function ExportMenu({ onClose, a }: { onClose: () => void; a: ExportActions }) {
   const go = (f: () => void) => () => { onClose(); f(); };
   return <Pop className="mm-export" onClose={onClose} testid="export-menu">
@@ -34,7 +34,6 @@ export function ExportMenu({ onClose, a }: { onClose: () => void; a: ExportActio
     <Item icon={X.download} label="Download board backup" onClick={go(a.backup)} />
     <Item icon={X.code} label="Embed" onClick={go(a.embed)} />
     <Item icon={X.drive} label="Save to Google Drive" onClick={go(a.drive)} />
-    <Hr /><Item icon={X.ai} label="Copy scene JSON for an AI agent" onClick={go(a.scene)} />
   </Pop>;
 }
 

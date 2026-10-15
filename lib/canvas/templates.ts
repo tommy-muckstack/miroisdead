@@ -124,6 +124,6 @@ export function templateDoc(id: TemplateId): Doc {
     ]);
   }
 }
-export const boardFromTemplate = (id: TemplateId): Board => newBoard(TEMPLATES.find(t => t.id === id)?.name ?? "Untitled board", templateDoc(id));
+export const boardFromTemplate = (id: TemplateId): Board => newBoard(id === "blank" ? "Untitled" : TEMPLATES.find(t => t.id === id)?.name ?? "Untitled", templateDoc(id));
 export { pen, addObjects };
 export type { Obj };

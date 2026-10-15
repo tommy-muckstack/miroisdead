@@ -1,0 +1,16 @@
+import { chromium } from "@playwright/test";
+const OUT = process.env.OUT ?? new URL("../../miroisdead-parity/qa/", import.meta.url).pathname, BASE = "http://localhost:3111/miroisdead";
+const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+p.on("pageerror", e => console.log("pageerror:", e.message));
+const shot = (n) => p.screenshot({ path: `${OUT}/${n}.png` });
+await p.goto(`${BASE}/login`); await p.getByText("Sign in with the demo account instead").click(); await p.waitForURL("**/app"); await p.waitForSelector("[data-testid=board-card]");
+await p.getByTestId("new-blank").click(); await p.waitForSelector("[data-testid=board-editor]"); await p.waitForTimeout(400);
+console.log("title:", await p.getByLabel("Board title").inputValue()); await shot("07-board-empty-after");
+await p.getByTestId("share").click(); await p.waitForTimeout(200); console.log("title prompt:", await p.getByTestId("title-prompt").count()); await shot("14-share-title-prompt-after");
+await p.getByTestId("title-prompt").getByLabel("Board title").fill("QA board"); await p.getByRole("button", { name: "Save" }).click(); await p.waitForTimeout(300);
+console.log("share open:", await p.locator(".mb-share").count(), "title now:", await p.getByLabel("Board title").inputValue(), "scrim bg:", await p.evaluate(() => getComputedStyle(document.querySelector(".mb-scrim")).backgroundColor)); await shot("14-share-after");
+await p.keyboard.press("Escape"); await p.getByLabel("Export this board").click(); await p.waitForTimeout(150); console.log("scene item:", await p.getByRole("menuitem", { name: /scene JSON/ }).count()); await shot("16-export-after");
+await p.getByRole("menuitem", { name: "Export as image" }).click(); await p.waitForTimeout(200); console.log("export dialog:", await p.getByTestId("export-image").count()); await shot("21-export-image-after");
+const [dl] = await Promise.all([p.waitForEvent("download"), p.getByTestId("export-image").getByRole("button", { name: "Export" }).click()]); console.log("download:", dl.suggestedFilename());
+await p.getByLabel("Shapes and lines").click(); await p.getByLabel("Main menu").click(); await p.waitForTimeout(150); console.log("flyout while ⋮ open:", await p.locator(".mb-fly.shapes.open").count()); await shot("15-board-menu-after"); await p.keyboard.press("Escape");
+await b.close();

@@ -8,7 +8,7 @@ import { DIR, OPPOSITE, anchorPoint, boxOf, normBox, simplify, snapBox, unionBox
 import { prepareImage, isImageFile } from "@/lib/image";
 import { StickerPanel } from "./Stickers";
 import { track, EVENTS } from "@/lib/analytics";
-import { addObjects, align, bringToFront, cloneObjects, connector, createConnected, distribute, frame, frameAround, groupObjects, moveObjects, nid, pasteObjects, pen, removeObjects, resizeObject, sendToBack, shape, sticky, textObj, ungroupObjects, updateObjects, withFrameChildren, withGroups, type Align } from "@/lib/canvas/doc";
+import { STICKY_SIZE, addObjects, align, bringToFront, cloneObjects, connector, createConnected, distribute, frame, frameAround, groupObjects, moveObjects, nid, pasteObjects, pen, removeObjects, resizeObject, sendToBack, shape, sticky, textObj, ungroupObjects, updateObjects, withFrameChildren, withGroups, type Align } from "@/lib/canvas/doc";
 import { boundsOf, resolveConnector, routeConnector } from "@/lib/canvas/connectors";
 import { hitTest, marquee } from "@/lib/canvas/hit";
 import { LINE_HEIGHT, fitFontSize, wrapText } from "@/lib/canvas/text";
@@ -40,6 +40,8 @@ type Gesture =
   | { k: "move"; ids: Id[]; start: Doc; w0: Pt; cp: boolean; dup: boolean; clickId: Id | null; shift: boolean; moved: boolean; was: boolean }
   | { k: "resize"; id: Id; h: string; start: Doc; b0: Box; cp: boolean }
   | { k: "rot"; id: Id; c: Pt; a0: number; r0: number; start: Doc; cp: boolean }
+  | { k: "gresize"; ids: Id[]; h: string; start: Doc; b0: Box; cp: boolean }
+  | { k: "grot"; ids: Id[]; c: Pt; a0: number; start: Doc; cp: boolean; last: number }
   | { k: "marquee"; w0: Pt; base: Id[] }
   | { k: "draw"; tool: Tool; w0: Pt }
   | { k: "pen"; pts: Pt[] }
@@ -81,8 +83,10 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const [fly, setFly] = useState<"" | "shapes" | "more">("");
   const [firstRun, setFirstRun] = useState(false); // tool hints are onboarding only: shown until the first board has 8 objects, then never again
   useEffect(() => { try { setFirstRun(localStorage.getItem("mi-onboarded") !== "1"); } catch { /* ignore */ } }, []);
-  useEffect(() => { if (!fly) return; const f = (e: PointerEvent) => { const t = e.target as Element; if (!t.closest(".mb-fly") && !t.closest("[aria-expanded]")) setFly(""); }; window.addEventListener("pointerdown", f, true); return () => window.removeEventListener("pointerdown", f, true); }, [fly]);
+  useEffect(() => { if (!fly) return; const f = (e: PointerEvent) => { const t = e.target as Element; if (!t.closest(".mb-fly") && !t.closest('[aria-label="Shapes and lines"]')) setFly(""); }; window.addEventListener("pointerdown", f, true); return () => window.removeEventListener("pointerdown", f, true); }, [fly]);
   const [share, setShare] = useState<"" | ShareTab>("");
+  const [titlePrompt, setTitlePrompt] = useState<string | null>(null); // "Give your board a title" before the first Share (Miro)
+  const [imgOpts, setImgOpts] = useState<null | { area: "board" | "selection"; quality: "small" | "medium" | "large"; bg: boolean }>(null);
   useEffect(() => { if (location.hash === "#share" && !guest) { setShare("Invite"); history.replaceState(null, "", location.pathname + location.search); } }, [guest]); // dashboard row menu › Share
   const [prof, setProf] = useState(false);
   const [chips, setChips] = useState(true);
@@ -146,7 +150,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   R.current = { doc, view, sel, tool, size, edit, title, space, thread };
   const clip = useRef<Obj[]>([]);
   const pasteN = useRef(0);
-  const last = useRef<Last>({ stickyColor: STICKY_COLORS[0], fill: "#FFFFFF", stroke: "#1C1C1E", penColor: "#1C1C1E", penWidth: 3, textColor: "#1C1C1E", connectorStyle: "elbow", shape: "rect", arrow: true, line: "Elbow arrow" });
+  const last = useRef<Last>({ stickyColor: STICKY_COLORS[0], fill: "#FFFFFF", stroke: "#1C1C1E", penColor: "#1C1C1E", penWidth: 3, textColor: "#1C1C1E", connectorStyle: "straight", shape: "rect", arrow: true, line: "Elbow arrow" });
   const lastClick = useRef({ t: 0, id: "" });
   const snapRef = useRef(true);
   const votingRef = useRef<Voting>(null); votingRef.current = voting;
@@ -189,10 +193,15 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const selectOnly = (ids: Id[]) => setSel(ids);
   const startEdit = (id: Id, isNew = false) => { setEdit({ id, isNew }); setSel([id]); };
   const backToSelect = () => setTool("select");
+  const convertSel = (t: "sticky" | "shape" | "text") => { const { doc: d, sel: s } = R.current; let nd = d; const ids: Id[] = [];
+    for (const id of s) { const o = d.objects[id]; if (!o || !isBox(o) || o.type === t || !(o.type === "sticky" || o.type === "shape" || o.type === "text")) continue; const text = (o as { text?: string }).text ?? "";
+      const n: Obj = t === "sticky" ? sticky(o.x, o.y, { w: o.w, h: o.h, text, color: last.current.stickyColor }) : t === "shape" ? shape(o.x, o.y, { w: o.w, h: o.h, text, fill: last.current.fill, stroke: last.current.stroke }) : textObj(o.x, o.y, { w: o.w, text, color: last.current.textColor });
+      nd = addObjects(removeObjects(nd, [id]), [n]); ids.push(n.id); }
+    if (ids.length) { commitDoc(nd); setSel(ids); } };
   const patchSel = (p: Partial<Obj> | ((o: Obj) => Partial<Obj>), remember?: Record<string, unknown>) => { commitDoc(updateObjects(R.current.doc, R.current.sel, p)); if (remember) Object.assign(last.current, remember); };
   const del = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; commitDoc(removeObjects(d, s)); setSel([]); };
   const regroup = (objs: Obj[]): Obj[] => { const map = new Map<string, string>(); return objs.map(o => { if (!o.group) return o; if (!map.has(o.group)) map.set(o.group, nid()); return { ...o, group: map.get(o.group) } as Obj; }); };
-  const dup = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; const c = cloneObjects(d, s); commitDoc(addObjects(d, regroup(c.objs))); setSel(c.ids); };
+  const dup = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; const c = cloneObjects(d, s); commitDoc(addObjects(d, regroup(c.objs))); setSel([]); };
   const groupSel = () => { const { doc: d, sel: s } = R.current; if (s.length < 2) { flash("Select two or more objects to group"); return; } commitDoc(groupObjects(d, s)); track(EVENTS.board_group_changed, { action: "group", count: s.length }); flash("Grouped"); };
   const ungroupSel = () => { const { doc: d, sel: s } = R.current; if (!s.some(i => d.objects[i]?.group)) return; commitDoc(ungroupObjects(d, s)); track(EVENTS.board_group_changed, { action: "ungroup" }); flash("Ungrouped"); };
   const copy = (cut: boolean) => { const { doc: d, sel: s } = R.current; if (!s.length) return; const set = new Set(s); clip.current = d.order.filter(i => set.has(i)).map(i => d.objects[i]); pasteN.current = 0; navigator.clipboard?.writeText("MiroIsDead board objects").catch(() => {}); if (cut) del(); else flash(`Copied ${s.length} object${s.length > 1 ? "s" : ""}`); };
@@ -204,7 +213,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const fullscreen = () => { const el = box.current?.closest(".mi-app") as HTMLElement | null; if (document.fullscreenElement) void document.exitFullscreen(); else void el?.requestFullscreen?.(); };
   const jumpTo = (id: Id) => { const o = R.current.doc.objects[id]; if (!o) return; setView(fitView(boundsOf(R.current.doc, o), R.current.size, 120)); setSel([id]); };
   const exportPdf = () => { track(EVENTS.board_exported, { format: "pdf" }); openPrintWindow(title || "board", boardToSvg(doc)); };
-  const exportPng = async () => { track(EVENTS.board_exported, { format: "png" }); try { const blob = await svgToPngBlob(boardToSvg(doc), 2); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${title || "board"}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); } catch { flash("Couldn't render the image"); } };
+  const exportPng = async (o: { area: "board" | "selection"; quality: "small" | "medium" | "large"; bg: boolean } = { area: "board", quality: "medium", bg: true }) => { track(EVENTS.board_exported, { format: "png", area: o.area, quality: o.quality }); try { const src = o.area === "selection" && R.current.sel.length ? (() => { const keep = new Set(withFrameChildren(doc, R.current.sel)); return { ...doc, order: doc.order.filter(i => keep.has(i)) }; })() : doc; const blob = await svgToPngBlob(boardToSvg(src, { background: o.bg ? undefined : null }), { small: 1, medium: 2, large: 4 }[o.quality]); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${title || "board"}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); } catch { flash("Couldn't render the image"); } };
   const exportCsv = () => { track(EVENTS.board_exported, { format: "csv" }); download(`${title || "board"}.csv`, "text/csv", boardToCsv(doc)); };
   const exportBackup = () => { track(EVENTS.board_exported, { format: "json" }); download(`${title || "board"}.miroisdead.json`, "application/json", serialize(boardRef.current)); };
   const saveTemplate = () => { track(EVENTS.board_exported, { format: "template" }); saveCustomTemplate(boardRef.current); flash("Saved as a custom template. Find it under Create ▸ Explore templates."); };
@@ -249,7 +258,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const frameSel = () => { const { doc: d, sel: s } = R.current; const r = frameAround(d, s.filter(i => d.objects[i]?.type !== "frame")); if (r) { commitDoc(r.doc); setSel([r.id]); } };
   const newFrom = (x: number, y: number, kind: Tool): Obj => {
     const L = last.current;
-    if (kind === "sticky") return sticky(x - 90, y - 90, { color: L.stickyColor, ...(priv ? { private: true } : {}) } as Partial<StickyObj>);
+    if (kind === "sticky") return sticky(x - STICKY_SIZE / 2, y - STICKY_SIZE / 2, { color: L.stickyColor, ...(priv ? { private: true } : {}) } as Partial<StickyObj>);
     if (kind === "text") return textObj(x, y - 18, { color: L.textColor });
     const sh = kind === "ellipse" ? "ellipse" : kind === "diamond" ? "diamond" : L.shape === "triangle" ? "triangle" : "rect";
     return shape(x - 80, y - 55, { shape: sh, fill: L.fill, stroke: L.stroke });
@@ -289,6 +298,8 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     if (t === "select" && h) {
       if (h.startsWith("dot:")) { const side = h.slice(4) as Side, id = s[0]; const o = d.objects[id]; g.current = { k: "conn", from: { id, side }, fromPt: anchorPoint(boxOf(o as any), side), dot: { id, side }, moved: false }; return; }
       if (h === "ca" || h === "cb") { g.current = { k: "cend", id: s[0], which: h === "ca" ? "from" : "to", cp: false }; return; }
+      if (h.startsWith("g:")) { const b = unionBox(s.map(i => boundsOf(d, d.objects[i]))); if (!b) return; g.current = { k: "gresize", ids: s.slice(), h: h.slice(2), start: d, b0: b, cp: false }; return; }
+      if (h === "grot") { const b = unionBox(s.map(i => boundsOf(d, d.objects[i]))); if (!b) return; const c = { x: b.x + b.w / 2, y: b.y + b.h / 2 }; g.current = { k: "grot", ids: s.slice(), c, a0: Math.atan2(w.y - c.y, w.x - c.x), start: d, cp: false, last: 0 }; return; }
       if (h === "rot") { const o = d.objects[s[0]] as Obj & Box & { rot?: number }; const c = { x: o.x + o.w / 2, y: o.y + o.h / 2 }; g.current = { k: "rot", id: s[0], c, a0: Math.atan2(w.y - c.y, w.x - c.x), r0: o.rot ?? 0, start: d, cp: false }; return; }
       g.current = { k: "resize", id: s[0], h, start: d, b0: boxOf(d.objects[s[0]] as any), cp: false }; return;
     }
@@ -343,6 +354,21 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
           const r = snapBox({ ...moving, x: moving.x + dx, y: moving.y + dy }, others, 6 / v.zoom); dx += r.dx; dy += r.dy; gl = r.guides;
         }
         setGuides(gl); liveDoc(moveObjects(gg.start, gg.ids, dx, dy)); return;
+      }
+      case "gresize": { // scale every selected box about the opposite corner of the selection
+        if (!gg.cp) { gg.cp = true; begin(); }
+        const b0 = gg.b0, ax = gg.h.includes("w") ? b0.x + b0.w : b0.x, ay = gg.h.includes("n") ? b0.y + b0.h : b0.y; // anchor (fixed corner)
+        let sx = b0.w ? (w.x - ax) / ((gg.h.includes("w") ? b0.x : b0.x + b0.w) - ax) : 1, sy = b0.h ? (w.y - ay) / ((gg.h.includes("n") ? b0.y : b0.y + b0.h) - ay) : 1;
+        if (!e.shiftKey) { const k = Math.max(Math.abs(sx), Math.abs(sy)); sx = sy = k; } sx = Math.max(0.05, Math.abs(sx)); sy = Math.max(0.05, Math.abs(sy));
+        let nd = gg.start; for (const id of gg.ids) { const o = gg.start.objects[id]; if (!o || !isBox(o)) continue; nd = resizeObject(nd, id, { x: ax + (o.x - ax) * sx, y: ay + (o.y - ay) * sy, w: o.w * sx, h: o.h * sy }); }
+        liveDoc(nd); return;
+      }
+      case "grot": { // rotate the selection as one: each object spins in place and orbits the selection centre
+        if (!gg.cp) { gg.cp = true; begin(); }
+        let deg = ((Math.atan2(w.y - gg.c.y, w.x - gg.c.x) - gg.a0) * 180) / Math.PI; const snap45 = Math.round(deg / 45) * 45; if (!e.shiftKey && Math.abs(deg - snap45) < 4) deg = snap45;
+        const rad = (deg * Math.PI) / 180, cs = Math.cos(rad), sn = Math.sin(rad); let nd = gg.start;
+        for (const id of gg.ids) { const o = gg.start.objects[id]; if (!o || !isBox(o) || o.type === "frame") continue; const cx = o.x + o.w / 2 - gg.c.x, cy = o.y + o.h / 2 - gg.c.y; const nx = gg.c.x + cx * cs - cy * sn - o.w / 2, ny = gg.c.y + cx * sn + cy * cs - o.h / 2; const r = ((((o as { rot?: number }).rot ?? 0) + deg) % 360 + 360) % 360; nd = updateObjects(nd, [id], { x: nx, y: ny, rot: r || undefined } as Partial<Obj>); }
+        liveDoc(nd); return;
       }
       case "rot": {
         if (!gg.cp) { gg.cp = true; begin(); }
@@ -532,7 +558,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
         {main && <MainMenu onClose={() => setMain(false)} a={{ rename: () => (document.querySelector(".mb-title") as HTMLInputElement | null)?.select(), duplicate: () => { const b = { ...boardRef.current, id: nid(), title: `${title} copy`, createdAt: Date.now(), updatedAt: Date.now() }; void store.save(b).then(() => flash("Board duplicated. It's on your dashboard."), () => flash("Couldn't duplicate")); }, back: () => (window.location.href = `${BP}/app`), undo: doUndo, redo: doRedo, canUndo: canUndo(hist), canRedo: canRedo(hist), selectAll: () => setSel(doc.order.slice()), dup, del, hasSel: sel.length > 0, minimap: map, toggleMinimap: () => setMap(m => !m), grid, toggleGrid: () => setGrid(g => !g), fullscreen, fit: fitAll, snap, toggleSnap: () => { snapRef.current = !snap; setSnap(s => !s); }, dims, toggleDims: () => setDims(d => !d), shortcuts: () => setHelp(true), flash }} />}</span>
       <span className="mi-menuwrap">
         <button className="mb-i" onClick={() => setMenu(m => !m)} aria-expanded={menu} aria-haspopup="menu" aria-label="Export this board" title="Export this board">{X.upload}</button>
-        {menu && <ExportMenu onClose={() => setMenu(false)} a={{ pdf: exportPdf, image: () => void exportPng(), template: saveTemplate, csv: exportCsv, backup: exportBackup, embed: () => setShare("Embed"), drive: () => { exportBackup(); flash("Backup downloaded. Upload it to Drive to keep a copy there."); }, scene: () => void copyScene() }} />}
+        {menu && <ExportMenu onClose={() => setMenu(false)} a={{ pdf: exportPdf, image: () => setImgOpts({ area: "board", quality: "medium", bg: true }), template: saveTemplate, csv: exportCsv, backup: exportBackup, embed: () => setShare("Embed"), drive: () => { exportBackup(); flash("Backup downloaded. Upload it to Drive to keep a copy there."); } }} />}
       </span>
       <span className="mx-sr" data-testid="save-status" role="status">{readOnly ? "View only" : statusText}</span>
     </header>}
@@ -547,12 +573,12 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
           <Link href="/app" role="menuitem" className="mb-link">All boards</Link>
           {signOutAction && <form action={signOutAction}><button role="menuitem">Sign out</button></form>}</div>}</span>
       <button className="mb-play hm" aria-label="Present" title="Present" onClick={startPresent}>{X.play}</button>
-      {!guest && <button className="mb-sharebtn" onClick={() => { setShare("Invite"); track(EVENTS.board_share_opened, { tab: "Invite" }); }} data-testid="share">Share</button>}
+      {!guest && <button className="mb-sharebtn" onClick={() => { if (!title.trim() || title.trim() === "Untitled") { setTitlePrompt(title.trim() === "Untitled" ? "" : title); return; } setShare("Invite"); track(EVENTS.board_share_opened, { tab: "Invite" }); }} data-testid="share">Share</button>}
     </div>}
 
     {!readOnly && !embed && !present && <nav className="mb-rail" data-ui aria-label="Tools" style={{ top: compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0)) }}>
       <div className="mb-pill">
-        <button className="mb-t ai" aria-label="Create with AI" title="Create with AI" onClick={() => { setFly(""); flash("Copy scene JSON in Export to use your own AI agent"); }}>{X.sparkle}</button>
+        <button className="mb-t ai" aria-label="Create with AI" title="Create with AI" onClick={() => { setFly(""); setShare("AI"); }}>{X.sparkle}</button>
       </div>
       <div className="mb-pill main">
         {([["select", X.select, "Select"], [null, X.notes, "Formats and Flows"], [null, X.tpl, "Templates"], ["sticky", X.sticky, "Sticky note"], ...(compact ? [] : [["text", X.text, "Text"]])] as [Tool | null, React.ReactNode, string][]).map(([t, ic, label]) => t
@@ -591,9 +617,13 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
           <Scene doc={doc} editing={edit?.id} comments={hideComments ? "none" : "show"} selected={sel} />
           {/* selection chrome */}
           {tool === "select" && selObjs.filter(o => o.type !== "comment").map(o => { const b = boundsOf(doc, o); const rt = o.type !== "connector" && o.rot ? `rotate(${o.rot} ${o.x + o.w / 2} ${o.y + o.h / 2})` : undefined; return o.type === "connector" ? <path key={o.id} d={routeConnector(doc, o).path} fill="none" stroke="#4262FF" strokeWidth={px(5)} opacity={0.25} /> : <rect key={o.id} transform={rt} x={b.x - px(2)} y={b.y - px(2)} width={b.w + px(4)} height={b.h + px(4)} fill="none" stroke="#4262FF" strokeWidth={px(1.5)} />; })}
-          {tool === "select" && selObjs.length > 1 && selBounds && <rect x={selBounds.x - px(6)} y={selBounds.y - px(6)} width={selBounds.w + px(12)} height={selBounds.h + px(12)} fill="none" stroke="#4262FF" strokeWidth={px(1)} strokeDasharray={`${px(5)} ${px(4)}`} />}
+          {tool === "select" && selObjs.length > 1 && selBounds && !edit && <g data-testid="multi-box">
+            <rect x={selBounds.x} y={selBounds.y} width={selBounds.w} height={selBounds.h} fill="none" stroke="#4262FF" strokeWidth={px(1.5)} />
+            {(["nw", "ne", "se", "sw"] as const).map(h => { const p = handlePt(selBounds, h); return <circle key={h} data-h={`g:${h}`} data-testid={`ghandle-${h}`} cx={p.x} cy={p.y} r={px(6.5)} fill="#fff" stroke="#8E8E93" strokeWidth={px(2)} style={{ cursor: CURSOR[h] }} />; })}
+            <g data-h="grot" data-testid="ghandle-rot" style={{ cursor: "grab" }} transform={`translate(${selBounds.x - px(18)} ${selBounds.y + selBounds.h + px(18)})`}><circle r={px(10)} fill="#fff" stroke="#8E8E93" strokeWidth={px(1.5)} /><path d={`M${-px(4)} ${-px(1)}a${px(4.5)} ${px(4.5)} 0 1 1 ${px(1.5)} ${px(4)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /><path d={`M${-px(5.5)} ${-px(3.5)}l${px(1.5)} ${px(3)}l${px(3)} ${-px(1)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /></g>
+          </g>}
           {tool === "select" && one && isBox(one) && one.type !== "comment" && (!edit || (edit.id === one.id && one.type !== "text")) && !(one as { locked?: boolean }).locked && <g transform={one.rot ? `rotate(${one.rot} ${one.x + one.w / 2} ${one.y + one.h / 2})` : undefined}>
-            {one.type !== "frame" && <g data-h="rot" data-testid="handle-rot" style={{ cursor: "grab" }} transform={`translate(${one.x - px(18)} ${one.y + one.h + px(18)})`}><circle r={px(10)} fill="#fff" stroke="#8E8E93" strokeWidth={px(1.5)} /><path d={`M${-px(4)} ${-px(1)}a${px(4.5)} ${px(4.5)} 0 1 1 ${px(1.5)} ${px(4)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /><path d={`M${-px(5.5)} ${-px(3.5)}l${px(1.5)} ${px(3)}l${px(3)} ${-px(1)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /></g>}
+            {one.type !== "frame" && one.type !== "sticky" && <g data-h="rot" data-testid="handle-rot" style={{ cursor: "grab" }} transform={`translate(${one.x - px(18)} ${one.y + one.h + px(18)})`}><circle r={px(10)} fill="#fff" stroke="#8E8E93" strokeWidth={px(1.5)} /><path d={`M${-px(4)} ${-px(1)}a${px(4.5)} ${px(4.5)} 0 1 1 ${px(1.5)} ${px(4)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /><path d={`M${-px(5.5)} ${-px(3.5)}l${px(1.5)} ${px(3)}l${px(3)} ${-px(1)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /></g>}
             {HANDLES.map(h => { const p = handlePt(boxOf(one), h), edge = h.length === 1; return <circle key={h} data-h={h} data-testid={`handle-${h}`} cx={p.x} cy={p.y} r={px(edge ? 7 : 6.5)} fill={one.type === "sticky" && edge ? "transparent" : "#fff"} stroke={one.type === "sticky" && edge ? "transparent" : "#8E8E93"} strokeWidth={px(2)} style={{ cursor: CURSOR[h] }} />; })}
             {(one.type === "sticky" || one.type === "shape") && (["n", "e", "s", "w"] as Side[]).map(sd => { const a = anchorPoint(boxOf(one), sd), off = px(22); return <g key={sd} data-h={`dot:${sd}`} data-testid={`dot-${sd}`} style={{ cursor: "copy" }}><circle cx={a.x + DIR[sd].x * off} cy={a.y + DIR[sd].y * off} r={px(9)} fill="transparent" /><circle cx={a.x + DIR[sd].x * off} cy={a.y + DIR[sd].y * off} r={px(3.5)} fill="#4262FF" /></g>; })}
           </g>}
@@ -613,14 +643,14 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
       <PeerCursors peers={Object.values(peers)} toScreen={p => worldToScreen(view, size, p)} />
       {Object.values(peers).filter(p => p.sel?.length).map(p => p.sel!.filter(i => doc.objects[i]).map(i => { const b = boundsOf(doc, doc.objects[i]); const a = worldToScreen(view, size, { x: b.x, y: b.y }); return <div key={p.id + i} className="lv-sel" style={{ left: a.x - 2, top: a.y - 2, width: b.w * z + 4, height: b.h * z + 4, borderColor: p.color }} aria-hidden />; }))}
       {edit && doc.objects[edit.id] && <TextEditor key={edit.id} doc={doc} id={edit.id} view={view} size={size} onDone={finishEdit} />}
-      {sBox && (!edit || (one && edit.id === one.id && one.type !== "text")) && !g.current && tool === "select" && one?.type !== "comment" && <SelectionToolbar doc={doc} ids={sel} screenBox={sBox} canvas={size} patch={patchSel} onDelete={del} onDuplicate={dup} onFront={() => commitDoc(bringToFront(doc, sel))} onBack={() => commitDoc(sendToBack(doc, sel))} onFrame={frameSel} onAlign={(a: Align) => commitDoc(align(doc, sel, a))} onDistribute={a => commitDoc(distribute(doc, sel, a))} onGroup={() => (selObjs.some(o => o.group) ? ungroupSel() : groupSel())} />}
+      {sBox && (!edit || (one && edit.id === one.id && one.type !== "text")) && !g.current && tool === "select" && one?.type !== "comment" && <SelectionToolbar doc={doc} ids={sel} screenBox={sBox} canvas={size} patch={patchSel} onDelete={del} onDuplicate={dup} onFront={() => commitDoc(bringToFront(doc, sel))} onBack={() => commitDoc(sendToBack(doc, sel))} onFrame={frameSel} onAlign={(a: Align) => commitDoc(align(doc, sel, a))} onDistribute={a => commitDoc(distribute(doc, sel, a))} onConvert={convertSel} onGroup={() => (selObjs.some(o => o.group) ? ungroupSel() : groupSel())} />}
     </div>
 
     {hint && (doc.order.length === 0 || (firstRun && (edit || tool !== "select"))) && <div className={"mi-hint" + (doc.order.length === 0 && chips && !edit ? " hi" : "")} data-ui data-testid={doc.order.length === 0 && !edit ? "empty-hint" : "hint"}>{hint}</div>}
     {chips && !readOnly && doc.order.length === 0 && !edit && <div className="mb-chips" data-ui>
       <button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c1" />Prep a workshop</button><button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c2" />Map a process</button><button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c3" />Build a roadmap</button>
       <button className="x" aria-label="Dismiss suggestions" onClick={() => setChips(false)}>{X.close}</button></div>}
-    {!readOnly && !embed && !present && <div className="mb-ai" data-ui onClick={() => flash("Use “Copy scene JSON for an AI agent” in Export to bring your own AI")}>{X.plusS}<span>Where shall we start?</span>{X.mic}</div>}
+    {!readOnly && !embed && !present && <div className="mb-ai" data-ui onClick={() => setShare("AI")}>{X.plusS}<span>Where shall we start?</span>{X.mic}</div>}
     <div className="mb-zoom" data-ui>
       <button className={"mb-t sm" + (frames ? " on" : "")} onClick={() => setFrames(f => !f)} aria-label="Frames" title="Frames" aria-expanded={frames}>{X.frame}</button>
       <button className="mb-t sm" onClick={() => zoomBy(0.8)} aria-label="Zoom out" title="Zoom out (⌘ −)">{X.minus}</button>
@@ -650,6 +680,21 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     <input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden data-testid="upload-input" onChange={e => { void addImages([...(e.target.files ?? [])]); e.target.value = ""; }} />
     {tools && <ToolsPanel top={compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0))} onClose={() => setTools(false)} tools={toolEntries} />}
     {(status === "device" || status === "error") && <div className="mb-save" data-ui role="status">{statusText}</div>}
+    {titlePrompt !== null && <div className="mb-scrim mb-dlg-scrim" data-ui onMouseDown={e => { if (e.target === e.currentTarget) setTitlePrompt(null); }}>
+      <form className="mb-dlg" role="dialog" aria-label="Give your board a title" data-testid="title-prompt" onSubmit={e => { e.preventDefault(); const t = titlePrompt.trim(); if (t) { setTitle(t); flash("Saved"); } setTitlePrompt(null); setShare("Invite"); track(EVENTS.board_share_opened, { tab: "Invite" }); }}>
+        <h3>Give your board a title</h3><p>A clear name helps your team find it later.</p>
+        <input autoFocus value={titlePrompt} onChange={e => setTitlePrompt(e.target.value)} placeholder="Untitled" aria-label="Board title" maxLength={120} onKeyDown={e => e.stopPropagation()} />
+        <div className="mb-dlg-acts"><button type="button" className="mb-btn" onClick={() => { setTitlePrompt(null); setShare("Invite"); track(EVENTS.board_share_opened, { tab: "Invite" }); }}>Skip</button><button type="submit" className="mb-btn primary" disabled={!titlePrompt.trim()}>Save</button></div>
+      </form></div>}
+    {imgOpts && <div className="mb-scrim mb-dlg-scrim" data-ui onMouseDown={e => { if (e.target === e.currentTarget) setImgOpts(null); }}>
+      <form className="mb-dlg" role="dialog" aria-label="Export as image" data-testid="export-image" onSubmit={e => { e.preventDefault(); const o = imgOpts; setImgOpts(null); void exportPng(o); }}>
+        <h3>Export as image</h3>
+        <label className="mb-dlg-row"><span>Area</span><select value={imgOpts.area} onChange={e => setImgOpts({ ...imgOpts, area: e.target.value as "board" | "selection" })}><option value="board">Whole board</option><option value="selection" disabled={!sel.length}>Selected objects{sel.length ? ` (${sel.length})` : ""}</option></select></label>
+        <label className="mb-dlg-row"><span>Quality</span><select value={imgOpts.quality} onChange={e => setImgOpts({ ...imgOpts, quality: e.target.value as "small" | "medium" | "large" })}><option value="small">Small (1×)</option><option value="medium">Medium (2×)</option><option value="large">Large (4×)</option></select></label>
+        <label className="mb-dlg-row"><span>Background</span><span className="mb-dlg-chk"><input type="checkbox" checked={imgOpts.bg} onChange={e => setImgOpts({ ...imgOpts, bg: e.target.checked })} /> Include board background</span></label>
+        <p className="mb-dlg-note">PNG, rendered on this device. Large exports of big boards can take a few seconds.</p>
+        <div className="mb-dlg-acts"><button type="button" className="mb-btn" onClick={() => setImgOpts(null)}>Cancel</button><button type="submit" className="mb-btn primary">Export</button></div>
+      </form></div>}
     {share && <ShareModal tab={share} setTab={setShare} onClose={() => setShare("")} who={who} doc={doc} title={title} boardId={initial.id} access={access} setAccess={a => { setAccess(a); track(EVENTS.board_share_access_changed, { access: a }); }} canShare={store.kind === "cloud" && !guest} onTemplate={saveTemplate} onScene={() => void copyScene()} flash={flash} />}
     {map && <Minimap doc={doc} view={view} size={size} onJump={(x, y) => setView(v => ({ ...v, x, y }))} />}
     {help && <ShortcutsPanel onClose={() => setHelp(false)} />}

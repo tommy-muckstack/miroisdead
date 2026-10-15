@@ -1,6 +1,6 @@
 import type { Box, Pt, View } from "./types";
 import { clamp } from "./geometry";
-export const MIN_ZOOM = 0.1, MAX_ZOOM = 6;
+export const MIN_ZOOM = 0.02, MAX_ZOOM = 20; // Miro: 2% – 2000%
 export type Size = { w: number; h: number };
 /** View.x/y is the world point shown at the screen centre. */
 export const screenToWorld = (v: View, s: Size, p: Pt): Pt => ({ x: (p.x - s.w / 2) / v.zoom + v.x, y: (p.y - s.h / 2) / v.zoom + v.y });

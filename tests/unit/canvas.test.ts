@@ -26,7 +26,7 @@ describe("elbow routing", () => {
   it("rounds corners with quadratic arcs", () => { expect(roundedPath([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }], 10)).toBe("M0 0L90 0Q100 0 100 10L100 100"); });
   it("reroutes live when a bound object moves", () => {
     const a = shape(0, 0, { id: "a" }), b = shape(400, 0, { id: "b" });
-    const c = connector({ id: "a", side: "e" }, { id: "b", side: "w" }, { id: "c" });
+    const c = connector({ id: "a", side: "e" }, { id: "b", side: "w" }, { id: "c", style: "elbow" });
     let doc = makeDoc([a, b, c]);
     const before = routeConnector(doc, c).points;
     doc = moveObjects(doc, ["b"], 0, 300);
@@ -64,13 +64,13 @@ describe("geometry", () => {
 });
 
 describe("document operations", () => {
-  const base = () => makeDoc([sticky(0, 0, { id: "s1" }), sticky(300, 0, { id: "s2" }), sticky(700, 40, { id: "s3" }), connector({ id: "s1" }, { id: "s2" }, { id: "k" })]);
+  const base = () => makeDoc([sticky(0, 0, { id: "s1" }), sticky(300, 0, { id: "s2" }), sticky(700, 40, { id: "s3" }), connector({ id: "s1" }, { id: "s2" }, { id: "k", style: "elbow" })]);
   it("is immutable", () => { const d = base(); const frozen = JSON.stringify(d); moveObjects(d, ["s1"], 5, 5); removeObjects(d, ["s1"]); updateObjects(d, ["s1"], { text: "x" }); expect(JSON.stringify(d)).toBe(frozen); });
   it("removing an object detaches its connectors at the last position instead of deleting them", () => {
     const d = removeObjects(base(), ["s2"]);
     expect(d.order).toEqual(["s1", "s3", "k"]);
     const k = d.objects["k"] as ReturnType<typeof connector>;
-    expect(k.to).toEqual({ x: 300, y: 90 }); expect("id" in k.from).toBe(true);
+    expect(k.to).toEqual({ x: 300, y: 99.5 }); expect("id" in k.from).toBe(true);
   });
   it("moving a free connector shifts its free ends only", () => {
     const d = makeDoc([connector({ x: 0, y: 0 }, { x: 10, y: 10 }, { id: "k" })]);
@@ -110,7 +110,7 @@ describe("document operations", () => {
 });
 
 describe("hit testing and marquee", () => {
-  const d = makeDoc([frame(-50, -50, 600, 400, "F", { id: "f" }), sticky(0, 0, { id: "s" }), shape(300, 0, { id: "sh", filled: false }), connector({ id: "s" }, { id: "sh" }, { id: "k" }), pen([{ x: 0, y: 300 }, { x: 200, y: 300 }], "#000", 4, { id: "p" })]);
+  const d = makeDoc([frame(-50, -50, 600, 400, "F", { id: "f" }), sticky(0, 0, { id: "s" }), shape(300, 0, { id: "sh", filled: false }), connector({ id: "s" }, { id: "sh" }, { id: "k", style: "elbow" }), pen([{ x: 0, y: 300 }, { x: 200, y: 300 }], "#000", 4, { id: "p" })]);
   it("picks topmost, hits unfilled shapes inside, ignores a frame's interior", () => {
     expect(hitTest(d, { x: 90, y: 90 }, 6)).toBe("s");
     expect(hitTest(d, { x: 380, y: 50 }, 6)).toBe("sh");
@@ -118,7 +118,7 @@ describe("hit testing and marquee", () => {
     expect(hitTest(d, { x: -50, y: 100 }, 6)).toBe("f");
     expect(hitTest(d, { x: -40, y: -60 }, 6)).toBe("f"); // title tab
     expect(hitTest(d, { x: 100, y: 302 }, 6)).toBe("p");
-    expect(hitTest(d, { x: 235, y: 55 }, 6)).toBe("k");
+    expect(hitTest(d, { x: 249.5, y: 77 }, 6)).toBe("k");
   });
   it("marquee takes intersecting objects, frames only when enclosed", () => {
     expect(marquee(d, { x: -10, y: -10, w: 100, h: 100 })).toEqual(["s"]);
@@ -139,7 +139,7 @@ describe("text fitting", () => {
   });
   it("auto size shrinks as text grows but never below 10", () => {
     const short = fitFontSize("Hi", 180, 180, approx), long = fitFontSize("lorem ipsum dolor sit amet ".repeat(16), 180, 180, approx), huge = fitFontSize("word ".repeat(2000), 180, 180, approx);
-    expect(short).toBe(28); expect(long).toBeLessThan(short); expect(huge).toBe(10);
+    expect(short).toBe(48); expect(long).toBeLessThan(short); expect(huge).toBe(10);
   });
 });
 
