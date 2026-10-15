@@ -32,11 +32,11 @@ export function templateDoc(id: TemplateId): Doc {
       textObj(330, 30, { id: "w-keys", text: "V select · H hand · N sticky\nR rect · O ellipse · D diamond\nT text · P pen · C connector\nF frame · E eraser\n⌘Z undo · ⌘D duplicate\n⇧1 fit all · ? all shortcuts", fontSize: 15, w: 250, h: 150 }),
     ]);
     case "brainstorm": return makeDoc([
-      textObj(-300, -300, { id: "b-q", text: "How might we make Monday standups useful?", fontSize: 32, bold: true, w: 640, h: 48 }),
-      frame(-340, -210, 340, 520, "Async updates", { id: "b-f1" }), frame(20, -210, 340, 520, "Meeting rituals", { id: "b-f2" }), frame(380, -210, 340, 520, "Vote here", { id: "b-f3" }),
-      S("b-1", -300, -160, "Post a 3-line update in Slack the night before", C.yellow, { w: 140, h: 140 }), S("b-2", -140, -160, "Auto-pull open PRs", C.yellow, { w: 140, h: 140 }), S("b-3", -300, 10, "Weekly written digest", C.yellow, { w: 140, h: 140 }),
-      S("b-4", 60, -160, "Timebox to 10 minutes", C.aqua, { w: 140, h: 140 }), S("b-5", 220, -160, "Only blockers get airtime", C.aqua, { w: 140, h: 140 }), S("b-6", 60, 10, "Rotate the facilitator", C.aqua, { w: 140, h: 140 }),
-      S("b-7", 420, -160, "Dot-vote the top three ideas", C.pink, { w: 140, h: 140 }),
+      textObj(-590, -300, { id: "b-q", text: "How might we make Monday standups useful?", fontSize: 32, bold: true, w: 1000, h: 48 }),
+      frame(-590, -210, 380, 520, "Async updates", { id: "b-f1" }), frame(-190, -210, 380, 520, "Meeting rituals", { id: "b-f2" }), frame(210, -210, 380, 520, "Vote here", { id: "b-f3" }),
+      S("b-1", -560, -160, "Post a 3-line update in Slack the night before", C.yellow, { w: 150, h: 150 }), S("b-2", -380, -160, "Auto-pull open PRs", C.yellow, { w: 150, h: 150 }), S("b-3", -560, 20, "Weekly written digest", C.yellow, { w: 150, h: 150 }),
+      S("b-4", -160, -160, "Timebox to 10 minutes", C.aqua, { w: 150, h: 150 }), S("b-5", 20, -160, "Only blockers get airtime", C.aqua, { w: 150, h: 150 }), S("b-6", -160, 20, "Rotate the facilitator", C.aqua, { w: 150, h: 150 }),
+      S("b-7", 240, -160, "Dot-vote the top three ideas", C.pink, { w: 150, h: 150 }),
     ]);
     case "flowchart": return makeDoc([
       Sh("f-start", -80, -260, "Start", "round", "#C3F4D6", { w: 160, h: 70 }),
@@ -49,19 +49,19 @@ export function templateDoc(id: TemplateId): Doc {
       connector({ id: "f-yes", side: "s" }, { id: "f-end", side: "w" }, { id: "fk5" }), connector({ id: "f-no", side: "s" }, { id: "f-end", side: "e" }, { id: "fk6" }),
     ]);
     case "roadmap": return makeDoc([
-      textObj(-500, -300, { id: "m-t", text: "Product roadmap", fontSize: 34, bold: true, w: 500, h: 50 }),
-      frame(-520, -220, 340, 480, "Now", { id: "m-f1" }), frame(-160, -220, 340, 480, "Next", { id: "m-f2" }), frame(200, -220, 340, 480, "Later", { id: "m-f3" }),
-      S("m-1", -490, -170, "Board templates", C.green, { w: 140, h: 120 }), S("m-2", -490, -30, "Export to SVG", C.green, { w: 140, h: 120 }), S("m-3", -330, -170, "Keyboard sheet", C.green, { w: 140, h: 120 }),
-      S("m-4", -130, -170, "Real-time cursors", C.blue, { w: 140, h: 120 }), S("m-5", -130, -30, "Comments on objects", C.blue, { w: 140, h: 120 }), S("m-6", 30, -170, "Present frames as slides", C.blue, { w: 140, h: 120 }),
-      S("m-7", 230, -170, "Mermaid import", C.lilac, { w: 140, h: 120 }), S("m-8", 390, -170, "Mind-map layout", C.lilac, { w: 140, h: 120 }),
+      textObj(-590, -300, { id: "m-t", text: "Product roadmap", fontSize: 34, bold: true, w: 700, h: 50 }),
+      frame(-590, -210, 380, 480, "Now", { id: "m-f1" }), frame(-190, -210, 380, 480, "Next", { id: "m-f2" }), frame(210, -210, 380, 480, "Later", { id: "m-f3" }),
+      S("m-1", -560, -160, "Board templates", C.green, { w: 150, h: 130 }), S("m-2", -560, 0, "Export to SVG", C.green, { w: 150, h: 130 }), S("m-3", -380, -160, "Keyboard sheet", C.green, { w: 150, h: 130 }),
+      S("m-4", -160, -160, "Real-time cursors", C.blue, { w: 150, h: 130 }), S("m-5", -160, 0, "Comments on objects", C.blue, { w: 150, h: 130 }), S("m-6", 20, -160, "Present frames as slides", C.blue, { w: 150, h: 130 }),
+      S("m-7", 240, -160, "Mermaid import", C.lilac, { w: 150, h: 130 }), S("m-8", 420, -160, "Mind-map layout", C.lilac, { w: 150, h: 130 }),
       connector({ id: "m-1", side: "e" }, { id: "m-3", side: "w" }, { id: "mk1", style: "curve" }), connector({ id: "m-3", side: "e" }, { id: "m-4", side: "w" }, { id: "mk2", dashed: true }),
     ]);
     case "retro": return makeDoc([
-      textObj(-480, -320, { id: "r-t", text: "Sprint retrospective", fontSize: 34, bold: true, w: 500, h: 50 }),
-      frame(-500, -240, 330, 520, "Went well", { id: "r-f1" }), frame(-150, -240, 330, 520, "To improve", { id: "r-f2" }), frame(200, -240, 330, 520, "Actions", { id: "r-f3" }),
-      S("r-1", -470, -190, "Shipped on time", C.green, { w: 130, h: 130 }), S("r-2", -330, -190, "Great pairing", C.green, { w: 130, h: 130 }),
-      S("r-3", -120, -190, "Flaky CI", C.peach, { w: 130, h: 130 }), S("r-4", 20, -190, "Late design handoff", C.peach, { w: 130, h: 130 }),
-      S("r-5", 230, -190, "Fix CI flake (Sam)", C.lilac, { w: 130, h: 130 }), S("r-6", 370, -190, "Handoff checklist (Ana)", C.lilac, { w: 130, h: 130 }),
+      textObj(-590, -300, { id: "r-t", text: "Sprint retrospective", fontSize: 34, bold: true, w: 700, h: 50 }),
+      frame(-590, -210, 380, 480, "Went well", { id: "r-f1" }), frame(-190, -210, 380, 480, "To improve", { id: "r-f2" }), frame(210, -210, 380, 480, "Actions", { id: "r-f3" }),
+      S("r-1", -560, -160, "Shipped on time", C.green, { w: 150, h: 150 }), S("r-2", -380, -160, "Great pairing", C.green, { w: 150, h: 150 }),
+      S("r-3", -160, -160, "Flaky CI", C.peach, { w: 150, h: 150 }), S("r-4", 20, -160, "Late design handoff", C.peach, { w: 150, h: 150 }),
+      S("r-5", 240, -160, "Fix CI flake (Sam)", C.lilac, { w: 150, h: 150 }), S("r-6", 420, -160, "Handoff checklist (Ana)", C.lilac, { w: 150, h: 150 }),
     ]);
   }
 }

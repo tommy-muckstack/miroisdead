@@ -28,11 +28,11 @@ await click(-340, -60); await p.getByRole("button", { name: /Sticky colour #FFB8
 await shot(`${HOME}quick-create.png`); await shot(`${OUT}/07-quick-create-toolbar.png`);
 
 await open("flowchart"); await fit();
-const c = await p.locator("svg g[data-obj]").nth(7).locator("path").first().boundingBox(); await p.mouse.click(c.x + c.width / 2, c.y + c.height / 2); await p.waitForTimeout(250);
+const c = await p.locator("svg g[data-obj]").nth(10).locator("path").first().boundingBox(); await p.mouse.click(c.x + c.width / 2, c.y + c.height / 2); await p.waitForTimeout(250);
 await shot(`${HOME}connectors.png`);
 
 await open("brainstorm"); await fit();
-await drag(-340, -260, -20, 20); await p.waitForTimeout(250); await shot(`${HOME}frames.png`); await shot(`${OUT}/08-multiselect-toolbar.png`);
+await p.keyboard.press("-"); await p.waitForTimeout(300); await drag(-520, -270, -60, 130); await p.waitForTimeout(250); await shot(`${HOME}frames.png`); await shot(`${OUT}/08-multiselect-toolbar.png`);
 
 await open("welcome"); await fit();
 await p.keyboard.press("p"); await drag(-100, 250, 150, 280); await p.keyboard.press("Escape"); await p.keyboard.press("v");

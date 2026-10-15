@@ -372,7 +372,7 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
     </nav>
 
     <div ref={box} className="mi-canvas" tabIndex={0} data-testid="canvas" style={{ cursor, backgroundSize: `${gridSize}px ${gridSize}px`, backgroundPosition: bgPos }}
-      onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onContextMenu={e => e.preventDefault()}>
+      onMouseDown={e => { if (!(e.target as Element).closest("[data-ui]")) e.preventDefault(); }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onContextMenu={e => e.preventDefault()}>
       <svg width={size.w} height={size.h} style={{ display: "block", overflow: "hidden" }}>
         <Defs />
         <g transform={`translate(${size.w / 2 - view.x * z} ${size.h / 2 - view.y * z}) scale(${z})`}>

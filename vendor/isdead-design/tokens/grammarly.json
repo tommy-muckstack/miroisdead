@@ -1,0 +1,85 @@
+{
+  "name": "grammarly",
+  "source": "grammarly.com look (emerald #15C39A / deep green #02543D, white canvas, rounded 10px controls, soft mint washes), measured 2026-10-14; original art",
+  "font": {
+    "sans": "Onest",
+    "display": "Onest",
+    "files": {
+      "Onest": "grammarly/Onest-Variable.woff2"
+    },
+    "mono": "ui-monospace, SFMono-Regular, Menlo, monospace",
+    "note": "Grammarly's marketing type (Inter / Gelion-style display) is not copied. Onest (OFL) is our lookalike: clean, slightly rounded Cyrillic-friendly grotesque with generous x-height."
+  },
+  "color": {
+    "bg": "#FFFFFF",
+    "surface": "#FFFFFF",
+    "surfaceAlt": "#F2F7F6",
+    "text": "#0E1B1A",
+    "textMuted": "#4A5B59",
+    "textSubtle": "#869593",
+    "border": "#DCE6E4",
+    "borderStrong": "#0E1B1A",
+    "danger": "#D6334A",
+    "success": "#1B7F4B",
+    "warning": "#F0A800",
+    "onPrimary": "#FFFFFF",
+    "onAccent": "#FFFFFF",
+    "primary": "#027E6F",
+    "primaryHover": "#01675B",
+    "accent": "#15C39A",
+    "accentHover": "#0FA582",
+    "accentSoft": "#D5F6EC",
+    "focus": "#15C39A",
+    "heroFrom": "#F4FFFB",
+    "heroMid": "#D5F6EC",
+    "heroTo": "#EAF4FF"
+  },
+  "radius": {
+    "xs": "4px",
+    "sm": "8px",
+    "md": "10px",
+    "lg": "14px",
+    "xl": "24px",
+    "pill": "9999px"
+  },
+  "space": {
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "5": "20px",
+    "6": "24px",
+    "8": "32px",
+    "10": "40px",
+    "12": "48px",
+    "16": "64px"
+  },
+  "shadow": {
+    "sm": "0 1px 2px rgba(14,27,26,.08)",
+    "md": "0 4px 16px rgba(14,27,26,.10)",
+    "lg": "0 16px 48px rgba(14,27,26,.14)"
+  },
+  "type": {
+    "xs": "12px",
+    "sm": "14px",
+    "md": "16px",
+    "lg": "18px",
+    "xl": "24px",
+    "2xl": "32px",
+    "3xl": "44px",
+    "4xl": "60px",
+    "weightBody": 400,
+    "weightStrong": 600,
+    "weightHeading": 700,
+    "tracking": "-0.025em",
+    "lineHeight": 1.5
+  },
+  "control": {
+    "height": "48px",
+    "heightSm": "36px",
+    "borderWidth": "1px",
+    "buttonRadius": "10px",
+    "inputRadius": "10px",
+    "cardRadius": "20px"
+  }
+}

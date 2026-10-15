@@ -1,0 +1,85 @@
+{
+  "name": "docusign",
+  "source": "docusign.com look (deep indigo #130032 text, electric violet #4C00FF, cream/lilac washes, 4px-ish buttons), measured 2026-10-14; original art",
+  "font": {
+    "sans": "Public Sans",
+    "display": "Public Sans",
+    "files": {
+      "Public Sans": "docusign/PublicSans-Variable.woff2"
+    },
+    "mono": "ui-monospace, SFMono-Regular, Menlo, monospace",
+    "note": "Docusign's brand type (DS Indigo) is proprietary and is not shipped. Public Sans (OFL) is our lookalike: sturdy, civic, slightly wide neutral grotesque."
+  },
+  "color": {
+    "bg": "#FFFFFF",
+    "surface": "#FFFFFF",
+    "surfaceAlt": "#F6F3FB",
+    "text": "#130032",
+    "textMuted": "#4F4565",
+    "textSubtle": "#8A8299",
+    "border": "#DCD7E6",
+    "borderStrong": "#130032",
+    "danger": "#C62828",
+    "success": "#0C7C59",
+    "warning": "#B7791F",
+    "onPrimary": "#FFFFFF",
+    "onAccent": "#FFFFFF",
+    "primary": "#4C00FF",
+    "primaryHover": "#3A00C7",
+    "accent": "#4C00FF",
+    "accentHover": "#3A00C7",
+    "accentSoft": "#E3DAFF",
+    "focus": "#4C00FF",
+    "heroFrom": "#FFFFFF",
+    "heroMid": "#EFE9FF",
+    "heroTo": "#FFF3CF"
+  },
+  "radius": {
+    "xs": "2px",
+    "sm": "4px",
+    "md": "6px",
+    "lg": "8px",
+    "xl": "16px",
+    "pill": "9999px"
+  },
+  "space": {
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "5": "20px",
+    "6": "24px",
+    "8": "32px",
+    "10": "40px",
+    "12": "48px",
+    "16": "64px"
+  },
+  "shadow": {
+    "sm": "0 1px 2px rgba(19,0,50,.08)",
+    "md": "0 4px 16px rgba(19,0,50,.10)",
+    "lg": "0 16px 48px rgba(19,0,50,.16)"
+  },
+  "type": {
+    "xs": "12px",
+    "sm": "14px",
+    "md": "16px",
+    "lg": "18px",
+    "xl": "24px",
+    "2xl": "32px",
+    "3xl": "44px",
+    "4xl": "60px",
+    "weightBody": 400,
+    "weightStrong": 600,
+    "weightHeading": 700,
+    "tracking": "-0.015em",
+    "lineHeight": 1.5
+  },
+  "control": {
+    "height": "48px",
+    "heightSm": "36px",
+    "borderWidth": "1px",
+    "buttonRadius": "4px",
+    "inputRadius": "4px",
+    "cardRadius": "12px"
+  }
+}

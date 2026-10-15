@@ -1,0 +1,85 @@
+{
+  "name": "typeform",
+  "source": "typeform.com look (near-black #262627 on warm paper, giant tight headlines, soft pill-ish buttons), measured 2026-10-14; original art",
+  "font": {
+    "sans": "Instrument Sans",
+    "display": "Instrument Sans",
+    "files": {
+      "Instrument Sans": "typeform/InstrumentSans-Variable.woff2"
+    },
+    "mono": "ui-monospace, SFMono-Regular, Menlo, monospace",
+    "note": "Typeform uses Apercu (proprietary, not shipped). Instrument Sans (OFL) is our lookalike: neo-grotesque with a quirky narrow-ish rhythm."
+  },
+  "color": {
+    "bg": "#FAF8F4",
+    "surface": "#FFFFFF",
+    "surfaceAlt": "#F1EDE5",
+    "text": "#262627",
+    "textMuted": "#5C5C5E",
+    "textSubtle": "#8E8E90",
+    "border": "#DEDAD1",
+    "borderStrong": "#262627",
+    "danger": "#C62828",
+    "success": "#1B7F4B",
+    "warning": "#B7791F",
+    "onPrimary": "#FFFFFF",
+    "onAccent": "#FFFFFF",
+    "primary": "#262627",
+    "primaryHover": "#000000",
+    "accent": "#C7461B",
+    "accentHover": "#A33714",
+    "accentSoft": "#FFE3D6",
+    "focus": "#0445AF",
+    "heroFrom": "#FAF8F4",
+    "heroMid": "#FFE9DB",
+    "heroTo": "#E7E1FF"
+  },
+  "radius": {
+    "xs": "4px",
+    "sm": "6px",
+    "md": "10px",
+    "lg": "16px",
+    "xl": "28px",
+    "pill": "9999px"
+  },
+  "space": {
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "5": "20px",
+    "6": "24px",
+    "8": "32px",
+    "10": "40px",
+    "12": "48px",
+    "16": "64px"
+  },
+  "shadow": {
+    "sm": "0 1px 2px rgba(38,38,39,.08)",
+    "md": "0 6px 20px rgba(38,38,39,.10)",
+    "lg": "0 20px 60px rgba(38,38,39,.16)"
+  },
+  "type": {
+    "xs": "12px",
+    "sm": "14px",
+    "md": "16px",
+    "lg": "18px",
+    "xl": "24px",
+    "2xl": "32px",
+    "3xl": "52px",
+    "4xl": "76px",
+    "weightBody": 400,
+    "weightStrong": 600,
+    "weightHeading": 500,
+    "tracking": "-0.035em",
+    "lineHeight": 1.5
+  },
+  "control": {
+    "height": "48px",
+    "heightSm": "36px",
+    "borderWidth": "1px",
+    "buttonRadius": "9999px",
+    "inputRadius": "10px",
+    "cardRadius": "24px"
+  }
+}

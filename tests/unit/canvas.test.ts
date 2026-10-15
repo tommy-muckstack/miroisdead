@@ -127,6 +127,11 @@ describe("hit testing and marquee", () => {
 });
 
 describe("text fitting", () => {
+  it("auto font size avoids splitting a word when a smaller size fits it", () => {
+    const m = (s: string, f: number) => s.length * f * 0.56;
+    const f = fitFontSize("Timebox to 10 minutes", 150, 150, m);
+    expect(Math.max(..."Timebox to 10 minutes".split(" ").map(w => m(w, f)))).toBeLessThanOrEqual(150 - 28);
+  });
   it("wraps words, breaks overlong words and honours newlines", () => {
     expect(wrapText("aaa bbb ccc", 20, 10, approx)).toEqual(["aaa", "bbb", "ccc"]);
     expect(wrapText("a\n\nb", 100, 10, approx)).toEqual(["a", "", "b"]);

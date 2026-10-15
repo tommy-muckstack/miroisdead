@@ -167,7 +167,7 @@ test("boards list: rename, duplicate, export, delete, import round-trip", async 
 test("bad import file shows an error", async ({ page }) => {
   await demo(page);
   await page.locator('input[type=file]').setInputFiles({ name: "x.json", mimeType: "application/json", buffer: Buffer.from('{"nope":1}') });
-  await expect(page.getByRole("alert")).toContainText("MiroIsDead board file");
+  await expect(page.locator(".mi-err")).toContainText("MiroIsDead board file");
 });
 
 test("export menu offers SVG and the agent scene JSON", async ({ page }) => {

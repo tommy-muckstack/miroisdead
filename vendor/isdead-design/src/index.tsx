@@ -40,5 +40,5 @@ export function Footer({ columns, note }: { columns: { title: string; links: { h
   return <footer><div className="ids-footer">{columns.map(c => <div key={c.title}><h4>{c.title}</h4>{c.links.map(l => <a key={l.label} href={l.href}>{l.label}</a>)}</div>)}</div>
     {note && <p className="ids-muted" style={{ textAlign: "center", fontSize: 13, padding: "0 32px 40px" }}>{note}</p>}</footer>;
 }
-export const themes = ["calendly", "superhuman", "wisprflow"] as const;
+export const themes = ["calendly", "superhuman", "wisprflow", "miro", "canva", "typeform", "docusign", "grammarly", "granola", "cleanshotx"] as const;
 export type ThemeName = (typeof themes)[number];
