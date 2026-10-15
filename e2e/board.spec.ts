@@ -189,6 +189,7 @@ test.describe("marketing page", () => {
     await expect(page.getByTestId("tabpanel").locator("img")).toHaveAttribute("src", /research\.png$/);
     await page.getByRole("tab", { name: "Diagrams" }).click();
     await expect(page.getByTestId("tabpanel").locator("img")).toHaveAttribute("src", /diagrams\.png$/);
+    await page.goto("/miroisdead/pricing");
     await expect(page.getByTestId("cost-starter")).toHaveText("$960"); await expect(page.getByTestId("cost-ours")).toHaveText("$0");
     await page.locator("#seats").fill("50");
     await expect(page.getByTestId("cost-starter")).toHaveText("$4,800"); await expect(page.getByTestId("cost-business")).toHaveText("$12,000");
