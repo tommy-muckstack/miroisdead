@@ -8,8 +8,11 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const raw = req.nextUrl.searchParams.get("next") || "/app";
   const next = /^\/(?!\/)[\w\-./?=&%]*$/.test(raw) ? raw : "/app";
-  const res = NextResponse.redirect(new URL(BP + next, req.nextUrl.origin), 307);
-  if (!guestEnabled()) return NextResponse.redirect(new URL(BP + "/login?callbackUrl=" + encodeURIComponent(next), req.nextUrl.origin), 307);
+  // Relative Location on purpose: behind the yourappisdead.com rewrite this function sees its own
+  // *.vercel.app origin, and an absolute redirect would carry the visitor off the public domain.
+  const go = (path: string) => new NextResponse(null, { status: 307, headers: { Location: BP + path } });
+  if (!guestEnabled()) return go("/login?callbackUrl=" + encodeURIComponent(next));
+  const res = go(next);
   if (!(await getIdentity())) res.cookies.set(GUEST_COOKIE, signGuest(newGuestId()), cookieOptions(GUEST_MAX_AGE_S));
   return res;
 }
