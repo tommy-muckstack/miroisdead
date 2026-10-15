@@ -131,7 +131,7 @@ test("shortcut sheet, minimap toggle and command keys", async ({ page }) => {
   await page.keyboard.press("?"); await expect(page.getByTestId("shortcut-sheet")).toContainText("Shortcuts"); await page.keyboard.press("Escape");
   await expect(page.getByTestId("shortcut-sheet")).toHaveCount(0);
   await page.keyboard.press("m"); await expect(page.getByTestId("minimap")).toBeVisible(); await page.keyboard.press("m"); await expect(page.getByTestId("minimap")).toHaveCount(0);
-  for (const [k, t] of [["h", "hand"], ["t", "text"], ["f", "frame"], ["e", "eraser"], ["c", "connector"], ["v", "select"]]) { await page.keyboard.press(k); await expect(page.getByTestId("canvas")).toHaveAttribute("data-tool", t); }
+  for (const [k, t] of [["h", "hand"], ["t", "text"], ["f", "frame"], ["e", "eraser"], ["c", "connector"], ["v", "select"]]) { await page.keyboard.press(k); await expect(page.getByTestId("canvas")).toHaveAttribute("data-active-tool", t); }
 });
 
 test("duplicate, copy/paste, delete and alt-drag duplicate", async ({ page }) => {

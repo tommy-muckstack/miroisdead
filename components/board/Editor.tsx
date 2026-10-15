@@ -466,7 +466,7 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
       </div>
     </nav>
 
-    <div ref={box} className="mi-canvas" tabIndex={0} data-testid="canvas" data-tool={tool} style={{ cursor, backgroundSize: `${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px, ${gridSize * 3}px ${gridSize * 3}px, ${gridSize * 3}px ${gridSize * 3}px`, backgroundPosition: bgPos, backgroundImage: grid ? undefined : "none" }}
+    <div ref={box} className="mi-canvas" tabIndex={0} data-testid="canvas" data-active-tool={tool} style={{ cursor, backgroundSize: `${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px, ${gridSize * 3}px ${gridSize * 3}px, ${gridSize * 3}px ${gridSize * 3}px`, backgroundPosition: bgPos, backgroundImage: grid ? undefined : "none" }}
       onMouseDown={e => { if (!(e.target as Element).closest("[data-ui]")) e.preventDefault(); }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onContextMenu={e => { e.preventDefault(); if ((e.target as Element).closest("[data-ui]")) return; const r = rect(), w = toWorld(e); const id = hitTest(R.current.doc, w, tol()); if (id && !R.current.sel.includes(id)) setSel([id]); setCtx({ x: e.clientX - r.left, y: e.clientY - r.top, id }); }}>
       <svg width={size.w} height={size.h} style={{ display: "block", overflow: "hidden" }}>
         <Defs />
