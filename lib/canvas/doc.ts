@@ -10,7 +10,7 @@ export function nid(): Id {
   return `${r}${(counter++).toString(36)}`;
 }
 
-export const STICKY_SIZE = 180, SHAPE_W = 160, SHAPE_H = 110, FRAME_PAD = 40;
+export const DUP_GAP = 40, STICKY_SIZE = 199, SHAPE_W = 160, SHAPE_H = 110, FRAME_PAD = 40;
 
 export const sticky = (x: number, y: number, p: Partial<StickyObj> = {}): StickyObj => ({ id: nid(), type: "sticky", x, y, w: STICKY_SIZE, h: STICKY_SIZE, text: "", color: STICKY_COLORS[0], fontSize: "auto", ...p });
 export const shape = (x: number, y: number, p: Partial<ShapeObj> = {}): ShapeObj => ({ id: nid(), type: "shape", shape: "rect", x, y, w: SHAPE_W, h: SHAPE_H, text: "", fill: "#FFFFFF", stroke: "#1C1C1E", filled: true, dashed: false, fontSize: 16, ...p });
@@ -20,7 +20,7 @@ export const pen = (points: Pt[], stroke = "#1C1C1E", width = 3, p: Partial<PenO
   const b = unionBox(points.map(q => ({ x: q.x, y: q.y, w: 0, h: 0 })))!;
   return { id: nid(), type: "pen", x: b.x, y: b.y, w: b.w, h: b.h, points: points.map(q => ({ x: q.x - b.x, y: q.y - b.y })), stroke, width, ...p };
 };
-export const connector = (from: End, to: End, p: Partial<ConnectorObj> = {}): ConnectorObj => ({ id: nid(), type: "connector", from, to, style: "elbow", startArrow: false, endArrow: true, dashed: false, stroke: "#1C1C1E", label: "", ...p });
+export const connector = (from: End, to: End, p: Partial<ConnectorObj> = {}): ConnectorObj => ({ id: nid(), type: "connector", from, to, style: "straight", startArrow: false, endArrow: true, dashed: false, stroke: "#1C1C1E", label: "", ...p });
 
 export const makeDoc = (objs: Obj[]): Doc => addObjects({ objects: {}, order: [] }, objs);
 export function addObjects(doc: Doc, objs: Obj[]): Doc {
@@ -113,8 +113,9 @@ export function distribute(doc: Doc, ids: Id[], axis: "h" | "v"): Doc {
 }
 
 /** Copy objects (with new ids, offset). Connectors come along when both ends are inside the set or free. */
-export function cloneObjects(doc: Doc, ids: Id[], dx = 24, dy = 24): { objs: Obj[]; ids: Id[] } {
+export function cloneObjects(doc: Doc, ids: Id[], dx?: number, dy = 0): { objs: Obj[]; ids: Id[] } {
   const set = new Set(ids), map = new Map<Id, Id>(), out: Obj[] = [];
+  if (dx === undefined) { const bs = ids.map(i => doc.objects[i]).filter(o => o && isBox(o)) as (Obj & Box)[]; dx = bs.length ? Math.max(...bs.map(o => o.x + o.w)) - Math.min(...bs.map(o => o.x)) + DUP_GAP : 24; }
   for (const id of doc.order) if (set.has(id) && doc.objects[id].type !== "connector") map.set(id, nid());
   for (const id of doc.order) {
     if (!set.has(id)) continue; const o = doc.objects[id];

@@ -8,7 +8,7 @@ import { DIR, OPPOSITE, anchorPoint, boxOf, normBox, simplify, snapBox, unionBox
 import { prepareImage, isImageFile } from "@/lib/image";
 import { StickerPanel } from "./Stickers";
 import { track, EVENTS } from "@/lib/analytics";
-import { addObjects, align, bringToFront, cloneObjects, connector, createConnected, distribute, frame, frameAround, groupObjects, moveObjects, nid, pasteObjects, pen, removeObjects, resizeObject, sendToBack, shape, sticky, textObj, ungroupObjects, updateObjects, withFrameChildren, withGroups, type Align } from "@/lib/canvas/doc";
+import { STICKY_SIZE, addObjects, align, bringToFront, cloneObjects, connector, createConnected, distribute, frame, frameAround, groupObjects, moveObjects, nid, pasteObjects, pen, removeObjects, resizeObject, sendToBack, shape, sticky, textObj, ungroupObjects, updateObjects, withFrameChildren, withGroups, type Align } from "@/lib/canvas/doc";
 import { boundsOf, resolveConnector, routeConnector } from "@/lib/canvas/connectors";
 import { hitTest, marquee } from "@/lib/canvas/hit";
 import { LINE_HEIGHT, fitFontSize, wrapText } from "@/lib/canvas/text";
@@ -40,6 +40,8 @@ type Gesture =
   | { k: "move"; ids: Id[]; start: Doc; w0: Pt; cp: boolean; dup: boolean; clickId: Id | null; shift: boolean; moved: boolean; was: boolean }
   | { k: "resize"; id: Id; h: string; start: Doc; b0: Box; cp: boolean }
   | { k: "rot"; id: Id; c: Pt; a0: number; r0: number; start: Doc; cp: boolean }
+  | { k: "gresize"; ids: Id[]; h: string; start: Doc; b0: Box; cp: boolean }
+  | { k: "grot"; ids: Id[]; c: Pt; a0: number; start: Doc; cp: boolean; last: number }
   | { k: "marquee"; w0: Pt; base: Id[] }
   | { k: "draw"; tool: Tool; w0: Pt }
   | { k: "pen"; pts: Pt[] }
@@ -145,7 +147,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   R.current = { doc, view, sel, tool, size, edit, title, space, thread };
   const clip = useRef<Obj[]>([]);
   const pasteN = useRef(0);
-  const last = useRef<Last>({ stickyColor: STICKY_COLORS[0], fill: "#FFFFFF", stroke: "#1C1C1E", penColor: "#1C1C1E", penWidth: 3, textColor: "#1C1C1E", connectorStyle: "elbow", shape: "rect", arrow: true, line: "Elbow arrow" });
+  const last = useRef<Last>({ stickyColor: STICKY_COLORS[0], fill: "#FFFFFF", stroke: "#1C1C1E", penColor: "#1C1C1E", penWidth: 3, textColor: "#1C1C1E", connectorStyle: "straight", shape: "rect", arrow: true, line: "Elbow arrow" });
   const lastClick = useRef({ t: 0, id: "" });
   const snapRef = useRef(true);
   const votingRef = useRef<Voting>(null); votingRef.current = voting;
@@ -188,10 +190,15 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const selectOnly = (ids: Id[]) => setSel(ids);
   const startEdit = (id: Id, isNew = false) => { setEdit({ id, isNew }); setSel([id]); };
   const backToSelect = () => setTool("select");
+  const convertSel = (t: "sticky" | "shape" | "text") => { const { doc: d, sel: s } = R.current; let nd = d; const ids: Id[] = [];
+    for (const id of s) { const o = d.objects[id]; if (!o || !isBox(o) || o.type === t || !(o.type === "sticky" || o.type === "shape" || o.type === "text")) continue; const text = (o as { text?: string }).text ?? "";
+      const n: Obj = t === "sticky" ? sticky(o.x, o.y, { w: o.w, h: o.h, text, color: last.current.stickyColor }) : t === "shape" ? shape(o.x, o.y, { w: o.w, h: o.h, text, fill: last.current.fill, stroke: last.current.stroke }) : textObj(o.x, o.y, { w: o.w, text, color: last.current.textColor });
+      nd = addObjects(removeObjects(nd, [id]), [n]); ids.push(n.id); }
+    if (ids.length) { commitDoc(nd); setSel(ids); } };
   const patchSel = (p: Partial<Obj> | ((o: Obj) => Partial<Obj>), remember?: Record<string, unknown>) => { commitDoc(updateObjects(R.current.doc, R.current.sel, p)); if (remember) Object.assign(last.current, remember); };
   const del = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; commitDoc(removeObjects(d, s)); setSel([]); };
   const regroup = (objs: Obj[]): Obj[] => { const map = new Map<string, string>(); return objs.map(o => { if (!o.group) return o; if (!map.has(o.group)) map.set(o.group, nid()); return { ...o, group: map.get(o.group) } as Obj; }); };
-  const dup = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; const c = cloneObjects(d, s); commitDoc(addObjects(d, regroup(c.objs))); setSel(c.ids); };
+  const dup = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; const c = cloneObjects(d, s); commitDoc(addObjects(d, regroup(c.objs))); setSel([]); };
   const groupSel = () => { const { doc: d, sel: s } = R.current; if (s.length < 2) { flash("Select two or more objects to group"); return; } commitDoc(groupObjects(d, s)); track(EVENTS.board_group_changed, { action: "group", count: s.length }); flash("Grouped"); };
   const ungroupSel = () => { const { doc: d, sel: s } = R.current; if (!s.some(i => d.objects[i]?.group)) return; commitDoc(ungroupObjects(d, s)); track(EVENTS.board_group_changed, { action: "ungroup" }); flash("Ungrouped"); };
   const copy = (cut: boolean) => { const { doc: d, sel: s } = R.current; if (!s.length) return; const set = new Set(s); clip.current = d.order.filter(i => set.has(i)).map(i => d.objects[i]); pasteN.current = 0; navigator.clipboard?.writeText("MiroIsDead board objects").catch(() => {}); if (cut) del(); else flash(`Copied ${s.length} object${s.length > 1 ? "s" : ""}`); };
@@ -248,7 +255,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const frameSel = () => { const { doc: d, sel: s } = R.current; const r = frameAround(d, s.filter(i => d.objects[i]?.type !== "frame")); if (r) { commitDoc(r.doc); setSel([r.id]); } };
   const newFrom = (x: number, y: number, kind: Tool): Obj => {
     const L = last.current;
-    if (kind === "sticky") return sticky(x - 90, y - 90, { color: L.stickyColor, ...(priv ? { private: true } : {}) } as Partial<StickyObj>);
+    if (kind === "sticky") return sticky(x - STICKY_SIZE / 2, y - STICKY_SIZE / 2, { color: L.stickyColor, ...(priv ? { private: true } : {}) } as Partial<StickyObj>);
     if (kind === "text") return textObj(x, y - 18, { color: L.textColor });
     const sh = kind === "ellipse" ? "ellipse" : kind === "diamond" ? "diamond" : L.shape === "triangle" ? "triangle" : "rect";
     return shape(x - 80, y - 55, { shape: sh, fill: L.fill, stroke: L.stroke });
@@ -288,6 +295,8 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     if (t === "select" && h) {
       if (h.startsWith("dot:")) { const side = h.slice(4) as Side, id = s[0]; const o = d.objects[id]; g.current = { k: "conn", from: { id, side }, fromPt: anchorPoint(boxOf(o as any), side), dot: { id, side }, moved: false }; return; }
       if (h === "ca" || h === "cb") { g.current = { k: "cend", id: s[0], which: h === "ca" ? "from" : "to", cp: false }; return; }
+      if (h.startsWith("g:")) { const b = unionBox(s.map(i => boundsOf(d, d.objects[i]))); if (!b) return; g.current = { k: "gresize", ids: s.slice(), h: h.slice(2), start: d, b0: b, cp: false }; return; }
+      if (h === "grot") { const b = unionBox(s.map(i => boundsOf(d, d.objects[i]))); if (!b) return; const c = { x: b.x + b.w / 2, y: b.y + b.h / 2 }; g.current = { k: "grot", ids: s.slice(), c, a0: Math.atan2(w.y - c.y, w.x - c.x), start: d, cp: false, last: 0 }; return; }
       if (h === "rot") { const o = d.objects[s[0]] as Obj & Box & { rot?: number }; const c = { x: o.x + o.w / 2, y: o.y + o.h / 2 }; g.current = { k: "rot", id: s[0], c, a0: Math.atan2(w.y - c.y, w.x - c.x), r0: o.rot ?? 0, start: d, cp: false }; return; }
       g.current = { k: "resize", id: s[0], h, start: d, b0: boxOf(d.objects[s[0]] as any), cp: false }; return;
     }
@@ -342,6 +351,21 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
           const r = snapBox({ ...moving, x: moving.x + dx, y: moving.y + dy }, others, 6 / v.zoom); dx += r.dx; dy += r.dy; gl = r.guides;
         }
         setGuides(gl); liveDoc(moveObjects(gg.start, gg.ids, dx, dy)); return;
+      }
+      case "gresize": { // scale every selected box about the opposite corner of the selection
+        if (!gg.cp) { gg.cp = true; begin(); }
+        const b0 = gg.b0, ax = gg.h.includes("w") ? b0.x + b0.w : b0.x, ay = gg.h.includes("n") ? b0.y + b0.h : b0.y; // anchor (fixed corner)
+        let sx = b0.w ? (w.x - ax) / ((gg.h.includes("w") ? b0.x : b0.x + b0.w) - ax) : 1, sy = b0.h ? (w.y - ay) / ((gg.h.includes("n") ? b0.y : b0.y + b0.h) - ay) : 1;
+        if (!e.shiftKey) { const k = Math.max(Math.abs(sx), Math.abs(sy)); sx = sy = k; } sx = Math.max(0.05, Math.abs(sx)); sy = Math.max(0.05, Math.abs(sy));
+        let nd = gg.start; for (const id of gg.ids) { const o = gg.start.objects[id]; if (!o || !isBox(o)) continue; nd = resizeObject(nd, id, { x: ax + (o.x - ax) * sx, y: ay + (o.y - ay) * sy, w: o.w * sx, h: o.h * sy }); }
+        liveDoc(nd); return;
+      }
+      case "grot": { // rotate the selection as one: each object spins in place and orbits the selection centre
+        if (!gg.cp) { gg.cp = true; begin(); }
+        let deg = ((Math.atan2(w.y - gg.c.y, w.x - gg.c.x) - gg.a0) * 180) / Math.PI; const snap45 = Math.round(deg / 45) * 45; if (!e.shiftKey && Math.abs(deg - snap45) < 4) deg = snap45;
+        const rad = (deg * Math.PI) / 180, cs = Math.cos(rad), sn = Math.sin(rad); let nd = gg.start;
+        for (const id of gg.ids) { const o = gg.start.objects[id]; if (!o || !isBox(o) || o.type === "frame") continue; const cx = o.x + o.w / 2 - gg.c.x, cy = o.y + o.h / 2 - gg.c.y; const nx = gg.c.x + cx * cs - cy * sn - o.w / 2, ny = gg.c.y + cx * sn + cy * cs - o.h / 2; const r = ((((o as { rot?: number }).rot ?? 0) + deg) % 360 + 360) % 360; nd = updateObjects(nd, [id], { x: nx, y: ny, rot: r || undefined } as Partial<Obj>); }
+        liveDoc(nd); return;
       }
       case "rot": {
         if (!gg.cp) { gg.cp = true; begin(); }
@@ -590,9 +614,13 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
           <Scene doc={doc} editing={edit?.id} comments={hideComments ? "none" : "show"} selected={sel} />
           {/* selection chrome */}
           {tool === "select" && selObjs.filter(o => o.type !== "comment").map(o => { const b = boundsOf(doc, o); const rt = o.type !== "connector" && o.rot ? `rotate(${o.rot} ${o.x + o.w / 2} ${o.y + o.h / 2})` : undefined; return o.type === "connector" ? <path key={o.id} d={routeConnector(doc, o).path} fill="none" stroke="#4262FF" strokeWidth={px(5)} opacity={0.25} /> : <rect key={o.id} transform={rt} x={b.x - px(2)} y={b.y - px(2)} width={b.w + px(4)} height={b.h + px(4)} fill="none" stroke="#4262FF" strokeWidth={px(1.5)} />; })}
-          {tool === "select" && selObjs.length > 1 && selBounds && <rect x={selBounds.x - px(6)} y={selBounds.y - px(6)} width={selBounds.w + px(12)} height={selBounds.h + px(12)} fill="none" stroke="#4262FF" strokeWidth={px(1)} strokeDasharray={`${px(5)} ${px(4)}`} />}
+          {tool === "select" && selObjs.length > 1 && selBounds && !edit && <g data-testid="multi-box">
+            <rect x={selBounds.x} y={selBounds.y} width={selBounds.w} height={selBounds.h} fill="none" stroke="#4262FF" strokeWidth={px(1.5)} />
+            {(["nw", "ne", "se", "sw"] as const).map(h => { const p = handlePt(selBounds, h); return <circle key={h} data-h={`g:${h}`} data-testid={`ghandle-${h}`} cx={p.x} cy={p.y} r={px(6.5)} fill="#fff" stroke="#8E8E93" strokeWidth={px(2)} style={{ cursor: CURSOR[h] }} />; })}
+            <g data-h="grot" data-testid="ghandle-rot" style={{ cursor: "grab" }} transform={`translate(${selBounds.x - px(18)} ${selBounds.y + selBounds.h + px(18)})`}><circle r={px(10)} fill="#fff" stroke="#8E8E93" strokeWidth={px(1.5)} /><path d={`M${-px(4)} ${-px(1)}a${px(4.5)} ${px(4.5)} 0 1 1 ${px(1.5)} ${px(4)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /><path d={`M${-px(5.5)} ${-px(3.5)}l${px(1.5)} ${px(3)}l${px(3)} ${-px(1)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /></g>
+          </g>}
           {tool === "select" && one && isBox(one) && one.type !== "comment" && (!edit || (edit.id === one.id && one.type !== "text")) && !(one as { locked?: boolean }).locked && <g transform={one.rot ? `rotate(${one.rot} ${one.x + one.w / 2} ${one.y + one.h / 2})` : undefined}>
-            {one.type !== "frame" && <g data-h="rot" data-testid="handle-rot" style={{ cursor: "grab" }} transform={`translate(${one.x - px(18)} ${one.y + one.h + px(18)})`}><circle r={px(10)} fill="#fff" stroke="#8E8E93" strokeWidth={px(1.5)} /><path d={`M${-px(4)} ${-px(1)}a${px(4.5)} ${px(4.5)} 0 1 1 ${px(1.5)} ${px(4)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /><path d={`M${-px(5.5)} ${-px(3.5)}l${px(1.5)} ${px(3)}l${px(3)} ${-px(1)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /></g>}
+            {one.type !== "frame" && one.type !== "sticky" && <g data-h="rot" data-testid="handle-rot" style={{ cursor: "grab" }} transform={`translate(${one.x - px(18)} ${one.y + one.h + px(18)})`}><circle r={px(10)} fill="#fff" stroke="#8E8E93" strokeWidth={px(1.5)} /><path d={`M${-px(4)} ${-px(1)}a${px(4.5)} ${px(4.5)} 0 1 1 ${px(1.5)} ${px(4)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /><path d={`M${-px(5.5)} ${-px(3.5)}l${px(1.5)} ${px(3)}l${px(3)} ${-px(1)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /></g>}
             {HANDLES.map(h => { const p = handlePt(boxOf(one), h), edge = h.length === 1; return <circle key={h} data-h={h} data-testid={`handle-${h}`} cx={p.x} cy={p.y} r={px(edge ? 7 : 6.5)} fill={one.type === "sticky" && edge ? "transparent" : "#fff"} stroke={one.type === "sticky" && edge ? "transparent" : "#8E8E93"} strokeWidth={px(2)} style={{ cursor: CURSOR[h] }} />; })}
             {(one.type === "sticky" || one.type === "shape") && (["n", "e", "s", "w"] as Side[]).map(sd => { const a = anchorPoint(boxOf(one), sd), off = px(22); return <g key={sd} data-h={`dot:${sd}`} data-testid={`dot-${sd}`} style={{ cursor: "copy" }}><circle cx={a.x + DIR[sd].x * off} cy={a.y + DIR[sd].y * off} r={px(9)} fill="transparent" /><circle cx={a.x + DIR[sd].x * off} cy={a.y + DIR[sd].y * off} r={px(3.5)} fill="#4262FF" /></g>; })}
           </g>}
@@ -612,7 +640,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
       <PeerCursors peers={Object.values(peers)} toScreen={p => worldToScreen(view, size, p)} />
       {Object.values(peers).filter(p => p.sel?.length).map(p => p.sel!.filter(i => doc.objects[i]).map(i => { const b = boundsOf(doc, doc.objects[i]); const a = worldToScreen(view, size, { x: b.x, y: b.y }); return <div key={p.id + i} className="lv-sel" style={{ left: a.x - 2, top: a.y - 2, width: b.w * z + 4, height: b.h * z + 4, borderColor: p.color }} aria-hidden />; }))}
       {edit && doc.objects[edit.id] && <TextEditor key={edit.id} doc={doc} id={edit.id} view={view} size={size} onDone={finishEdit} />}
-      {sBox && (!edit || (one && edit.id === one.id && one.type !== "text")) && !g.current && tool === "select" && one?.type !== "comment" && <SelectionToolbar doc={doc} ids={sel} screenBox={sBox} canvas={size} patch={patchSel} onDelete={del} onDuplicate={dup} onFront={() => commitDoc(bringToFront(doc, sel))} onBack={() => commitDoc(sendToBack(doc, sel))} onFrame={frameSel} onAlign={(a: Align) => commitDoc(align(doc, sel, a))} onDistribute={a => commitDoc(distribute(doc, sel, a))} onGroup={() => (selObjs.some(o => o.group) ? ungroupSel() : groupSel())} />}
+      {sBox && (!edit || (one && edit.id === one.id && one.type !== "text")) && !g.current && tool === "select" && one?.type !== "comment" && <SelectionToolbar doc={doc} ids={sel} screenBox={sBox} canvas={size} patch={patchSel} onDelete={del} onDuplicate={dup} onFront={() => commitDoc(bringToFront(doc, sel))} onBack={() => commitDoc(sendToBack(doc, sel))} onFrame={frameSel} onAlign={(a: Align) => commitDoc(align(doc, sel, a))} onDistribute={a => commitDoc(distribute(doc, sel, a))} onConvert={convertSel} onGroup={() => (selObjs.some(o => o.group) ? ungroupSel() : groupSel())} />}
     </div>
 
     {hint && (doc.order.length === 0 || (firstRun && (edit || tool !== "select"))) && <div className={"mi-hint" + (doc.order.length === 0 && chips && !edit ? " hi" : "")} data-ui data-testid={doc.order.length === 0 && !edit ? "empty-hint" : "hint"}>{hint}</div>}

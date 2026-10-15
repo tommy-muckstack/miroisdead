@@ -41,7 +41,7 @@ test("Tab chains stickies in a row without the mouse", async ({ page }) => {
   await page.keyboard.type("one"); await page.keyboard.press("Tab"); await page.keyboard.type("two"); await page.keyboard.press("Tab"); await page.keyboard.type("three"); await page.keyboard.press("Escape");
   await expect(objs(page)).toHaveCount(3);
   const xs = await page.locator("svg g[data-obj]").evaluateAll(els => els.map(e => (e.getAttribute("transform") ?? "").match(/translate\(([-\d.]+)/)![1]).map(Number));
-  expect(xs[1] - xs[0]).toBeCloseTo(204); expect(xs[2] - xs[1]).toBeCloseTo(204);
+  expect(xs[1] - xs[0]).toBeCloseTo(223); expect(xs[2] - xs[1]).toBeCloseTo(223); // 199 sticky + 24 gap
   await expect(page.locator("svg text").filter({ hasText: "three" })).toBeVisible();
 });
 
@@ -60,7 +60,7 @@ test("connectors bind to shapes and reroute live when a shape moves", async ({ p
   await newBoard(page);
   await page.keyboard.press("r"); await drag(page, -400, -60, -240, 50); await page.keyboard.press("Escape");
   await page.keyboard.press("r"); await drag(page, 200, -60, 360, 50); await page.keyboard.press("Escape");
-  await page.keyboard.press("l"); await drag(page, -320, 0, 280, 0); // from shape A centre to shape B centre
+  await page.getByLabel("Shapes and lines").click(); await page.getByRole("menuitem", { name: "Elbow arrow" }).click(); await drag(page, -320, 0, 280, 0); // from shape A centre to shape B centre
   await expect(objs(page)).toHaveCount(3);
   const conn = page.locator("svg g[data-obj]").last().locator("path").first();
   const before = await conn.getAttribute("d");
@@ -92,7 +92,7 @@ test("align toolbar moves selected stickies to a common edge", async ({ page }) 
   await page.keyboard.press("n"); await click(page, -250, -120); await page.keyboard.type("a"); await page.keyboard.press("Escape");
   await page.keyboard.press("n"); await click(page, 100, 100); await page.keyboard.type("b"); await page.keyboard.press("Escape");
   await drag(page, -400, -300, 400, 300); // marquee both
-  await expect(page.getByTestId("selection-count")).toHaveText("2 selected");
+  await expect(page.getByTestId("selection-count")).toContainText("2 objects");
   await page.getByRole("button", { name: "Align left" }).click();
   const xs = await page.locator("svg g[data-obj]").evaluateAll(els => els.map(e => (e.getAttribute("transform") ?? "").match(/translate\(([-\d.]+)/)![1]));
   expect(xs[0]).toBe(xs[1]);
@@ -137,10 +137,10 @@ test("shortcut sheet, minimap toggle and command keys", async ({ page }) => {
 test("duplicate, copy/paste, delete and alt-drag duplicate", async ({ page }) => {
   await newBoard(page);
   await page.keyboard.press("n"); await click(page, 0, 0); await page.keyboard.type("x"); await page.keyboard.press("Escape");
-  await page.keyboard.press(`${MOD}+d`); await expect(objs(page)).toHaveCount(2);
-  await page.keyboard.press(`${MOD}+c`); await page.keyboard.press(`${MOD}+v`); await expect(objs(page)).toHaveCount(3);
+  await page.keyboard.press(`${MOD}+d`); await expect(objs(page)).toHaveCount(2); await expect(page.getByTestId("selection-toolbar")).toHaveCount(0); // Miro: nothing stays selected
+  await click(page, 0, 0); await page.keyboard.press(`${MOD}+c`); await page.keyboard.press(`${MOD}+v`); await expect(objs(page)).toHaveCount(3);
   await page.keyboard.press("Delete"); await expect(objs(page)).toHaveCount(2);
-  await page.keyboard.press("Escape"); await page.keyboard.down("Alt"); await drag(page, 0, 0, 300, 250); await page.keyboard.up("Alt"); await expect(objs(page)).toHaveCount(3);
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400); /* outside the double-click window of the click above */ await page.keyboard.down("Alt"); await drag(page, 0, 0, 300, 250); await page.keyboard.up("Alt"); await expect(objs(page)).toHaveCount(3);
 });
 
 test("eraser deletes what it crosses; text tool; frame tool", async ({ page }) => {
@@ -221,7 +221,7 @@ test("grouping: ⌘G groups, click selects the whole group, ⌘⇧G ungroups; �
   await page.keyboard.press("n"); await click(page, -200, 0); await page.keyboard.type("a"); await page.keyboard.press("Escape");
   await page.keyboard.press("n"); await click(page, 200, 0); await page.keyboard.type("b"); await page.keyboard.press("Escape");
   await page.keyboard.press(`${MOD}+a`); await page.keyboard.press(`${MOD}+g`); await click(page, 0, 250); await page.waitForTimeout(100);
-  await click(page, -200, 0); await expect(page.getByTestId("selection-count")).toContainText("2 selected");
+  await click(page, -200, 0); await expect(page.getByTestId("selection-count")).toContainText("2 objects");
   await page.keyboard.press(`${MOD}+Shift+g`); await click(page, 0, 250); await click(page, -200, 0); await expect(page.getByTestId("selection-count")).toHaveCount(0);
   await page.keyboard.press(`${MOD}+k`); await page.getByPlaceholder(/Type what you want/).fill("minimap"); await page.keyboard.press("Enter"); await expect(page.getByTestId("minimap")).toBeVisible();
 });
@@ -240,7 +240,7 @@ test("live session: a second tab on the same board sees the first tab's sticky a
   await other.close();
 });
 
-test("images: upload adds a picture; stickers insert emoji; rotation handle rotates a sticky", async ({ page }) => {
+test("images: upload adds a picture; stickers insert emoji; rotation handle rotates a shape", async ({ page }) => {
   await newBoard(page);
   const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQIW2P8z8DwnwEKGBkYGP4DAAwMAwF+Wk1fAAAAAElFTkSuQmCC", "base64");
   await page.getByTestId("upload-input").setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: png });
@@ -248,7 +248,7 @@ test("images: upload adds a picture; stickers insert emoji; rotation handle rota
   await page.keyboard.press("Escape"); await page.mouse.click(700, 500);
   await page.getByLabel("Stickers, Emoji and GIFs").click(); await page.getByRole("button", { name: "Insert 🚀" }).click();
   await expect(page.locator("svg text").filter({ hasText: "🚀" })).toBeVisible();
-  await page.keyboard.press("n"); await click(page, -250, 0); await page.keyboard.type("spin"); await page.keyboard.press("Escape"); await click(page, -250, 0);
+  await page.keyboard.press("r"); await click(page, -250, 0); await page.keyboard.type("spin"); await page.keyboard.press("Escape"); await click(page, -250, 0); // stickies have no rotate handle (Miro)
   const h = (await page.getByTestId("handle-rot").boundingBox())!; await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2); await page.mouse.down(); await page.mouse.move(h.x + 200, h.y - 150, { steps: 8 }); await page.mouse.up();
   const t = await page.locator("svg g[data-obj]").last().locator("xpath=..").getAttribute("transform"); expect(t ?? "").toContain("rotate(");
 });

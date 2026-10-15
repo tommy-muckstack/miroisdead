@@ -15,6 +15,7 @@ export const X = {
   smile: <S><circle cx="11" cy="13" r="7.5" /><path d="M8.3 14.2c.8 1.4 2 2.1 3.5 2.1s2.6-.7 3.4-2.1M9 11h.01M13.5 11h.01M18 4v4M16 6h4" /></S>,
   kebab: <S><circle cx="12" cy="5.5" r="1.2" fill="currentColor" /><circle cx="12" cy="12" r="1.2" fill="currentColor" /><circle cx="12" cy="18.5" r="1.2" fill="currentColor" /></S>,
   upload: <S><path d="M12 15V4M8 8l4-4 4 4M5 13v5a2 2 0 002 2h10a2 2 0 002-2v-5" /></S>,
+  funnel: <S size={14}><path d="M4 5h16l-6 7v6l-4-2v-4z" /></S>,
   chev: <S size={14}><path d="M6 9l6 6 6-6" /></S>,
   chevR: <S size={14}><path d="M9 6l6 6-6 6" /></S>,
   chevUp: <S size={12}><path d="M6 15l6-6 6 6" /></S>,

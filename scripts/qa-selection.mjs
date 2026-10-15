@@ -1,0 +1,22 @@
+import { chromium } from "@playwright/test";
+const OUT = "/Users/tommykeeley/MuckStack-Projects/Web-Android/miroisdead-parity/qa", BASE = "http://localhost:3111/miroisdead";
+const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+p.on("pageerror", e => console.log("pageerror:", e.message));
+const shot = (n) => p.screenshot({ path: `${OUT}/${n}.png` });
+await p.goto(`${BASE}/login`); await p.getByText("Sign in with the demo account instead").click(); await p.waitForURL("**/app"); await p.waitForSelector("[data-testid=board-card]");
+await p.getByTestId("new-blank").click(); await p.waitForSelector("[data-testid=board-editor]"); await p.waitForTimeout(400);
+await p.keyboard.press("n"); await p.mouse.click(600, 400); await p.keyboard.type("Hello QA"); await p.keyboard.press("Escape"); await p.mouse.click(600, 400); await p.waitForTimeout(250);
+const tb = await p.getByTestId("selection-toolbar").boundingBox(), st = await p.locator("[data-obj]").first().boundingBox();
+console.log("sticky size px:", st.width, st.height, "| toolbar below sticky:", tb.y > st.y + st.height, "| rotate handle:", await p.getByTestId("handle-rot").count(), "| dots:", await p.getByTestId("dot-n").count() + await p.getByTestId("dot-s").count());
+console.log("font size:", await p.locator("[data-obj] text").first().getAttribute("font-size")); await shot("08-sticky-selected-after");
+await p.keyboard.press("Control+d"); await p.waitForTimeout(250); const objs = await p.locator("[data-obj]").all(); const bb = await Promise.all(objs.map(o => o.boundingBox()));
+console.log("after ⌘D: objects", bb.length, "gap:", Math.round(bb[1].x - (bb[0].x + bb[0].width)), "selected:", await p.getByTestId("selection-toolbar").count()); await shot("09-duplicate-after");
+await p.keyboard.press("r"); await p.mouse.click(900, 650); await p.keyboard.press("Escape"); await p.keyboard.press("Control+a"); await p.waitForTimeout(250);
+console.log("multi: box", await p.getByTestId("multi-box").count(), "ghandles", await p.locator("[data-testid^=ghandle-]").count(), "count text:", await p.getByTestId("selection-count").textContent(), "convert:", await p.getByRole("button", { name: /Convert to/ }).count()); await shot("12-multiselect-after");
+const h = await p.getByTestId("ghandle-se").boundingBox(); await p.mouse.move(h.x + h.width / 2, h.y + h.height / 2); await p.mouse.down(); await p.mouse.move(h.x + 150, h.y + 150, { steps: 8 }); await p.mouse.up(); await p.waitForTimeout(200);
+const bb2 = await Promise.all((await p.locator("[data-obj]").all()).map(o => o.boundingBox())); console.log("group resize: first sticky now", Math.round(bb2[0].width));
+await p.keyboard.press("Escape"); await p.mouse.move(700, 300); for (let i = 0; i < 3; i++) await p.mouse.wheel(0, -100).catch(() => {});
+// ctrl+wheel: dispatch real wheel events with ctrlKey
+await p.evaluate(() => { const c = document.querySelector("[data-testid=canvas]"); for (let i = 0; i < 3; i++) c.dispatchEvent(new WheelEvent("wheel", { deltaY: -100, ctrlKey: true, clientX: 700, clientY: 300, bubbles: true, cancelable: true })); });
+await p.waitForTimeout(200); console.log("zoom after 3 ctrl+wheel ticks from 100%:", await p.locator(".mb-zoom").textContent());
+await b.close();
