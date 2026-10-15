@@ -9,6 +9,7 @@ import { boardFromTemplate, TEMPLATES, type TemplateId } from "@/lib/canvas/temp
 import { newBoard, parseBoard, serialize } from "@/lib/canvas/board";
 import { nid } from "@/lib/canvas/doc";
 import { Editor } from "@/components/board/Editor";
+import { Mark } from "@/components/board/icons";
 import { boardToSvg } from "@/components/board/exportSvg";
 import { listCustomTemplates, removeCustomTemplate, type CustomTemplate } from "@/components/board/exportMore";
 import { Pop, Item, Hr } from "@/components/board/Menus";
@@ -125,7 +126,6 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
   const curSpace = typeof nav === "object" ? nav.space : undefined;
 
   return <div className="mx-dash">
-    {prefs.banner !== false && <Banner onClose={() => setPrefs(p => ({ ...p, banner: false }))} />}
     <div className="mx-shell">
       <aside className="mx-side">
         <div className="mx-ws"><span className="mx-ws-av">{initials}</span><b title="Rename workspace" onDoubleClick={() => { const n = window.prompt("Workspace name", workspace); if (n?.trim()) setPrefs(p => ({ ...p, workspace: n.trim() })); }}>{workspace}</b><button className="mx-sq" aria-label="Create or join a workspace" onClick={() => setErr("MiroIsDead has one workspace per account; use Spaces to organise boards.")}>{X.plusS}</button></div>
@@ -138,17 +138,15 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
       </aside>
       <main className="mx-main">
         <header className="mx-bar">
-          <Link href="/" className="mx-logo">miro</Link><span className="mx-plan" title="Everything is free"><b>Free</b> plan {X.chev}</span><span className="mx-grow" />
+          <Link href="/" className="mx-logo"><Mark size={28} />MiroIsDead</Link><span className="mx-grow" />
           <button className="mx-pill" onClick={() => setErr("Invite people by sharing a board: open it and use Share ▸ Anyone with the link.")}>{X.invite} Invite members</button>
-          <button className="mx-blue" onClick={() => setErr("Everything in MiroIsDead is free. Nothing to upgrade.")}>Upgrade</button>
           <button className="mx-ic" aria-label="What's new" onClick={() => window.open("https://github.com/tommy-muckstack/miroisdead/commits/main", "_blank")}>{X.gift}</button>
           <button className="mx-ic" aria-label="Notifications" onClick={() => setPrefs(p => ({ ...p, banner: true }))}>{X.bell}</button>
           <span data-menu className="mx-menuwrap"><button className="mx-av" aria-label="Account" aria-expanded={menu === "profile"} onClick={() => setMenu(m => m === "profile" ? "" : "profile")}>{initials[0]}</button>
             {menu === "profile" && <div className="mx-pop mx-prof" role="menu"><div className="mx-prof-h"><span className="mx-av sm">{initials[0]}</span><b>{user}</b></div>
               <a role="menuitem">{X.user} Profile</a><a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead#readme" target="_blank" rel="noreferrer">{X.ai} Connect your AI tools</a><a role="menuitem">{X.gear} Admin Console</a><hr />
-              <a role="menuitem">{X.trash} Trash<span className="r">{X.upgrade}</span></a><a role="menuitem" onClick={() => { void create("welcome"); }}>{X.learn} Learning Center</a><a role="menuitem">{X.apps} iOS, Android, Desktop Apps</a><hr />
-              <a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead" target="_blank" rel="noreferrer">{X.dev} Developer Hub</a><a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead" target="_blank" rel="noreferrer">{X.market} Miro Marketplace</a><a role="menuitem">{X.upgrade} Upgrade</a>
-              <form action={signOutAction}><button role="menuitem">{X.logout} Log out</button></form></div>}
+              <a role="menuitem">{X.trash} Trash</a><a role="menuitem" onClick={() => { void create("welcome"); }}>{X.learn} Learning Center</a><a role="menuitem">{X.apps} iOS, Android, Desktop Apps</a><hr />
+              <a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead" target="_blank" rel="noreferrer">{X.dev} Developer Hub</a><a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead" target="_blank" rel="noreferrer">{X.market} MiroIsDead Marketplace</a>              <form action={signOutAction}><button role="menuitem">{X.logout} Log out</button></form></div>}
           </span>
         </header>
         <div className="mx-col">

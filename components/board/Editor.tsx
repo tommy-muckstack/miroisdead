@@ -19,7 +19,7 @@ import { KEY_TO_TOOL, TOOLS, type Tool } from "@/lib/shortcuts";
 import type { BoardStore } from "@/lib/store";
 import { Defs, Scene, shapePath, penPath } from "./Scene";
 import { boardToSvg } from "./exportSvg";
-import { I } from "./icons";
+import { I, Mark } from "./icons";
 import { X } from "@/components/mxi";
 import { BP } from "@/lib/basepath";
 import "@/components/miboard.css";
@@ -75,7 +75,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const [menu, setMenu] = useState(false);
   const [space, setSpace] = useState(false);
   const [toast, setToast] = useState("");
-  const [banner, setBanner] = useState(!guest && !embed);
+  const [banner, setBanner] = useState(false); // the "turn on notifications" banner is gone by owner request
   const [access, setAccess] = useState<BoardAccess>(initial.access ?? "none");
   const [fly, setFly] = useState<"" | "shapes" | "more">("");
   const [share, setShare] = useState<"" | ShareTab>("");
@@ -234,7 +234,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     { id: "minimap", icon: X.map, label: "Minimap", desc: "Overview of the whole board (M)", onPick: () => setMap(m => !m) },
     { id: "keys", icon: X.keys, label: "Keyboard shortcuts", desc: "Every shortcut on one sheet (?)", onPick: () => setHelp(true) },
   ];
-  const compact = size.h < 720;
+  const compact = size.h < 820; // the full rail (AI + 11 tools + undo/redo + bottom bar) needs ~820px; below that Miro collapses it too
   const frameIds = () => R.current.doc.order.filter(i => R.current.doc.objects[i].type === "frame");
   const fitFrame = (b: Box) => { const sz = R.current.size, pad = 48; const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min((sz.w - pad * 2) / Math.max(1, b.w), (sz.h - pad * 2) / Math.max(1, b.h)))); setView({ zoom, x: b.x + b.w / 2, y: b.y + b.h / 2 }); };
   const presentGo = (dir: number) => setPresent(p => { if (!p) return p; const fs = frameIds(); const i = Math.max(0, Math.min(fs.length - 1, p.i + dir)); if (fs[i]) fitFrame(boundsOf(R.current.doc, R.current.doc.objects[fs[i]])); return { i }; });
@@ -509,7 +509,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     {(readOnly || guest) && <div className="mb-ro" data-ui>{X.globe} {readOnly ? "View only" : "Editing as a guest"} · {title || "Untitled"}{guest && <a href={`${BP}/signup`}>Sign up to keep a copy</a>}</div>}
     {!embed && !present && <header className="mb-tl" data-ui style={{ top: banner ? 66 : 10 }}>
       <Link href="/app" className="mb-i" aria-label="Back to boards" title="Back to boards">{X.panel}</Link>
-      <Link href="/app" className="mb-logo hm" aria-label="MiroIsDead home">miro</Link>
+      <Link href="/app" className="mb-logo hm" aria-label="MiroIsDead home"><Mark size={24} />MiroIsDead</Link>
       <button className="mb-i hm" aria-label="Reactions" onClick={() => flash("Reactions are for live sessions")}>{X.smile}</button>
       <span className="mi-menuwrap"><button className={"mb-i mb-emoji" + (emoji ? " has" : "")} aria-label="Choose emoji" title="Choose emoji" onClick={() => setEmojiPick(p => !p)}>{emoji || <span className="mb-emoji-ph" />}</button>{emojiPick && <EmojiPicker onPick={setEmoji} onClose={() => setEmojiPick(false)} />}</span>
       <input className="mb-title" aria-label="Board title" value={title} placeholder="Untitled" readOnly={readOnly} onChange={e => setTitle(e.target.value)} onKeyDown={e => { e.stopPropagation(); if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
@@ -519,7 +519,6 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
         <button className="mb-i" onClick={() => setMenu(m => !m)} aria-expanded={menu} aria-haspopup="menu" aria-label="Export this board" title="Export this board">{X.upload}</button>
         {menu && <ExportMenu onClose={() => setMenu(false)} a={{ pdf: exportPdf, image: () => void exportPng(), template: saveTemplate, csv: exportCsv, backup: exportBackup, embed: () => setShare("Embed"), drive: () => { exportBackup(); flash("Backup downloaded. Upload it to Drive to keep a copy there."); }, scene: () => void copyScene() }} />}
       </span>
-      <button className="mb-upg hm" onClick={() => flash("Everything in MiroIsDead is free. Nothing to upgrade.")}>Upgrade</button>
       <span className="mx-sr" data-testid="save-status" role="status">{readOnly ? "View only" : statusText}</span>
     </header>}
     {!embed && !present && <div className="mb-tr" data-ui style={{ top: banner ? 66 : 10 }}>

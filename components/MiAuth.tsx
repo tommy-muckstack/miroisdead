@@ -16,7 +16,6 @@ export function MiAuth({ config, demo, to, mode }: Props) {
   const [busy, setBusy] = useState(false), [err, setErr] = useState(""), [note, setNote] = useState("");
   const session = `${BP}/api/session`; const done = () => { window.location.assign(to); };
   const run = async (f: () => Promise<void>) => { setBusy(true); setErr(""); setNote(""); try { await f(); } catch (e) { setErr(authErrorMessage(e)); } finally { setBusy(false); } };
-  const soon = (n: string) => { setErr(`${n} sign-in isn't available yet. Use Google or email.`); };
   const submit = (e: React.FormEvent) => { e.preventDefault(); if (!config) { setErr("Sign-in isn't configured on this deployment yet."); return; }
     if (reset) return run(async () => { await resetPassword(config, email); setNote("If that email has an account, a reset link is on its way."); setReset(false); });
     if (step === 0) { if (email) setStep(1); return; }
@@ -24,7 +23,6 @@ export function MiAuth({ config, demo, to, mode }: Props) {
   const demoLogin = () => run(async () => { const r = await fetch(`${BP}/api/session/demo`, { method: "POST" }); if (!r.ok) throw new Error("Demo sign-in failed"); done(); });
   const google = () => config ? run(async () => { await signInWithGoogle(config, session); done(); }) : setErr("Sign-in isn't configured on this deployment yet.");
   const G = <span dangerouslySetInnerHTML={{ __html: GOOGLE_G_SVG }} style={{ display: "inline-flex" }} />;
-  const MS = <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden><path fill="#f25022" d="M2 2h7.500v7.500H2z" /><path fill="#7fba00" d="M10.5 2H18v7.500h-7.500z" /><path fill="#00a4ef" d="M2 10.500h7.500V18H2z" /><path fill="#ffb900" d="M10.5 10.500H18V18h-7.500z" /></svg>;
   const form = <form onSubmit={submit} noValidate={false}>
     <label className="ma-l" htmlFor="ma-email">{su ? "Enter your work email" : "Email"}</label>
     <div className="ma-in"><Bld /><input id="ma-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" aria-label="Email" disabled={step > 0} /></div>
@@ -39,10 +37,9 @@ export function MiAuth({ config, demo, to, mode }: Props) {
     <main className="ma-card">
       <h1>{su ? "Your canvas is ready" : "Sign in to MiroIsDead"}</h1>
       {su && <p className="ma-sub">Start building, collaborating and bringing your ideas to life.</p>}
-      {!su && <><div className="ma-row"><button type="button" className="ma-pb" onClick={google}>{G}Google</button><button type="button" className="ma-pb" onClick={() => soon("Microsoft")}>{MS}Microsoft</button><button type="button" className="ma-pb ma-sq" aria-label="More" onClick={() => soon("Other providers")}>+</button></div>
-        <button type="button" className="ma-pb ma-full" onClick={() => soon("SSO")}>SSO</button><hr /></>}
+      {!su && <><button type="button" className="ma-pb ma-full" onClick={google}>{G}Continue with Google</button><hr /></>}
       {form}
-      {su && <><div className="ma-or"><span>OR</span></div><div className="ma-row3"><button type="button" className="ma-pb" onClick={google}>{G}Google</button><button type="button" className="ma-pb" onClick={() => soon("Microsoft")}>{MS}Microsoft</button><button type="button" className="ma-pb" onClick={() => soon("SSO")}>SSO</button></div></>}
+      {su && <><div className="ma-or"><span>OR</span></div><button type="button" className="ma-pb ma-full" onClick={google}>{G}Continue with Google</button></>}
       {err && <p role="alert" className="ma-err">{err}</p>}{note && <p role="status" className="ma-note">{note}</p>}
       {su ? <p className="ma-alt">→ <Link href="/login">Already have an account? Sign in</Link></p> : demo ? <p className="ma-alt"><a href="#" onClick={e => { e.preventDefault(); demoLogin(); }}>→ Sign in with the demo account instead</a></p> : null}
       {!su && <p className="ma-trouble"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M4 20l5-1 10-10-4-4L5 15zM13 7l4 4M15 3l1 2M20 8l-2 1" /></svg>Trouble signing in? <a href="#" onClick={e => { e.preventDefault(); setReset(!reset); setStep(1); }}>{reset ? "Back to sign in" : "Request a password reset link"}</a></p>}
@@ -55,7 +52,7 @@ export function MiAuth({ config, demo, to, mode }: Props) {
 function FakeBoard() {
   const rail = [X.select, X.notes, X.tpl, X.text, X.sticky, X.shapes, X.pen, X.comment, X.frame, X.diagram];
   return <div className="ma-fake" aria-hidden>
-    <div className="ma-ftl"><span className="ma-fi">☰</span><b className="ma-flogo">miro</b><i className="ma-fdot" /><span>My first board</span><em>Internal</em><span className="ma-fi">{X.kebab}</span></div>
+    <div className="ma-ftl"><span className="ma-fi">☰</span><b className="ma-flogo"><Mark size={22} />MiroIsDead</b><i className="ma-fdot" /><span>My first board</span><em>Internal</em><span className="ma-fi">{X.kebab}</span></div>
     <div className="ma-ftr"><span className="ma-fi">{X.timer}</span><span className="ma-fi">{X.chat}</span><span className="ma-fi">{X.video}</span><span className="ma-favs"><i /><i /><i /><i />7 {X.chev}</span><span className="ma-fpres">{X.play} Present</span><span className="ma-fshare">Share</span></div>
     <div className="ma-frail"><span className="ma-fai">{X.sparkle}</span><div className="ma-frl">{rail.map((ic, i) => <span key={i} className={"ma-fi" + (i === 0 ? " on" : "")}>{ic}</span>)}<span className="ma-fi plus">{X.plusS}</span></div><div className="ma-frl sm"><span className="ma-fi">{X.undo}</span><span className="ma-fi">{X.redo}</span></div></div>
   </div>;
