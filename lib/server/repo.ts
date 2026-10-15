@@ -7,6 +7,8 @@ export interface BoardRepo {
   get(uid: string, id: string): Promise<Board | null>;
   put(uid: string, board: Board): Promise<void>;
   del(uid: string, id: string): Promise<void>;
+  /** Look a board up by id alone (for anyone-with-the-link access). */
+  getPublic(id: string): Promise<{ uid: string; board: Board } | null>;
 }
 export class MemoryRepo implements BoardRepo {
   private data = new Map<string, Board>();
@@ -14,6 +16,7 @@ export class MemoryRepo implements BoardRepo {
   async get(uid: string, id: string) { return this.data.get(`${uid}/${id}`) ?? null; }
   async put(uid: string, b: Board) { this.data.set(`${uid}/${b.id}`, b); }
   async del(uid: string, id: string) { this.data.delete(`${uid}/${id}`); }
+  async getPublic(id: string) { for (const [k, b] of this.data) if (k.endsWith("/" + id)) return { uid: k.split("/")[0], board: b }; return null; }
 }
 
 /** users/{uid}/miroisdead_boards/{id}: { title, createdAt, updatedAt, objectCount, payload: JSON string of {doc, view} } */
@@ -32,11 +35,16 @@ export class FirestoreRepo implements BoardRepo {
   }
   async get(uid: string, id: string) {
     const d = await (await this.col(uid)).doc(id).get(); if (!d.exists) return null;
-    const x = d.data()!, p = JSON.parse(x.payload);
-    return { id, title: x.title, createdAt: x.createdAt, updatedAt: x.updatedAt, ...(x.emoji ? { emoji: x.emoji } : {}), ...(p.note ? { note: String(p.note).slice(0, 20000) } : {}), doc: sanitizeDoc(p.doc), view: p.view };
+    return this.fromDoc(id, d.data()!);
+  }
+  private fromDoc(id: string, x: any): Board { const p = JSON.parse(x.payload); return { id, title: x.title, createdAt: x.createdAt, updatedAt: x.updatedAt, ...(x.emoji ? { emoji: x.emoji } : {}), ...(p.note ? { note: String(p.note).slice(0, 20000) } : {}), ...(x.access && x.access !== "none" ? { access: x.access } : {}), doc: sanitizeDoc(p.doc), view: p.view }; }
+  async getPublic(id: string) {
+    const snap = await (await this.db).collectionGroup("miroisdead_boards").where("id", "==", id).limit(1).get();
+    const d = snap.docs[0]; if (!d) return null; const uid = d.ref.parent.parent?.id; if (!uid) return null;
+    return { uid, board: this.fromDoc(d.id, d.data()) };
   }
   async put(uid: string, b: Board) {
-    await (await this.col(uid)).doc(b.id).set({ title: b.title, createdAt: b.createdAt, updatedAt: b.updatedAt, objectCount: b.doc.order.length, emoji: b.emoji ?? "", payload: JSON.stringify({ doc: b.doc, view: b.view, ...(b.note ? { note: b.note } : {}) }) });
+    await (await this.col(uid)).doc(b.id).set({ id: b.id, access: b.access ?? "none", title: b.title, createdAt: b.createdAt, updatedAt: b.updatedAt, objectCount: b.doc.order.length, emoji: b.emoji ?? "", payload: JSON.stringify({ doc: b.doc, view: b.view, ...(b.note ? { note: b.note } : {}) }) });
   }
   async del(uid: string, id: string) { await (await this.col(uid)).doc(id).delete(); }
 }
