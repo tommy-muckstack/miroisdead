@@ -34,7 +34,7 @@ Last full pass: 2026-10-15. Scope per the owner: the logged-out surface is the h
 | Dashboard | Starred / Browse / Spaces | missing | S2 | PR dashboard: star boards, Browse = all boards, Spaces as folders. |
 | Dashboard | Board limit banner / Upgrade | n/a | — | Everything is free; Upgrade chrome kept for look only. |
 | Board | Top-left pill (sidebar, logo, emoji picker, title, main menu, export, Upgrade pill) | match | — | Emoji is stored on the board; Upgrade is look-only. PR #3 |
-| Board | Top-right pill (facilitation, activity, call, avatar, present, Share) | match | S3 | Facilitation popover lands in PR facilitation. |
+| Board | Top-right pill (facilitation, activity, call, avatar, present, Share) | match | S3 | Activity and call buttons are stubs (no multiplayer yet). |
 | Board | Tool rail (AI, select, formats, templates, sticky, text, shapes, pen, frame, stickers, comment, +) | match | — | Compact rail under 720px like Miro; "+" opens the searchable Tools/Marketplace panel with the pinned tools. PR #3 |
 | Board | Shapes & lines flyout | match | — | Prior pass. |
 | Board | Main (kebab) menu: Board / Edit / View / Preferences / Accessibility submenus, Assign status, Send to display | match | S3 | PR #3 |
@@ -45,7 +45,7 @@ Last full pass: 2026-10-15. Scope per the owner: the logged-out surface is the h
 | Board | Export menu (PDF, image, template, CSV, backup, embed, Drive) | match | S3 | PDF via print window, PNG via rasterised SVG, CSV of text objects, backup JSON, custom template (local), Embed opens Share ▸ Embed; Drive = backup download (exception: no Google API). PR #3 |
 | Board | Zoom menu (full screen, minimap, grid, object dimensions, fit, presets) | match | — | PR #3 |
 | Board | Help menu + Shortcuts panel (blue header, icon column, Tools/General/Navigation/Text) | match | — | PR #3 |
-| Board | Facilitation: reactions, timer, voting, private mode, note | missing | S1 | Paid in Miro; free here. PR facilitation |
+| Board | Facilitation popover (6 reactions, Timer, Voting, Private mode, Note) | match | — | Paid in Miro, free here: floating reactions, countdown timer with chip in the header + chime, dot-voting sessions with per-person budget and results, private-mode stickies (hatched until revealed), shared board note. PR #4 |
 | Board | Frames panel (bottom bar) with empty state, list, create, present | match | S3 | PR #3 |
 | Board | Keyboard map (S shapes, L line, C comment, ⌥1/⌥2, G grid, ⌘G group, ⌘⇧L lock, fn↑/↓ order, ⌘K palette) | differs | S1 | PR shortcuts |
 | Board | Comments, reactions, cursors, real-time sync, presentation mode, images/upload | missing | S1 | Not built yet (see README). Tracked for follow-up PRs. |

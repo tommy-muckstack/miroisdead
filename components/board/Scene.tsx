@@ -80,7 +80,7 @@ export function ConnectorView({ doc, o, hideLabel }: { doc: Doc; o: ConnectorObj
 }
 
 export function Defs() {
-  return <defs><filter id="mi-shadow" x="-10%" y="-10%" width="120%" height="125%"><feGaussianBlur in="SourceAlpha" stdDeviation="2.5" /><feOffset dy="2" result="b" /><feFlood floodColor="#1C1C1E" floodOpacity="0.18" /><feComposite in2="b" operator="in" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter></defs>;
+  return <defs><filter id="mi-shadow" x="-10%" y="-10%" width="120%" height="125%"><feGaussianBlur in="SourceAlpha" stdDeviation="2.5" /><feOffset dy="2" result="b" /><feFlood floodColor="#1C1C1E" floodOpacity="0.18" /><feComposite in2="b" operator="in" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter><pattern id="mi-hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#F2F2F4" /><line x1="0" y1="0" x2="0" y2="10" stroke="#D9DBE3" strokeWidth="4" /></pattern></defs>;
 }
 /** Renders every object of a doc as SVG children. Shared by the editor, board thumbnails and SVG export. */
 export function Scene({ doc, editing }: { doc: Doc; editing?: Id | null }) {

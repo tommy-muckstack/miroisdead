@@ -18,7 +18,7 @@ export async function putBoard(repo: BoardRepo, uid: string, id: string, raw: st
   if (b?.id !== id) return { status: 400, body: { error: "Board id mismatch" } };
   const num = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? v : d);
   const v = b.view ?? {};
-  const board: Board = { id, title: String(b.title ?? "Untitled board").slice(0, 200), ...(typeof b.emoji === "string" && b.emoji ? { emoji: String(b.emoji).slice(0, 8) } : {}), createdAt: num(b.createdAt, Date.now()), updatedAt: num(b.updatedAt, Date.now()), doc: sanitizeDoc(b.doc), view: { x: num(v.x, 0), y: num(v.y, 0), zoom: Math.min(6, Math.max(0.1, num(v.zoom, 1))) } };
+  const board: Board = { id, title: String(b.title ?? "Untitled board").slice(0, 200), ...(typeof b.emoji === "string" && b.emoji ? { emoji: String(b.emoji).slice(0, 8) } : {}), ...(typeof b.note === "string" && b.note ? { note: String(b.note).slice(0, 20000) } : {}), createdAt: num(b.createdAt, Date.now()), updatedAt: num(b.updatedAt, Date.now()), doc: sanitizeDoc(b.doc), view: { x: num(v.x, 0), y: num(v.y, 0), zoom: Math.min(6, Math.max(0.1, num(v.zoom, 1))) } };
   await repo.put(uid, board); return { status: 200, body: { ok: true } };
 }
 export async function deleteBoard(repo: BoardRepo, uid: string, id: string): Promise<ApiResult> {

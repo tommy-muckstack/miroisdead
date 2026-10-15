@@ -35,7 +35,7 @@ export function sanitizeDoc(raw: any): Doc {
       case "pen": o = { ...base, type: "pen", points: (Array.isArray(r.points) ? r.points : []).slice(0, 5000).map((p: any) => ({ x: num(p?.x), y: num(p?.y) })), stroke: color(r.stroke, "#1C1C1E"), width: Math.min(40, Math.max(1, num(r.width, 3))) }; break;
       case "connector": o = { id: base.id, type: "connector", from: cleanEnd(r.from), to: cleanEnd(r.to), style: STYLES.includes(r.style) ? r.style : "elbow", startArrow: bool(r.startArrow), endArrow: bool(r.endArrow, true), dashed: bool(r.dashed), stroke: color(r.stroke, "#1C1C1E"), label: str(r.label, "", 500) }; break;
     }
-    if (o) { if (r.locked === true) (o as { locked?: boolean }).locked = true; objects[o.id] = o; order.push(o.id); }
+    if (o) { if (r.locked === true) (o as { locked?: boolean }).locked = true; if (r.private === true && o.type === "sticky") o.private = true; objects[o.id] = o; order.push(o.id); }
   }
   // connectors pointing at objects that don't exist become free-floating
   for (const id of order) { const o = objects[id]; if (o.type !== "connector") continue; for (const k of ["from", "to"] as const) { const e = o[k]; if ("id" in e && !objects[e.id]) o[k] = { x: 0, y: 0 }; } }
@@ -46,6 +46,6 @@ export function parseBoard(json: string): Board {
   let raw: any; try { raw = JSON.parse(json); } catch { throw new Error("That file isn't valid JSON."); }
   if (raw?.format !== FORMAT) throw new Error("That doesn't look like a MiroIsDead board file.");
   const t = Date.now(), v = raw.view ?? {};
-  return { id: nid(), title: str(raw.title, "Imported board", 200) || "Imported board", createdAt: t, updatedAt: t, ...(typeof raw.emoji === "string" ? { emoji: str(raw.emoji, "", 8) } : {}), doc: sanitizeDoc(raw.doc), view: { x: num(v.x), y: num(v.y), zoom: Math.min(6, Math.max(0.1, num(v.zoom, 1))) } };
+  return { id: nid(), title: str(raw.title, "Imported board", 200) || "Imported board", createdAt: t, updatedAt: t, ...(typeof raw.emoji === "string" ? { emoji: str(raw.emoji, "", 8) } : {}), ...(typeof raw.note === "string" ? { note: str(raw.note, "", 20000) } : {}), doc: sanitizeDoc(raw.doc), view: { x: num(v.x), y: num(v.y), zoom: Math.min(6, Math.max(0.1, num(v.zoom, 1))) } };
 }
 export { isBox };
