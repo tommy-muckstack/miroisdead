@@ -1,5 +1,5 @@
 import { chromium } from "@playwright/test";
-const OUT = "/Users/tommykeeley/MuckStack-Projects/Web-Android/miroisdead-parity/qa", BASE = "http://localhost:3111/miroisdead";
+const OUT = process.env.OUT ?? new URL("../../miroisdead-parity/qa/", import.meta.url).pathname, BASE = "http://localhost:3111/miroisdead";
 const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1440, height: 800 } });
 p.on("pageerror", e => console.log("pageerror:", e.message)); p.on("dialog", d => console.log("NATIVE DIALOG", d.type()));
 const shot = (n) => p.screenshot({ path: `${OUT}/${n}.png` });
