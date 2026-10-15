@@ -37,7 +37,7 @@ export function SelectionToolbar({ doc, ids, screenBox, canvas, patch, onDelete,
       <Dec title="Underline"><u style={{ fontWeight: 700, fontSize: 15 }}>B</u></Dec><Dec title="Align">{X.align}</Dec><Dec title="Link">{X.link}</Dec><Dec title="Size"><span style={{ fontSize: 12 }}>S</span></Dec>
       <span className="mi-menuwrap"><button type="button" className="mi-tb" aria-label="Colour" aria-expanded={pal} onClick={() => setPal(p => !p)}><span className="mb-dot" style={{ background: one.color }} /></button>
         {pal && <div className="mb-pal">{STICKY_COLORS.map(c => <button key={c} type="button" className={"mi-sw" + (one.color?.toLowerCase() === c.toLowerCase() ? " on" : "")} style={{ background: c }} aria-label={`Sticky colour ${c}`} onClick={() => { patch({ color: c }, { stickyColor: c }); setPal(false); }} />)}</div>}</span><Sep />
-      <Dec title="Assign">{X.assign}</Dec><Dec title="Tag">{X.tag}</Dec><Dec title="React">{X.react}</Dec><Sep /><Dec title="Comment">{X.comment2}</Dec><Sep /><Dec title="Lock">{X.lock}</Dec><Sep /><Dec title="Translate">{X.translate}</Dec><Sep />
+      <Dec title="Assign">{X.assign}</Dec><Dec title="Tag">{X.tag}</Dec><Dec title="React">{X.react}</Dec><Sep /><Dec title="Comment">{X.comment2}</Dec><Sep /><Btn title={one.locked ? "Unlock" : "Lock"} on={!!one.locked} onClick={() => patch({ locked: !one.locked } as Partial<Obj>)}>{X.lock}</Btn><Sep /><Dec title="Translate">{X.translate}</Dec><Sep />
     </>}
     {types.size === 1 && one?.type === "shape" && <>
       {SHAPES.map(s => <Btn key={s.k} title={s.label} on={one.shape === s.k} onClick={() => patch({ shape: s.k }, { shape: s.k })}>{s.i}</Btn>)}<Sep />

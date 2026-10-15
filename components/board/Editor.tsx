@@ -18,10 +18,12 @@ import { Defs, Scene, shapePath, penPath } from "./Scene";
 import { boardToSvg } from "./exportSvg";
 import { I } from "./icons";
 import { X } from "@/components/mxi";
+import { BP } from "@/lib/basepath";
 import "@/components/miboard.css";
 import { SelectionToolbar } from "./SelectionToolbar";
 import { Minimap } from "./Minimap";
-import { ShortcutSheet } from "./ShortcutSheet";
+import { ContextMenu, EmojiPicker, ExportMenu, FramesPanel, HelpMenu, MainMenu, ShortcutsPanel, StickyPicker, ToolsPanel, ZoomMenu, type ToolEntry } from "./Menus";
+import { svgToPngBlob, boardToCsv, saveCustomTemplate, openPrintWindow } from "./exportMore";
 
 type Gesture =
   | { k: "pan"; sx: number; sy: number; v: View }
@@ -68,6 +70,18 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
   const [share, setShare] = useState<"" | "Invite" | "Embed" | "Publish" | "AI">("");
   const [prof, setProf] = useState(false);
   const [chips, setChips] = useState(true);
+  const [main, setMain] = useState(false);
+  const [zoomMenu, setZoomMenu] = useState(false);
+  const [helpMenu, setHelpMenu] = useState(false);
+  const [ctx, setCtx] = useState<{ x: number; y: number; id: Id | null } | null>(null);
+  const [frames, setFrames] = useState(false);
+  const [tools, setTools] = useState(false);
+  const [emojiPick, setEmojiPick] = useState(false);
+  const [emoji, setEmoji] = useState(initial.emoji ?? "");
+  const [grid, setGrid] = useState(true);
+  const [snap, setSnap] = useState(true);
+  const [dims, setDims] = useState(false);
+  const styleClip = useRef<Partial<Obj> | null>(null);
   const doc = hist.present;
 
   const box = useRef<HTMLDivElement>(null);
@@ -78,6 +92,7 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
   const pasteN = useRef(0);
   const last = useRef<Last>({ stickyColor: STICKY_COLORS[0], fill: "#FFFFFF", stroke: "#1C1C1E", penColor: "#1C1C1E", penWidth: 3, textColor: "#1C1C1E", connectorStyle: "elbow", shape: "rect", arrow: true, line: "Elbow arrow" });
   const lastClick = useRef({ t: 0, id: "" });
+  const snapRef = useRef(true);
 
   // ---- size ----
   useLayoutEffect(() => {
@@ -96,14 +111,14 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
 
   // ---- autosave ----
   const first = useRef(true);
-  const board = useMemo<Board>(() => ({ ...initial, title, doc, view, updatedAt: Date.now() }), [initial, title, doc, view]);
+  const board = useMemo<Board>(() => ({ ...initial, title, doc, view, emoji, updatedAt: Date.now() }), [initial, title, doc, view, emoji]);
   const boardRef = useRef(board); boardRef.current = board;
   const saveNow = useCallback(async () => {
     setStatus("saving");
     try { await store.save({ ...boardRef.current, updatedAt: Date.now() }); setStatus("saved"); }
     catch { setStatus(store.kind === "cloud" ? "device" : "error"); }
   }, [store]);
-  useEffect(() => { if (first.current) { first.current = false; return; } setStatus("saving"); const t = setTimeout(saveNow, 600); return () => clearTimeout(t); }, [doc, title, view, saveNow]);
+  useEffect(() => { if (first.current) { first.current = false; return; } setStatus("saving"); const t = setTimeout(saveNow, 600); return () => clearTimeout(t); }, [doc, title, view, emoji, saveNow]);
   useEffect(() => { const f = () => { void store.save({ ...boardRef.current, updatedAt: Date.now() }).catch(() => {}); }; window.addEventListener("pagehide", f); const v = () => document.visibilityState === "hidden" && f(); document.addEventListener("visibilitychange", v); return () => { window.removeEventListener("pagehide", f); document.removeEventListener("visibilitychange", v); }; }, [store]);
 
   // ---- coordinates ----
@@ -123,6 +138,38 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
   const fitAll = () => { const { doc: d, size: s } = R.current; setView(fitView(unionBox(d.order.map(i => boundsOf(d, d.objects[i]))), s)); };
   const fitSel = () => { const { doc: d, size: s, sel: ss } = R.current; const b = unionBox(ss.map(i => d.objects[i]).filter(Boolean).map(o => boundsOf(d, o))); if (b) setView(fitView(b, s)); };
   const zoomBy = (f: number) => setView(v => zoomAt(v, R.current.size, { x: R.current.size.w / 2, y: R.current.size.h / 2 }, v.zoom * f));
+  const zoomTo = (zz: number) => setView(v => zoomAt(v, R.current.size, { x: R.current.size.w / 2, y: R.current.size.h / 2 }, zz));
+  const fullscreen = () => { const el = box.current?.closest(".mi-app") as HTMLElement | null; if (document.fullscreenElement) void document.exitFullscreen(); else void el?.requestFullscreen?.(); };
+  const jumpTo = (id: Id) => { const o = R.current.doc.objects[id]; if (!o) return; setView(fitView(boundsOf(R.current.doc, o), R.current.size, 120)); setSel([id]); };
+  const exportPdf = () => openPrintWindow(title || "board", boardToSvg(doc));
+  const exportPng = async () => { try { const blob = await svgToPngBlob(boardToSvg(doc), 2); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${title || "board"}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); } catch { flash("Couldn't render the image"); } };
+  const exportCsv = () => download(`${title || "board"}.csv`, "text/csv", boardToCsv(doc));
+  const exportBackup = () => download(`${title || "board"}.miroisdead.json`, "application/json", serialize(boardRef.current));
+  const saveTemplate = () => { saveCustomTemplate(boardRef.current); flash("Saved as a custom template. Find it under Create ▸ Explore templates."); };
+  const copyScene = () => navigator.clipboard?.writeText(JSON.stringify(describeScene(boardRef.current), null, 2)).then(() => flash("Scene JSON copied"), () => flash("Couldn't copy"));
+  const copyLink = (id?: Id) => navigator.clipboard?.writeText(location.origin + location.pathname + (id ? `?moveToWidget=${id}` : "")).then(() => flash("Link copied"), () => flash("Couldn't copy"));
+  const copyImage = async () => { const { doc: d, sel: s } = R.current; if (!s.length) return; const set = new Set(s); const sub = { objects: Object.fromEntries(s.map(i => [i, d.objects[i]])), order: d.order.filter(i => set.has(i)) }; try { const blob = await svgToPngBlob(boardToSvg(sub as Doc), 2); await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); flash("Copied as image"); } catch { flash("Couldn't copy the image here"); } };
+  const copyStyle = () => { const o = R.current.doc.objects[R.current.sel[0]]; if (!o) return; const p: Record<string, unknown> = {}; for (const k of ["color", "fill", "stroke", "filled", "dashed", "fontSize", "bold", "width", "style"]) if (k in o) p[k] = (o as unknown as Record<string, unknown>)[k]; styleClip.current = p as Partial<Obj>; flash("Style copied"); };
+  const pasteStyle = () => { const p = styleClip.current; if (!p) return; patchSel(o => Object.fromEntries(Object.entries(p).filter(([k]) => k in o)) as Partial<Obj>); };
+  const clearContent = () => patchSel(o => (o.type === "frame" ? { name: "Frame" } : o.type === "connector" ? { label: "" } : "text" in o ? { text: "" } : {}) as Partial<Obj>);
+  const toggleLock = () => patchSel(o => ({ locked: !("locked" in o && (o as { locked?: boolean }).locked) }) as Partial<Obj>);
+  const forward = () => { const { doc: d, sel: s } = R.current; const set = new Set(s); const order = d.order.slice(); for (let i = order.length - 2; i >= 0; i--) if (set.has(order[i]) && !set.has(order[i + 1])) [order[i], order[i + 1]] = [order[i + 1], order[i]]; commitDoc({ ...d, order }); };
+  const backward = () => { const { doc: d, sel: s } = R.current; const set = new Set(s); const order = d.order.slice(); for (let i = 1; i < order.length; i++) if (set.has(order[i]) && !set.has(order[i - 1])) [order[i], order[i - 1]] = [order[i - 1], order[i]]; commitDoc({ ...d, order }); };
+  const createFrame = () => { const c = R.current.view, f = frame(c.x - 400, c.y - 225, 800, 450, `Frame ${R.current.doc.order.filter(i => R.current.doc.objects[i].type === "frame").length + 1}`); commitDoc(addObjects(R.current.doc, [f])); setSel([f.id]); };
+  const toolEntries: ToolEntry[] = [
+    { id: "text", icon: X.text, label: "Text", desc: "Selects text creation tool", onPick: () => { setTool("text"); setEdit(null); } },
+    { id: "shapes", icon: X.shapes, label: "Shapes and lines", desc: "Shapes and lines", onPick: () => setFly("shapes") },
+    { id: "pen", icon: X.pen, label: "Pen", desc: "Create freehand drawings", onPick: () => { setTool("pen"); setEdit(null); } },
+    { id: "frame", icon: X.frame, label: "Frame", desc: "Add structure to the board", onPick: () => { setTool("frame"); setEdit(null); } },
+    { id: "stickers", icon: X.palette, label: "Stickers, Emoji and GIFs", desc: "Add visual flair", onPick: () => flash("Stickers aren't in MiroIsDead yet") },
+    { id: "comment", icon: X.comment, label: "Comment", desc: "Leave a comment on the board", onPick: () => flash("Comments aren't in MiroIsDead yet") },
+    { id: "hand", icon: X.hand, label: "Hand", desc: "Pan the canvas (H, or hold Space)", onPick: () => { setTool("hand"); setEdit(null); } },
+    { id: "eraser", icon: X.eraser, label: "Eraser", desc: "Drag across objects to delete them", onPick: () => { setTool("eraser"); setEdit(null); } },
+    { id: "connector", icon: X.elbow, label: "Connection line", desc: "Connect objects with lines and arrows", onPick: () => { setTool("connector"); setEdit(null); } },
+    { id: "minimap", icon: X.map, label: "Minimap", desc: "Overview of the whole board (M)", onPick: () => setMap(m => !m) },
+    { id: "keys", icon: X.keys, label: "Keyboard shortcuts", desc: "Every shortcut on one sheet (?)", onPick: () => setHelp(true) },
+  ];
+  const compact = size.h < 720;
   const frameSel = () => { const { doc: d, sel: s } = R.current; const r = frameAround(d, s.filter(i => d.objects[i]?.type !== "frame")); if (r) { commitDoc(r.doc); setSel([r.id]); } };
   const newFrom = (x: number, y: number, kind: Tool): Obj => {
     const L = last.current;
@@ -176,7 +223,7 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
         let ids = s;
         if (shift) { ids = s.includes(id) ? s.filter(i => i !== id) : [...s, id]; setSel(ids); if (!ids.includes(id)) { g.current = null; return; } }
         else if (!s.includes(id)) { ids = [id]; setSel(ids); }
-        g.current = { k: "move", ids: withFrameChildren(d, ids), start: d, w0: w, cp: false, dup: e.altKey, clickId: id, shift, moved: false };
+        const movable = withFrameChildren(d, ids).filter(i => !(d.objects[i] as { locked?: boolean }).locked); if (!movable.length) { g.current = null; return; } g.current = { k: "move", ids: movable, start: d, w0: w, cp: false, dup: e.altKey, clickId: id, shift, moved: false };
       } else { g.current = { k: "marquee", w0: w, base: e.shiftKey ? s : [] }; if (!e.shiftKey) setSel([]); }
       return;
     }
@@ -208,7 +255,7 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
         const movingSet = new Set(gg.ids);
         const moving = unionBox(gg.ids.map(i => gg.start.objects[i]).filter(o => o && isBox(o)).map(o => boxOf(o as any)));
         let gl: Guide[] = [];
-        if (moving && !e.metaKey && !e.ctrlKey) {
+        if (moving && snapRef.current && !e.metaKey && !e.ctrlKey) {
           const others = gg.start.order.filter(i => !movingSet.has(i) && gg.start.objects[i].type !== "connector" && gg.start.objects[i].type !== "frame").map(i => boxOf(gg.start.objects[i] as any));
           const r = snapBox({ ...moving, x: moving.x + dx, y: moving.y + dy }, others, 6 / v.zoom); dx += r.dx; dy += r.dy; gl = r.guides;
         }
@@ -311,7 +358,7 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
     if (mod && e.key === "-") { e.preventDefault(); zoomBy(0.8); return; }
     if (mod && e.key === "0") { e.preventDefault(); setView(v => zoomAt(v, R.current.size, { x: R.current.size.w / 2, y: R.current.size.h / 2 }, 1)); return; }
     if (mod) return;
-    if (e.key === "Escape") { if (g.current) { g.current = null; setDraft(null); setMarq(null); } else if (R.current.tool !== "select") setTool("select"); else setSel([]); setHelp(false); setMenu(false); return; }
+    if (e.key === "Escape") { if (g.current) { g.current = null; setDraft(null); setMarq(null); } else if (R.current.tool !== "select") setTool("select"); else setSel([]); setHelp(false); setMenu(false); setCtx(null); setTools(false); return; }
     if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); del(); return; }
     if (e.key === "?") { setHelp(h => !h); return; }
     if (e.key === "Enter" && s.length === 1 && textual(d.objects[s[0]])) { e.preventDefault(); startEdit(s[0]); return; }
@@ -319,6 +366,12 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
       const o = d.objects[s[0]]; if (o && (o.type === "sticky" || o.type === "shape")) { e.preventDefault(); const side: Side = e.shiftKey ? "s" : "e"; const r = createConnected(d, o.id, side); if (r) { commitDoc(r.doc); startEdit(r.id, true); } return; }
     }
     if (e.key.startsWith("Arrow") && s.length) { e.preventDefault(); const n = e.shiftKey ? 10 : 1; commitDoc(moveObjects(d, withFrameChildren(d, s), e.key === "ArrowLeft" ? -n : e.key === "ArrowRight" ? n : 0, e.key === "ArrowUp" ? -n : e.key === "ArrowDown" ? n : 0)); return; }
+    if (e.altKey && e.code === "Digit1") { e.preventDefault(); fitAll(); return; }
+    if (e.altKey && e.code === "Digit2") { e.preventDefault(); fitSel(); return; }
+    if (e.altKey && e.code === "Digit3") { e.preventDefault(); zoomTo(20); return; }
+    if (e.key === "PageUp" && s.length) { e.preventDefault(); commitDoc(bringToFront(d, s)); return; }
+    if (e.key === "PageDown" && s.length) { e.preventDefault(); commitDoc(sendToBack(d, s)); return; }
+    if (k === "g" && !e.shiftKey && !e.altKey) { setGrid(g => !g); return; }
     if (e.key === "!" || (e.shiftKey && e.code === "Digit1")) { fitAll(); return; }
     if (e.key === "@" || (e.shiftKey && e.code === "Digit2")) { fitSel(); return; }
     if (e.key === "+" || e.key === "=") { zoomBy(1.25); return; }
@@ -357,18 +410,15 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
       <Link href="/app" className="mb-i" aria-label="Back to boards" title="Back to boards">{X.panel}</Link>
       <Link href="/app" className="mb-logo hm" aria-label="MiroIsDead home">miro</Link>
       <button className="mb-i hm" aria-label="Reactions" onClick={() => flash("Reactions are for live sessions")}>{X.smile}</button>
+      <span className="mi-menuwrap"><button className={"mb-i mb-emoji" + (emoji ? " has" : "")} aria-label="Choose emoji" title="Choose emoji" onClick={() => setEmojiPick(p => !p)}>{emoji || <span className="mb-emoji-ph" />}</button>{emojiPick && <EmojiPicker onPick={setEmoji} onClose={() => setEmojiPick(false)} />}</span>
       <input className="mb-title" aria-label="Board title" value={title} placeholder="Untitled" onChange={e => setTitle(e.target.value)} onKeyDown={e => { e.stopPropagation(); if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
-      <span className="mi-menuwrap hm"><button className="mb-i" aria-label="Board options" aria-haspopup="menu" onClick={() => setMenu(m => !m)}>{X.kebab}</button></span>
-      <div className="mi-menuwrap">
-        <button className="mb-i" onClick={() => setMenu(m => !m)} aria-expanded={menu} aria-haspopup="menu" aria-label="Export" title="Export">{X.upload}</button>
-        {menu && <div className="mi-menu mb-menu" role="menu" onPointerDown={e => e.stopPropagation()}>
-          <div className="mb-menu-h">{statusText}</div>
-          <button role="menuitem" onClick={() => { download(`${title || "board"}.svg`, "image/svg+xml", boardToSvg(doc)); setMenu(false); }}>Download SVG</button>
-          <button role="menuitem" onClick={() => { download(`${title || "board"}.miroisdead.json`, "application/json", serialize(boardRef.current)); setMenu(false); }}>Download board file (.json)</button>
-          <button role="menuitem" onClick={() => { navigator.clipboard?.writeText(JSON.stringify(describeScene(boardRef.current), null, 2)).then(() => flash("Scene JSON copied"), () => flash("Couldn't copy")); setMenu(false); }}>Copy scene JSON for an AI agent</button>
-        </div>}
-      </div>
-      <button className="mb-plan hm" onClick={() => flash("MiroIsDead is free and open source")}><b>Free</b> plan {X.chev}</button>
+      <span className="mi-menuwrap"><button className="mb-i" aria-label="Main menu" aria-haspopup="menu" aria-expanded={main} onClick={() => setMain(m => !m)}>{X.kebab}</button>
+        {main && <MainMenu onClose={() => setMain(false)} a={{ rename: () => (document.querySelector(".mb-title") as HTMLInputElement | null)?.select(), duplicate: () => { const b = { ...boardRef.current, id: nid(), title: `${title} copy`, createdAt: Date.now(), updatedAt: Date.now() }; void store.save(b).then(() => flash("Board duplicated. It's on your dashboard."), () => flash("Couldn't duplicate")); }, back: () => (window.location.href = `${BP}/app`), undo: doUndo, redo: doRedo, canUndo: canUndo(hist), canRedo: canRedo(hist), selectAll: () => setSel(doc.order.slice()), dup, del, hasSel: sel.length > 0, minimap: map, toggleMinimap: () => setMap(m => !m), grid, toggleGrid: () => setGrid(g => !g), fullscreen, fit: fitAll, snap, toggleSnap: () => { snapRef.current = !snap; setSnap(s => !s); }, dims, toggleDims: () => setDims(d => !d), shortcuts: () => setHelp(true), flash }} />}</span>
+      <span className="mi-menuwrap">
+        <button className="mb-i" onClick={() => setMenu(m => !m)} aria-expanded={menu} aria-haspopup="menu" aria-label="Export this board" title="Export this board">{X.upload}</button>
+        {menu && <ExportMenu onClose={() => setMenu(false)} a={{ pdf: exportPdf, image: () => void exportPng(), template: saveTemplate, csv: exportCsv, backup: exportBackup, embed: () => setShare("Embed"), drive: () => { exportBackup(); flash("Backup downloaded. Upload it to Drive to keep a copy there."); }, scene: () => void copyScene() }} />}
+      </span>
+      <button className="mb-upg hm" onClick={() => flash("Everything in MiroIsDead is free. Nothing to upgrade.")}>Upgrade</button>
       <span className="mx-sr" data-testid="save-status" role="status">{statusText}</span>
     </header>
     <div className="mb-tr" data-ui style={{ top: banner ? 66 : 10 }}>
@@ -383,20 +433,21 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
       <button className="mb-sharebtn" onClick={() => setShare("Invite")} data-testid="share">Share</button>
     </div>
 
-    <nav className="mb-rail" data-ui aria-label="Tools" style={{ top: banner ? 130 : 80 }}>
+    <nav className="mb-rail" data-ui aria-label="Tools" style={{ top: compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0)) }}>
       <div className="mb-pill">
         <button className="mb-t ai" aria-label="Create with AI" title="Create with AI" onClick={() => { setFly(""); flash("Copy scene JSON in Export to use your own AI agent"); }}>{X.sparkle}</button>
       </div>
       <div className="mb-pill main">
-        {([["select", X.select, "Select"], [null, X.notes, "Notes and docs"], [null, X.tpl, "Templates"], ["sticky", X.sticky, "Sticky note"], ["text", X.text, "Text"]] as [Tool | null, React.ReactNode, string][]).map(([t, ic, label]) => t
+        {([["select", X.select, "Select"], [null, X.notes, "Formats and Flows"], [null, X.tpl, "Templates"], ["sticky", X.sticky, "Sticky note"], ...(compact ? [] : [["text", X.text, "Text"]])] as [Tool | null, React.ReactNode, string][]).map(([t, ic, label]) => t
           ? <button key={t} className={"mb-t" + (tool === t ? " on" : "")} aria-pressed={tool === t} title={`${label} (${TOOLS.find(x => x.tool === t)!.key.toUpperCase()})`} aria-label={label} data-tool={t} onClick={() => { setTool(t); setEdit(null); setFly(""); }}>{ic}</button>
           : <button key={label} className="mb-t" title={label} aria-label={label} onClick={() => { setFly(""); flash(`${label} aren't in MiroIsDead yet`); }}>{ic}</button>)}
-        <button className={"mb-t" + (fly === "shapes" || ["rect", "ellipse", "diamond", "connector"].includes(tool) ? " on" : "")} aria-label="Shapes and lines" title="Shapes and lines" aria-expanded={fly === "shapes"} onClick={() => setFly(f => f === "shapes" ? "" : "shapes")}>{X.shapes}</button>
+        {!compact && <>
+        <button className={"mb-t" + (fly === "shapes" || ["rect", "ellipse", "diamond", "connector"].includes(tool) ? " on" : "")} aria-label="Shapes and lines" title="Shapes and lines (S)" aria-expanded={fly === "shapes"} onClick={() => setFly(f => f === "shapes" ? "" : "shapes")}>{X.shapes}</button>
         <button className={"mb-t" + (tool === "pen" ? " on" : "")} aria-pressed={tool === "pen"} title="Pen (P)" aria-label="Pen" data-tool="pen" onClick={() => { setTool("pen"); setEdit(null); setFly(""); }}>{X.pen}</button>
         <button className={"mb-t" + (tool === "frame" ? " on" : "")} aria-pressed={tool === "frame"} title="Frame (F)" aria-label="Frame" data-tool="frame" onClick={() => { setTool("frame"); setEdit(null); setFly(""); }}>{X.frame}</button>
-        <button className="mb-t" title="Stickers and icons" aria-label="Stickers and icons" onClick={() => { setFly(""); flash("Stickers aren't in MiroIsDead yet"); }}>{X.palette}</button>
-        <button className="mb-t" title="Comment" aria-label="Comment" onClick={() => { setFly(""); flash("Comments aren't in MiroIsDead yet"); }}>{X.comment}</button>
-        <button className={"mb-t" + (fly === "more" || tool === "hand" || tool === "eraser" ? " on" : "")} aria-label="More tools" title="More tools" aria-expanded={fly === "more"} onClick={() => setFly(f => f === "more" ? "" : "more")}>{X.plus}</button>
+        <button className="mb-t" title="Stickers, Emoji and GIFs" aria-label="Stickers, Emoji and GIFs" onClick={() => { setFly(""); flash("Stickers aren't in MiroIsDead yet"); }}>{X.palette}</button>
+        <button className="mb-t" title="Comment (C)" aria-label="Comment" onClick={() => { setFly(""); flash("Comments aren't in MiroIsDead yet"); }}>{X.comment}</button></>}
+        <button className={"mb-t" + (tools || (compact && ["rect", "ellipse", "diamond", "connector", "pen", "frame", "text"].includes(tool)) ? " on" : "")} aria-label="Tools, Media and Integrations" title="Tools, Media and Integrations" aria-expanded={tools} onClick={() => { setFly(""); setTools(t => !t); }}>{X.plus}</button>
       </div>
       <div className="mb-pill hist">
         <button className="mb-t" disabled={!canUndo(hist)} onClick={doUndo} title="Undo (⌘Z)" aria-label="Undo">{X.undo}</button>
@@ -413,17 +464,10 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
         <hr />
         <button role="menuitem" className="mb-f" onClick={() => { setFly(""); flash("Diagramming from text isn't in MiroIsDead yet"); }}><span className="ic">{X.diagram}</span>Diagram</button>
       </div>
-      <div className={"mb-fly more" + (fly === "more" ? " open" : "")} role="menu">
-        <button role="menuitem" className={"mb-f" + (tool === "hand" ? " on" : "")} data-tool="hand" aria-pressed={tool === "hand"} onClick={() => { setTool("hand"); setEdit(null); setFly(""); }}><span className="ic">{X.hand}</span>Hand<kbd>H</kbd></button>
-        <button role="menuitem" className={"mb-f" + (tool === "eraser" ? " on" : "")} data-tool="eraser" aria-pressed={tool === "eraser"} onClick={() => { setTool("eraser"); setEdit(null); setFly(""); }}><span className="ic">{X.eraser}</span>Eraser<kbd>E</kbd></button>
-        <hr />
-        <button role="menuitem" className="mb-f" onClick={() => { setMap(m => !m); setFly(""); }}><span className="ic">{X.map}</span>Minimap<kbd>M</kbd></button>
-        <button role="menuitem" className="mb-f" onClick={() => { setHelp(true); setFly(""); }}><span className="ic">{X.keys}</span>Keyboard shortcuts<kbd>?</kbd></button>
-      </div>
     </nav>
 
-    <div ref={box} className="mi-canvas" tabIndex={0} data-testid="canvas" style={{ cursor, backgroundSize: `${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px, ${gridSize * 3}px ${gridSize * 3}px, ${gridSize * 3}px ${gridSize * 3}px`, backgroundPosition: bgPos }}
-      onMouseDown={e => { if (!(e.target as Element).closest("[data-ui]")) e.preventDefault(); }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onContextMenu={e => e.preventDefault()}>
+    <div ref={box} className="mi-canvas" tabIndex={0} data-testid="canvas" data-active-tool={tool} style={{ cursor, backgroundSize: `${gridSize}px ${gridSize}px, ${gridSize}px ${gridSize}px, ${gridSize * 3}px ${gridSize * 3}px, ${gridSize * 3}px ${gridSize * 3}px`, backgroundPosition: bgPos, backgroundImage: grid ? undefined : "none" }}
+      onMouseDown={e => { if (!(e.target as Element).closest("[data-ui]")) e.preventDefault(); }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onContextMenu={e => { e.preventDefault(); if ((e.target as Element).closest("[data-ui]")) return; const r = rect(), w = toWorld(e); const id = hitTest(R.current.doc, w, tol()); if (id && !R.current.sel.includes(id)) setSel([id]); setCtx({ x: e.clientX - r.left, y: e.clientY - r.top, id }); }}>
       <svg width={size.w} height={size.h} style={{ display: "block", overflow: "hidden" }}>
         <Defs />
         <g transform={`translate(${size.w / 2 - view.x * z} ${size.h / 2 - view.y * z}) scale(${z})`}>
@@ -431,10 +475,12 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
           {/* selection chrome */}
           {tool === "select" && selObjs.map(o => { const b = boundsOf(doc, o); return o.type === "connector" ? <path key={o.id} d={routeConnector(doc, o).path} fill="none" stroke="#4262FF" strokeWidth={px(5)} opacity={0.25} /> : <rect key={o.id} x={b.x - px(2)} y={b.y - px(2)} width={b.w + px(4)} height={b.h + px(4)} fill="none" stroke="#4262FF" strokeWidth={px(1.5)} />; })}
           {tool === "select" && selObjs.length > 1 && selBounds && <rect x={selBounds.x - px(6)} y={selBounds.y - px(6)} width={selBounds.w + px(12)} height={selBounds.h + px(12)} fill="none" stroke="#4262FF" strokeWidth={px(1)} strokeDasharray={`${px(5)} ${px(4)}`} />}
-          {tool === "select" && one && isBox(one) && !edit && <>
+          {tool === "select" && one && isBox(one) && !edit && !(one as { locked?: boolean }).locked && <>
             {HANDLES.map(h => { const p = handlePt(boxOf(one), h), edge = h.length === 1; return <circle key={h} data-h={h} data-testid={`handle-${h}`} cx={p.x} cy={p.y} r={px(edge ? 7 : 6.5)} fill={one.type === "sticky" && edge ? "transparent" : "#fff"} stroke={one.type === "sticky" && edge ? "transparent" : "#8E8E93"} strokeWidth={px(2)} style={{ cursor: CURSOR[h] }} />; })}
             {(one.type === "sticky" || one.type === "shape") && (["n", "e", "s", "w"] as Side[]).map(sd => { const a = anchorPoint(boxOf(one), sd), off = px(22); return <g key={sd} data-h={`dot:${sd}`} data-testid={`dot-${sd}`} style={{ cursor: "copy" }}><circle cx={a.x + DIR[sd].x * off} cy={a.y + DIR[sd].y * off} r={px(9)} fill="transparent" /><circle cx={a.x + DIR[sd].x * off} cy={a.y + DIR[sd].y * off} r={px(3.5)} fill="#4262FF" /></g>; })}
           </>}
+          {dims && tool === "select" && one && isBox(one) && !edit && <text x={one.x + one.w / 2} y={one.y + one.h + px(18)} textAnchor="middle" fontSize={px(12)} fill="#4262FF" fontFamily="var(--ids-font-sans)" style={{ pointerEvents: "none" }}>{Math.round(one.w)} × {Math.round(one.h)}</text>}
+          {tool === "select" && selObjs.some(o => (o as { locked?: boolean }).locked) && selObjs.filter(o => (o as { locked?: boolean }).locked).map(o => { const b = boundsOf(doc, o); return <g key={"lk" + o.id} transform={`translate(${b.x + b.w - px(18)} ${b.y + px(4)}) scale(${px(1)})`} style={{ pointerEvents: "none" }}><rect x="0" y="0" width="16" height="16" rx="4" fill="#fff" stroke="#8E8E93" /><path d="M5 8V6.5a3 3 0 016 0V8M4.5 8h7v5h-7z" fill="none" stroke="#1C1C1E" strokeWidth="1.3" /></g>; })}
           {tool === "select" && one?.type === "connector" && !edit && (() => { const r = resolveConnector(doc, one); return [["ca", r.a], ["cb", r.b]].map(([id, p]) => <circle key={id as string} data-h={id as string} data-testid={`conn-${id}`} cx={(p as Pt).x} cy={(p as Pt).y} r={px(7)} fill="#fff" stroke="#4262FF" strokeWidth={px(2)} style={{ cursor: "grab" }} />); })()}
           {/* snapping guides, marquee, drafts */}
           {guides.map((gd, i) => gd.axis === "x" ? <line key={i} x1={gd.at} x2={gd.at} y1={gd.from - px(12)} y2={gd.to + px(12)} stroke="#E0457B" strokeWidth={px(1)} strokeDasharray={`${px(5)} ${px(4)}`} /> : <line key={i} y1={gd.at} y2={gd.at} x1={gd.from - px(12)} x2={gd.to + px(12)} stroke="#E0457B" strokeWidth={px(1)} strokeDasharray={`${px(5)} ${px(4)}`} />)}
@@ -454,16 +500,22 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
       <button className="x" aria-label="Dismiss suggestions" onClick={() => setChips(false)}>{X.close}</button></div>}
     <div className="mb-ai" data-ui onClick={() => flash("Use “Copy scene JSON for an AI agent” in Export to bring your own AI")}>{X.plusS}<span>Where shall we start?</span>{X.mic}</div>
     <div className="mb-zoom" data-ui>
-      <button className="mb-t sm" onClick={fitAll} aria-label="Fit all" title="Fit all (⇧1)">{X.fit}</button>
-      <button className="mb-t sm" onClick={() => zoomBy(0.8)} aria-label="Zoom out" title="Zoom out (−)">{X.minus}</button>
-      <button className="mb-zv" onClick={() => setView(v => zoomAt(v, size, { x: size.w / 2, y: size.h / 2 }, 1))} title="Reset to 100% (⌘0)" data-testid="zoom-level">{Math.round(z * 100)}%</button>
-      <button className="mb-t sm" onClick={() => zoomBy(1.25)} aria-label="Zoom in" title="Zoom in (+)">{X.plusS}</button>
-      <button className="mb-t sm" onClick={() => setHelp(true)} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">{X.help}</button>
+      <button className={"mb-t sm" + (frames ? " on" : "")} onClick={() => setFrames(f => !f)} aria-label="Frames" title="Frames" aria-expanded={frames}>{X.frame}</button>
+      <button className="mb-t sm" onClick={() => zoomBy(0.8)} aria-label="Zoom out" title="Zoom out (⌘ −)">{X.minus}</button>
+      <span className="mi-menuwrap"><button className={"mb-zv" + (zoomMenu ? " on" : "")} onClick={() => setZoomMenu(m => !m)} title="Zoom and navigation" aria-haspopup="menu" aria-expanded={zoomMenu} data-testid="zoom-level">{Math.round(z * 100)}%</button>
+        {zoomMenu && <ZoomMenu onClose={() => setZoomMenu(false)} zoom={z} setZoom={zoomTo} a={{ fullscreen, minimap: map, toggleMinimap: () => setMap(m => !m), grid, toggleGrid: () => setGrid(g => !g), dims, toggleDims: () => setDims(d => !d), fit: fitAll, fitSel, hasSel: sel.length > 0 }} />}</span>
+      <button className="mb-t sm" onClick={() => zoomBy(1.25)} aria-label="Zoom in" title="Zoom in (⌘ +)">{X.plusS}</button>
+      <span className="mi-menuwrap"><button className={"mb-t sm" + (helpMenu ? " on" : "")} onClick={() => setHelpMenu(m => !m)} aria-label="Help and resources" title="Help and resources" aria-haspopup="menu" aria-expanded={helpMenu}>{X.help}</button>
+        {helpMenu && <HelpMenu onClose={() => setHelpMenu(false)} a={{ feedback: () => window.open("https://github.com/tommy-muckstack/miroisdead/issues/new", "_blank"), help: () => window.open("https://github.com/tommy-muckstack/miroisdead#readme", "_blank"), learn: () => window.open(`${BP}/app`, "_self"), news: () => window.open("https://github.com/tommy-muckstack/miroisdead/commits/main", "_blank"), shortcuts: () => setHelp(true) }} />}</span>
     </div>
+    {frames && <FramesPanel doc={doc} onClose={() => setFrames(false)} onJump={jumpTo} onCreate={createFrame} onRename={id => startEdit(id)} onPresent={() => { const f = doc.order.find(i => doc.objects[i].type === "frame"); if (f) jumpTo(f); fullscreen(); }} />}
+    {ctx && <ContextMenu x={ctx.x} y={ctx.y} canvas={size} onClose={() => setCtx(null)} target={ctx.id ? doc.objects[ctx.id] : null} a={{ copy: () => copy(false), copyLink: () => copyLink(ctx.id ?? undefined), copyImage: () => void copyImage(), dup, del, comment: () => flash("Comments aren't in MiroIsDead yet"), copyStyle, pasteStyle, canPasteStyle: !!styleClip.current, clear: clearContent, front: () => commitDoc(bringToFront(doc, sel)), back: () => commitDoc(sendToBack(doc, sel)), forward, backward, link: () => flash("Links on objects aren't in MiroIsDead yet"), lock: toggleLock, locked: !!(ctx.id && (doc.objects[ctx.id] as { locked?: boolean }).locked), frame: frameSel, template: saveTemplate, csv: exportCsv, paste: () => void paste(), canPaste: clip.current.length > 0, selectAll: () => setSel(doc.order.slice()), fit: fitAll, grid: () => setGrid(g => !g), gridOn: grid }} />}
+    {tool === "sticky" && <StickyPicker top={compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 250 + (banner ? 56 : 0))} value={last.current.stickyColor} onPick={c => { last.current.stickyColor = c; if (sel.length) patchSel({ color: c } as Partial<Obj>); setTool(t => t); }} />}
+    {tools && <ToolsPanel top={compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0))} onClose={() => setTools(false)} tools={toolEntries} />}
     {status !== "saved" && <div className="mb-save" data-ui>{statusText}</div>}
     {share && <ShareModal tab={share} setTab={setShare} onClose={() => setShare("")} who={who} onCopy={() => { navigator.clipboard?.writeText(location.href).then(() => flash("Link copied"), () => flash("Couldn't copy")); }} onExportSvg={() => { download(`${title || "board"}.svg`, "image/svg+xml", boardToSvg(doc)); }} onExportJson={() => download(`${title || "board"}.miroisdead.json`, "application/json", serialize(boardRef.current))} />}
     {map && <Minimap doc={doc} view={view} size={size} onJump={(x, y) => setView(v => ({ ...v, x, y }))} />}
-    {help && <ShortcutSheet onClose={() => setHelp(false)} />}
+    {help && <ShortcutsPanel onClose={() => setHelp(false)} />}
     {toast && <div className="mi-toast" role="status">{toast}</div>}
   </div>;
 }
