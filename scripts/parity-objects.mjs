@@ -1,0 +1,13 @@
+import { chromium } from "@playwright/test";
+const OUT = process.env.OUT, BASE = "http://localhost:3000/miroisdead";
+const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1512, height: 675 } });
+p.on("pageerror", e => console.log("pageerror:", e.message));
+const shot = (n) => p.screenshot({ path: `${OUT}/${n}.png` });
+await p.goto(`${BASE}/login`); await p.getByText("Sign in with the demo account instead").click(); await p.waitForURL("**/app"); await p.waitForSelector("[data-testid=board-card]");
+await p.getByTestId("new-blank").click(); await p.waitForSelector("[data-testid=board-editor]"); await p.waitForTimeout(300);
+await p.getByLabel("Tools, Media and Integrations").click(); await p.getByText("Stickers, Emoji and GIFs").first().click(); await p.waitForTimeout(300); await shot("board-stickers");
+await p.getByRole("button", { name: "Insert 🎯" }).click(); await p.waitForTimeout(200);
+const r = await p.getByTestId("canvas").boundingBox();
+await p.keyboard.press("n"); await p.mouse.click(r.x + r.width / 2 - 260, r.y + r.height / 2); await p.keyboard.type("Rotate me"); await p.keyboard.press("Escape"); await p.mouse.click(r.x + r.width / 2 - 260, r.y + r.height / 2); await p.waitForTimeout(200);
+const h = await p.getByTestId("handle-rot").boundingBox(); await p.mouse.move(h.x + h.width / 2, h.y + h.height / 2); await p.mouse.down(); await p.mouse.move(h.x + 120, h.y - 60, { steps: 10 }); await p.mouse.up(); await p.waitForTimeout(300); await shot("board-rotated");
+console.log("done"); await b.close();

@@ -1,5 +1,5 @@
 import React from "react";
-import type { CommentObj, ConnectorObj, Doc, FrameObj, Id, Obj, PenObj, ShapeObj, StickyObj, TextObj } from "@/lib/canvas/types";
+import type { CommentObj, ConnectorObj, Doc, FrameObj, Id, ImageObj, Obj, PenObj, ShapeObj, StickyObj, TextObj } from "@/lib/canvas/types";
 import { LINE_HEIGHT, fitFontSize, wrapText } from "@/lib/canvas/text";
 import { routeConnector } from "@/lib/canvas/connectors";
 import { renderOrder } from "@/lib/canvas/doc";
@@ -61,6 +61,9 @@ export const penPath = (pts: { x: number; y: number }[]): string => {
   for (let i = 1; i < pts.length - 1; i++) d += `Q${pts[i].x} ${pts[i].y} ${(pts[i].x + pts[i + 1].x) / 2} ${(pts[i].y + pts[i + 1].y) / 2}`;
   const l = pts[pts.length - 1]; return d + `L${l.x} ${l.y}`;
 };
+const ImageView = React.memo(function ImageView({ o }: { o: ImageObj }) {
+  return <g transform={`translate(${o.x} ${o.y})`} data-obj={o.id}><image href={o.src} width={o.w} height={o.h} preserveAspectRatio="none" style={{ pointerEvents: "none" }} /><title>{o.alt ?? "Image"}</title></g>;
+});
 const PenView = React.memo(function PenView({ o }: { o: PenObj }) {
   return <path data-obj={o.id} transform={`translate(${o.x} ${o.y})`} d={penPath(o.points)} fill="none" stroke={o.stroke} strokeWidth={o.width} strokeLinecap="round" strokeLinejoin="round" />;
 });
@@ -95,13 +98,15 @@ export function Defs() {
 /** Renders every object of a doc as SVG children. Shared by the editor, board thumbnails and SVG export. */
 export function Scene({ doc, editing, comments = "none", selected }: { doc: Doc; editing?: Id | null; comments?: "none" | "show"; selected?: Id[] }) {
   const order = renderOrder(doc), boxes = order.filter(i => doc.objects[i].type !== "connector" && doc.objects[i].type !== "comment"), conns = order.filter(i => doc.objects[i].type === "connector"), pins = comments === "show" ? order.filter(i => doc.objects[i].type === "comment") : [];
-  const view = (o: Obj) => {
+  const view = (o: Obj) => { const v = raw(o); return o.type !== "connector" && o.type !== "comment" && o.rot ? <g key={o.id} transform={`rotate(${o.rot} ${o.x + o.w / 2} ${o.y + o.h / 2})`}>{v}</g> : v; };
+  const raw = (o: Obj) => {
     const hide = editing === o.id;
     switch (o.type) {
       case "sticky": return <StickyView key={o.id} o={o} hide={hide} />; case "shape": return <ShapeView key={o.id} o={o} hide={hide} />;
       case "text": return <TextView key={o.id} o={o} hide={hide} />; case "frame": return <FrameView key={o.id} o={o} hide={hide} />;
       case "pen": return <PenView key={o.id} o={o} />; case "connector": return <ConnectorView key={o.id} doc={doc} o={o} hideLabel={hide} />;
       case "comment": return <CommentPinView key={o.id} c={o} selected={selected?.includes(o.id)} />;
+      case "image": return <ImageView key={o.id} o={o} />;
     }
   };
   return <>{boxes.map(i => view(doc.objects[i]))}{conns.map(i => view(doc.objects[i]))}{pins.map(i => view(doc.objects[i]))}</>;

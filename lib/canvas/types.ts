@@ -6,19 +6,21 @@ export type Side = "n" | "e" | "s" | "w";
 export type ShapeKind = "rect" | "round" | "ellipse" | "diamond" | "triangle";
 export type ConnectorStyle = "elbow" | "straight" | "curve";
 
-export interface StickyObj extends Box { id: Id; type: "sticky"; text: string; color: string; fontSize: number | "auto"; locked?: boolean; private?: boolean; group?: string }
-export interface ShapeObj extends Box { id: Id; type: "shape"; shape: ShapeKind; text: string; fill: string; stroke: string; filled: boolean; dashed: boolean; fontSize: number; locked?: boolean; group?: string }
-export interface TextObj extends Box { id: Id; type: "text"; text: string; fontSize: number; color: string; bold: boolean; locked?: boolean; group?: string }
+export interface StickyObj extends Box { id: Id; type: "sticky"; text: string; color: string; fontSize: number | "auto"; locked?: boolean; private?: boolean; group?: string; rot?: number }
+export interface ShapeObj extends Box { id: Id; type: "shape"; shape: ShapeKind; text: string; fill: string; stroke: string; filled: boolean; dashed: boolean; fontSize: number; locked?: boolean; group?: string; rot?: number }
+export interface TextObj extends Box { id: Id; type: "text"; text: string; fontSize: number; color: string; bold: boolean; locked?: boolean; group?: string; rot?: number }
 /** points are relative to (x, y), which is the stroke's bounding-box origin. */
-export interface PenObj extends Box { id: Id; type: "pen"; points: Pt[]; stroke: string; width: number; locked?: boolean; group?: string }
-export interface FrameObj extends Box { id: Id; type: "frame"; name: string; locked?: boolean; group?: string }
+export interface PenObj extends Box { id: Id; type: "pen"; points: Pt[]; stroke: string; width: number; locked?: boolean; group?: string; rot?: number }
+export interface FrameObj extends Box { id: Id; type: "frame"; name: string; locked?: boolean; group?: string; rot?: number }
+/** Picture: `src` is a data URL (compressed client-side) or https URL. Kept inside the board document so no file storage is needed. */
+export interface ImageObj extends Box { id: Id; type: "image"; src: string; alt?: string; locked?: boolean; group?: string; rot?: number }
 export interface CommentMsg { by: string; text: string; at: number }
 /** Comment pin: x,y is the pin anchor (bottom-left of the bubble); w/h are the hit box. */
-export interface CommentObj extends Box { id: Id; type: "comment"; thread: CommentMsg[]; resolved?: boolean; locked?: boolean; group?: string }
+export interface CommentObj extends Box { id: Id; type: "comment"; thread: CommentMsg[]; resolved?: boolean; locked?: boolean; group?: string; rot?: number }
 export type End = { id: Id; side?: Side } | { x: number; y: number };
 export interface ConnectorObj { id: Id; type: "connector"; from: End; to: End; style: ConnectorStyle; startArrow: boolean; endArrow: boolean; dashed: boolean; stroke: string; label: string; locked?: boolean; group?: string }
 
-export type BoxObj = StickyObj | ShapeObj | TextObj | PenObj | FrameObj | CommentObj;
+export type BoxObj = StickyObj | ShapeObj | TextObj | PenObj | FrameObj | CommentObj | ImageObj;
 export type Obj = BoxObj | ConnectorObj;
 export type ObjType = Obj["type"];
 

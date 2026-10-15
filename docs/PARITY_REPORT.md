@@ -55,7 +55,10 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 | Board | Grouping (⌘G / ⌘⇧G, toolbar button, click selects the group, click again drills into a member) | match | — | PR #8 |
 | Board | ⌘K command palette (create, view, edit, board, facilitation, help commands) | match | S3 | PR #8 |
 | Board | Live collaboration: collaborator cursors with name chips, avatar stack in the header, selection highlights, document relay | match | S3 | Zero-cost design: WebSocket relay in a Vercel Function with in-memory rooms (nothing stored, session-only) + BroadcastChannel for same-browser tabs; a reconnect or a new instance re-syncs from the saved board. Last-writer-wins. PR #10 |
-| Board | Rotation handle, images/file upload, tables/docs/slides formats, stickers | missing | S1 | Next PRs. |
+| Board | Rotation handle (bottom-left like Miro, snaps near 45°), rotated selection chrome and hit-testing | match | S3 | Resize handles stay axis-aligned for rotated objects. PR #12 |
+| Board | Images: Upload (tools panel), drag-and-drop, paste; compressed client-side and stored inside the board (no file storage) | match | S3 | ≤ ~250 KB per image; boards over ~700 KB warn (Firestore 1 MiB doc cap). PR #12 |
+| Board | Stickers, Emoji and GIFs panel | match | S3 | Emoji sets insert as large text objects; GIF/sticker packs need a paid API (exception). PR #12 |
+| Board | Docs / Tables / Slides formats | missing | S2 | Separate Miro products; not replicated. |
 | Share | Invite tab (email field, link row with Can edit/view, Copy team invite link, Board access, Anyone with the link) | match | — | "Anyone with the link" really works: No access / Can view / Can edit persisted on the board; public URL `/b/{id}` with a read-only viewer or guest editing. Emails aren't sent (no mail service); the link is copied for you to send. PR #6 |
 | Share | Embed tab (private notice, start view Board/First frame, View only, preview, Embed code, Copy code / Copy link) | match | — | iframe embeds the public viewer (`?embed=1`). PR #6 |
 | Share | Publish tab (community template / custom template cards) | match | S3 | Custom templates are free (saved locally); community publishing opens a GitHub issue. PR #6 |
@@ -73,5 +76,5 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 2. **Mega-menus**: built in PR #11.
 3. **Logos, photos and store badges**: text stand-ins instead of third-party marks (trademark). Keep, or commission original illustrations.
 4. **Email invites**: no mail service; the Share dialog copies the link instead. Wire a provider only if you accept the cost.
-5. **Rotation handle, images/uploads, Docs/Tables/Slides formats, stickers, AI sidekick**: not built. Images/uploads need storage (Firebase Storage is in the shared project; costs apply above the free tier). The AI bar stays a bring-your-own-agent flow (copy scene JSON).
+5. **Rotation, images, stickers**: built in PR #12 with images stored inside the board document (no storage bill). Docs/Tables/Slides formats and GIF packs are not replicated; the AI bar stays a bring-your-own-agent flow (copy scene JSON).
 6. **Mobile (390) for the logged-in app**: Miro's mobile web is a reduced experience that hands off to its native apps; the clone's phone layout works but was not compared screen-by-screen.

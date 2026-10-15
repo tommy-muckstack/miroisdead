@@ -239,3 +239,16 @@ test("live session: a second tab on the same board sees the first tab's sticky a
   await expect(other.getByTestId("peer-avatars")).toContainText("2");
   await other.close();
 });
+
+test("images: upload adds a picture; stickers insert emoji; rotation handle rotates a sticky", async ({ page }) => {
+  await newBoard(page);
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQIW2P8z8DwnwEKGBkYGP4DAAwMAwF+Wk1fAAAAAElFTkSuQmCC", "base64");
+  await page.getByTestId("upload-input").setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: png });
+  await expect(page.locator("svg image")).toHaveCount(1);
+  await page.keyboard.press("Escape"); await page.mouse.click(700, 500);
+  await page.getByLabel("Stickers, Emoji and GIFs").click(); await page.getByRole("button", { name: "Insert 🚀" }).click();
+  await expect(page.locator("svg text").filter({ hasText: "🚀" })).toBeVisible();
+  await page.keyboard.press("n"); await click(page, -250, 0); await page.keyboard.type("spin"); await page.keyboard.press("Escape"); await click(page, -250, 0);
+  const h = (await page.getByTestId("handle-rot").boundingBox())!; await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2); await page.mouse.down(); await page.mouse.move(h.x + 200, h.y - 150, { steps: 8 }); await page.mouse.up();
+  const t = await page.locator("svg g[data-obj]").last().locator("xpath=..").getAttribute("transform"); expect(t ?? "").toContain("rotate(");
+});

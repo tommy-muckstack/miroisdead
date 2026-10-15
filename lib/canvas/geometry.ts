@@ -7,6 +7,8 @@ export const SIDES: Side[] = ["n", "e", "s", "w"];
 
 export const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 export const center = (b: Box): Pt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
+/** Rotate a point around a centre by degrees (positive = clockwise on screen). */
+export const rotatePt = (p: Pt, c: Pt, deg: number): Pt => { const r = (deg * Math.PI) / 180, cos = Math.cos(r), sin = Math.sin(r), dx = p.x - c.x, dy = p.y - c.y; return { x: c.x + dx * cos - dy * sin, y: c.y + dx * sin + dy * cos }; };
 export const pointInBox = (p: Pt, b: Box, pad = 0) => p.x >= b.x - pad && p.x <= b.x + b.w + pad && p.y >= b.y - pad && p.y <= b.y + b.h + pad;
 export const boxesIntersect = (a: Box, b: Box) => a.x <= b.x + b.w && a.x + a.w >= b.x && a.y <= b.y + b.h && a.y + a.h >= b.y;
 export const boxContains = (outer: Box, inner: Box) => inner.x >= outer.x && inner.y >= outer.y && inner.x + inner.w <= outer.x + outer.w && inner.y + inner.h <= outer.y + outer.h;
