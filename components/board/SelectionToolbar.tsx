@@ -5,6 +5,7 @@ import { INK_COLORS, SHAPE_FILLS, STICKY_COLORS } from "@/lib/canvas/types";
 import type { Align } from "@/lib/canvas/doc";
 import { I } from "./icons";
 import { X } from "@/components/mxi";
+import { kbd, useMac } from "@/lib/keys";
 
 type Props = {
   doc: Doc; ids: Id[]; screenBox: Box; canvas: { w: number; h: number };
@@ -22,7 +23,7 @@ const Sep = () => <span className="mi-sep" />;
 const SHAPES: { k: ShapeKind; label: string; i: React.ReactNode }[] = [{ k: "rect", label: "Rectangle", i: I.rect }, { k: "round", label: "Rounded", i: I.rect }, { k: "ellipse", label: "Ellipse", i: I.ellipse }, { k: "diamond", label: "Diamond", i: I.diamond }, { k: "triangle", label: "Triangle", i: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d="M12 4l9 16H3z" /></svg> }];
 
 export function SelectionToolbar({ doc, ids, screenBox, canvas, patch, onDelete, onDuplicate, onFront, onBack, onFrame, onAlign, onDistribute, onGroup, onConvert }: Props) {
-  const [pal, setPal] = React.useState(false), [more, setMore] = React.useState(false), [convert, setConvert] = React.useState(false);
+  const [pal, setPal] = React.useState(false), [more, setMore] = React.useState(false), [convert, setConvert] = React.useState(false); const mac = useMac();
   const objs = ids.map(i => doc.objects[i]).filter(Boolean);
   if (!objs.length) return null;
   const types = new Set(objs.map(o => o.type)), one = objs.length === 1 ? objs[0] : null;
@@ -73,7 +74,7 @@ export function SelectionToolbar({ doc, ids, screenBox, canvas, patch, onDelete,
       <Btn title="Distribute horizontally" onClick={() => onDistribute("h")}><b style={{ fontSize: 11 }}>⇹</b></Btn>
       <Btn title="Distribute vertically" onClick={() => onDistribute("v")}><b style={{ fontSize: 11 }}>⇳</b></Btn>
       <Sep /><Btn title="Frame selection (F)" onClick={onFrame}>{I.frame}</Btn>
-      {onGroup && <Btn title={objs.some(o => o.group) ? "Ungroup (⌘⇧G)" : "Group (⌘G)"} on={objs.every(o => o.group) && objs.length > 1} onClick={onGroup}>{X.group}</Btn>}
+      {onGroup && <Btn title={kbd(objs.some(o => o.group) ? "Ungroup (⌘⇧G)" : "Group (⌘G)", mac)} on={objs.every(o => o.group) && objs.length > 1} onClick={onGroup}>{X.group}</Btn>}
     </>}
     {types.size !== 1 || one?.type !== "sticky" ? <Sep /> : null}
     <span className="mi-menuwrap"><button type="button" className={"mi-tb" + (more ? " on" : "")} aria-label="More options" aria-expanded={more} onClick={() => setMore(m => !m)}>{X.kebab}</button>
