@@ -230,3 +230,12 @@ test("presenting walks the frames with arrow keys and Escape exits", async ({ pa
   await page.getByLabel("Present", { exact: true }).click(); await expect(page.getByTestId("present-bar")).toContainText("1 / 3");
   await page.keyboard.press("ArrowRight"); await expect(page.getByTestId("present-bar")).toContainText("2 / 3"); await page.keyboard.press("Escape"); await expect(page.getByTestId("present-bar")).toHaveCount(0);
 });
+
+test("live session: a second tab on the same board sees the first tab's sticky and cursor avatar count", async ({ page, context }) => {
+  await newBoard(page);
+  const url = page.url(); const other = await context.newPage(); await other.goto(url); await other.waitForSelector("[data-testid=board-editor]");
+  await page.keyboard.press("n"); await click(page, 0, 0); await page.keyboard.type("Live"); await page.keyboard.press("Escape");
+  await expect(other.locator("svg text").filter({ hasText: "Live" })).toBeVisible({ timeout: 5000 });
+  await expect(other.getByTestId("peer-avatars")).toContainText("2");
+  await other.close();
+});
