@@ -1,7 +1,7 @@
 import { test, expect, Page } from "@playwright/test";
 
 const MOD = process.platform === "darwin" ? "Meta" : "Control";
-async function demo(page: Page) { await page.goto("/miroisdead/login"); await page.getByText("Use the demo account").click(); await page.waitForURL("**/miroisdead/app"); }
+async function demo(page: Page) { await page.goto("/miroisdead/login"); await page.getByText("Sign in with the demo account instead").click(); await page.waitForURL("**/miroisdead/app"); }
 async function newBoard(page: Page, tpl = "blank") { await demo(page); await page.getByTestId(`new-${tpl}`).click(); await page.waitForSelector("[data-testid=board-editor]"); await page.waitForTimeout(300); }
 const canvas = (page: Page) => page.getByTestId("canvas");
 async function at(page: Page, x: number, y: number) { const b = (await canvas(page).boundingBox())!; return { x: b.x + b.width / 2 + x, y: b.y + b.height / 2 + y }; }

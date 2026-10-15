@@ -49,7 +49,7 @@ export function MiAuth({ config, demo, to, mode }: Props) {
       {!su && <p className="ma-fine">New to MiroIsDead? <Link href="/signup">Create an account</Link>. No bots, no CAPTCHA.</p>}
       {su && <p className="ma-fine">By signing up, you agree to the <a href="https://github.com/tommy-muckstack/miroisdead/blob/main/LICENSE">license</a>. MiroIsDead is independent and not affiliated with Miro.</p>}
     </main>
-    {demo && su && <button type="button" className="ma-demo" disabled={busy} onClick={demoLogin}>Use the demo account</button>}{demo && !su && <button type="button" className="ma-demo ma-demo-hidden" disabled={busy} onClick={demoLogin}>Use the demo account</button>}</div>;
+    {demo && su && <button type="button" className="ma-demo" disabled={busy} onClick={demoLogin}>Use the demo account</button>}</div>;
 }
 /** Decorative board chrome behind the sign-up card (matches the editor's header, rail and right pill). */
 function FakeBoard() {
