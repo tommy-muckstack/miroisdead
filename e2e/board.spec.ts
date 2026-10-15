@@ -181,3 +181,22 @@ test("sign out returns to the marketing page and protects the app", async ({ pag
   await demo(page); await page.getByRole("button", { name: "Sign out" }).click(); await page.waitForURL(/\/miroisdead\/?$/);
   await page.goto("/miroisdead/app"); await expect(page).toHaveURL(/login/);
 });
+
+test.describe("marketing page", () => {
+  test("hero tabs swap the screenshot and the price calculator compares to Miro", async ({ page }) => {
+    await page.goto("/miroisdead");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("One endless canvas");
+    await expect(page.getByTestId("tabpanel").locator("img")).toHaveAttribute("src", /research\.png$/);
+    await page.getByRole("tab", { name: "Diagrams" }).click();
+    await expect(page.getByTestId("tabpanel").locator("img")).toHaveAttribute("src", /diagrams\.png$/);
+    await expect(page.getByTestId("cost-starter")).toHaveText("$960"); await expect(page.getByTestId("cost-ours")).toHaveText("$0");
+    await page.locator("#seats").fill("50");
+    await expect(page.getByTestId("cost-starter")).toHaveText("$4,800"); await expect(page.getByTestId("cost-business")).toHaveText("$12,000");
+    await expect(page.getByTestId("feature-table").locator("tbody tr")).toHaveCount(7);
+  });
+  test("every homepage CTA leads to login and the images resolve", async ({ page, request }) => {
+    await page.goto("/miroisdead");
+    await page.getByRole("link", { name: "Get started free" }).first().click(); await expect(page).toHaveURL(/\/miroisdead\/login/);
+    for (const n of ["research", "roadmap", "diagrams", "workshops", "canvas", "quick-create", "connectors", "frames"]) expect((await request.get(`/miroisdead/home/${n}.png`)).status()).toBe(200);
+  });
+});

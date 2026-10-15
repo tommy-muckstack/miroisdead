@@ -12,7 +12,7 @@ kbd{font-family:var(--ids-font-sans);font-size:12px;font-weight:600;background:v
 .mi-tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:40px auto 0}
 .mi-tab{border:1px solid var(--ids-color-border);background:#fff;border-radius:var(--ids-radius-pill);padding:10px 20px;font-weight:600;cursor:pointer;font-size:15px;transition:all .15s}
 .mi-tab:hover{border-color:var(--ids-color-text)}.mi-tab[aria-selected=true]{background:var(--ids-color-text);color:#fff;border-color:var(--ids-color-text)}
-.mi-shot{width:100%;display:block;border-radius:16px;border:1px solid var(--ids-color-border);box-shadow:var(--ids-shadow-lg);background:#fff}
+.mi-shot{width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;display:block;border-radius:16px;border:1px solid var(--ids-color-border);box-shadow:var(--ids-shadow-lg);background:#fff}
 .mi-tabpanel{max-width:1100px;margin:24px auto 0;text-align:center}.mi-tabpanel h3{font-family:var(--ids-font-display);font-size:28px;letter-spacing:-.03em;font-weight:500;margin:24px 0 8px}
 .mi-stats{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:40px}
 .mi-stat{background:var(--ids-color-surface-alt);border-radius:20px;padding:32px}.mi-stat b{display:block;font-family:var(--ids-font-display);font-size:56px;letter-spacing:-.04em;line-height:1;font-weight:500}.mi-stat span{display:block;margin-top:10px;color:var(--ids-color-text-muted)}

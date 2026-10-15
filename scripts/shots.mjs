@@ -40,6 +40,7 @@ await shot(`${OUT}/09-pen-and-shapes.png`);
 
 const m = await ctx.newPage(); await m.setViewportSize({ width: 1440, height: 900 });
 await m.goto(`${BASE}/`); await m.waitForTimeout(800); await m.screenshot({ path: `${OUT}/01-marketing-top.png` });
+await m.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 500) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); } window.scrollTo(0, 0); }); await m.waitForTimeout(500);
 await m.screenshot({ path: `${OUT}/02-marketing-full.png`, fullPage: true });
 await m.locator("#pricing").scrollIntoViewIfNeeded(); await m.waitForTimeout(500); await m.locator("#pricing").screenshot({ path: `${OUT}/02b-marketing-pricing.png` });
 const mob = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }); const mp = await mob.newPage(); await mp.goto(`${BASE}/`); await mp.waitForTimeout(800); await mp.screenshot({ path: `${OUT}/10-marketing-mobile.png` });

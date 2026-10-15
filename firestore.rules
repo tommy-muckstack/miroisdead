@@ -1,0 +1,10 @@
+rules_version = '2';
+// Boards are only reached through the server API (firebase-admin), which scopes every read/write to the signed-in uid.
+// These rules additionally lock direct client access to the owner, matching users/{uid}/miroisdead_boards/{id}.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/miroisdead_boards/{boardId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
