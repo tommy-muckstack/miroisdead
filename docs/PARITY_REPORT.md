@@ -71,9 +71,12 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 - "Contact sales" → "View source"; "No password required" → password sign-in copy; reCAPTCHA / region sign-in / enterprise SSO are not applicable.
 - Paid Miro features are built as free equivalents; Upgrade / Free-plan chrome and the notification banner were removed on the owner's request (2026-10-15), and sign-in is Google + email only.
 
+### Self-tests from the brief (2026-10-15, `scripts/qa-selftest.mjs`)
+Comment tool (C + click → thread, post), image upload, rotation handle (shape rotates), snapping guides (pink guide appears while dragging a sticky into alignment), pinch zoom (Ctrl+wheel = trackpad pinch → 165 % after one tick), and the "?" shortcuts panel all work. Miro's own logged-out landing/login/signup were compared in earlier passes (PR #1/#2) and their layout is unchanged.
+
+## Analytics
 ## QA findings (hands-on pass, 2026-10-15)
 41 findings from the external QA pass; each is closed here as fixed (PR) or a justified exception.
-
 | # | Finding | Status | Where |
 |---|---|---|---|
 | 1 | Board list › Rename does nothing visible | fixed: "Rename board" modal (Board name, Save/Cancel) | PR #19 |
@@ -91,7 +94,6 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 | 36 | Recents thumbnails | fixed: list view shows a Miro-style board icon; grid view keeps the live thumbnail | PR #26 |
 | 37 | Profile menu | exception: no Upgrade item (owner rule); "MiroIsDead Marketplace" is the Miro-equivalent label under the "say MiroIsDead wherever Miro says Miro" rule | — |
 | 6 | Hover actions, Today/Yesterday, truncated owner | fixed: Last opened says Today / Yesterday / date; the owner column keeps clear of the hover buttons | PR #19 |
-
 PostHog project 666931 (IsDead family) with the taxonomy in `docs/ANALYTICS.md`; PR #16.
 
 ## Open items needing a human decision

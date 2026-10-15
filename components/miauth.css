@@ -52,3 +52,7 @@
 .ma-frl{background:#fff;border-radius:16px;padding:4px;display:flex;flex-direction:column;gap:4px;box-shadow:0 2px 4px rgba(34,36,40,.08)}.ma-frl .ma-fi.plus{background:#191812;color:#fff;border-radius:8px;width:28px;height:28px;margin:4px}.ma-frl.sm .ma-fi{color:#8c8b85}
 @media (max-width:640px){.ma-fake{top:56px}.ma-ftr,.ma-frail{display:none}.ma-trouble{font-size:13px}}
 .ma-flogo{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:700;letter-spacing:-.02em}
+
+.ma-vstate{margin:18px 0 16px;padding:12px 14px;border-radius:8px;background:#f4f4f2;color:#555;font-size:14px}.ma-vstate.ok{background:#e6f7ec;color:#0a7a3d;font-weight:600}
+.ma-chips{display:flex;flex-wrap:wrap;gap:8px}.ma-chips button{height:36px;padding:0 14px;border-radius:99px;border:1px solid #c6c6c4;background:#fff;font:inherit;font-size:14px;cursor:pointer;color:#222428}.ma-chips button.on{border-color:#2e4de6;background:#eef1ff;color:#2e4de6;font-weight:600}
+.ma-sub b{font-weight:600}

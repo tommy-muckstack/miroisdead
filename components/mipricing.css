@@ -8,15 +8,15 @@
 .mpr-h{height:195px;padding-top:96px;text-align:center}.mpr-h h1{margin:0;font-size:48px;line-height:52.8px;font-weight:500;letter-spacing:-.02em}
 .mpr-tog{display:flex;width:max-content;margin:0 0 17px max(24px,calc(50% - 620px));background:#e4e4e8;border-radius:99px;padding:4px;gap:0}
 .mpr-tog button{border:0;background:transparent;border-radius:99px;height:30px;padding:0 12px;font:inherit;font-size:14px;color:#555a6a;cursor:pointer;min-width:74px}.mpr-tog button.on{background:#fff;color:#1c1c1e;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12);min-width:137px}
-.mpr-plans{display:grid;grid-template-columns:repeat(4,304px);gap:8px;width:1240px;margin:0 auto;align-items:start;position:relative;padding-top:0}
+.mpr-plans{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;width:min(1320px,calc(100% - 48px));margin:0 auto;align-items:start;position:relative;padding-top:0}
 .mpr-tog{position:relative}
-.mpr-plan{position:relative;background:#fff;border-radius:20px;height:1053px;padding:26px;font-size:14px}
-.mpr-plan.biz{margin-top:-4px;height:1057px;border:1px solid #4262ff;padding:25px}
+.mpr-plan{position:relative;background:#fff;border-radius:20px;min-height:1053px;height:auto;padding:26px 26px 40px;font-size:14px;display:flex;flex-direction:column}
+.mpr-plan.biz{margin-top:-4px;min-height:1057px;border:1px solid #4262ff;padding:25px 25px 40px}
 .mpr-tag{position:absolute;left:50%;top:-12px;transform:translateX(-50%);height:27px;padding:0 14px;border-radius:99px;background:#4262ff;color:#fff;font-size:14px;line-height:27px;white-space:nowrap}
 .mpr-plan h3{margin:0;font-size:32px;line-height:36.8px;font-weight:500;letter-spacing:-.01em}.mpr-plan.biz h3{margin-top:2px}
 .mpr-plan .d{margin:22px 0 0;height:80px;font-size:14px;line-height:19.6px;color:#212529}
 .mpr-price{height:43px;display:flex;align-items:flex-end;gap:4px;position:relative}.mpr-plan .n{font-size:32px;line-height:38.4px;font-weight:500;letter-spacing:-.01em;position:absolute;left:0;top:0}
-.mpr-price .s{margin-left:44px;font-size:14px;line-height:16.8px;width:200px;align-self:flex-start;margin-top:19px}.mpr-plan.biz .s{margin-left:50px}.mpr-price .s u{text-decoration:underline dotted}
+.mpr-price .s{margin-left:6px;font-size:14px;line-height:16.8px;width:auto;white-space:nowrap;align-self:flex-start;margin-top:19px}.mpr-plan.biz .s{margin-left:6px}.mpr-plan .n{position:static}.mpr-price .s u{text-decoration:underline dotted}
 .mpr-price .cust{font-size:14px;line-height:18.9px;align-self:flex-end;margin-bottom:6px}.mpr-price .cust b{font-weight:600}
 .mpr-btn{display:flex;align-items:center;justify-content:center;height:49px;border:1px solid #c7c9d1;border-radius:8px;background:#fff;color:#1c1c1e;font-size:18px;font-weight:600;text-decoration:none;font-family:var(--ids-font-display),sans-serif;letter-spacing:-.01em}
 .mpr-btn.pri{background:#4262ff;border-color:#4262ff;color:#fff}.mpr-btn:hover{background:#f4f4f7}.mpr-btn.pri:hover{background:#3555e8}
@@ -24,8 +24,8 @@
 .mpr-plan>.mpr-btn{margin-top:47px}
 .mpr-try{margin:16px 0 0;text-align:center;font-size:18px;line-height:24.3px}.mpr-try a{color:#3859ff}
 .mpr-show{display:none}
-.mpr-feats{position:absolute;left:26px;right:26px;top:368px}.mpr-plan.biz .mpr-feats{left:25px;right:25px}
-.mpr-head{display:flex;justify-content:space-between;align-items:flex-start;font-size:16px;line-height:24px}.mpr-head b{font-weight:600;max-width:205px}
+.mpr-feats{position:static;margin-top:28px}
+.mpr-head{display:flex;justify-content:space-between;align-items:flex-start;font-size:16px;line-height:24px}.mpr-head b{font-weight:600}
 .mpr-feats ul{list-style:none;margin:16px 0 0;padding:0}.mpr-feats li{position:relative;padding-left:24px;font-size:14px;line-height:20px;margin-bottom:16px;min-height:20px}.mpr-feats li>svg{position:absolute;left:0;top:4px}
 .mpr-feats li .vid{font-style:normal;font-size:10px;margin-left:6px;border:1px solid #999;border-radius:2px;padding:0 1px}
 .mpr-ics{display:flex;gap:8px;margin:10px 0 0 0;height:28px}.mpr-ics span{width:28px;height:28px;border:1px solid #e0e2e8;border-radius:6px;display:grid;place-items:center;font-size:13px;font-weight:700;background:#fff}.mpr-ics .more{color:#6c6c6c;font-weight:600}
@@ -100,3 +100,5 @@
 .mpr-faq{margin-top:63px;padding-bottom:63px}.mpr-faq h2{font-size:40px;line-height:46px;height:172px;margin:0 auto;width:342px}
 .mpr-faq .q{padding:0 24px}.mpr-faq .q button{min-height:0;padding:22px 0;font-size:24px}.mpr-faq .q button span{max-width:240px}.mpr-faq .q.open{padding-bottom:22px}.mpr-faq .q.open button{min-height:0}.mpr-faq .a p{font-size:18px;line-height:24.3px}.mpr-faq .q button em{margin-left:0}
 }
+
+.mpr-desc{display:block;font-size:12.5px;line-height:17px;color:#6b7080;margin-top:2px}.mpr-ics span{font-size:11px;letter-spacing:.02em}
