@@ -154,14 +154,16 @@ test("eraser deletes what it crosses; text tool; frame tool", async ({ page }) =
 test("boards list: rename, duplicate, export, delete, import round-trip", async ({ page }) => {
   await demo(page);
   page.on("dialog", d => d.accept(d.type() === "prompt" ? "Renamed board" : undefined));
-  await page.getByRole("button", { name: "Rename" }).first().click(); await expect(page.getByTestId("board-card").first()).toContainText("Renamed board");
-  await page.getByRole("button", { name: "Duplicate" }).first().click(); await expect(page.getByTestId("board-card")).toHaveCount(2);
-  const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Export" }).first().click()]);
+  const rowMenu = async (item: string | RegExp) => { await page.getByRole("button", { name: "Board options" }).first().click(); await page.getByRole("menuitem", { name: item }).click(); };
+  await rowMenu("Rename"); await expect(page.getByTestId("board-card").first()).toContainText("Renamed board");
+  await rowMenu("Duplicate"); await expect(page.getByTestId("board-card")).toHaveCount(2);
+  const [dl] = await Promise.all([page.waitForEvent("download"), rowMenu(/backup/)]);
   const path = await dl.path(); const fs = await import("node:fs"); const json = fs.readFileSync(path!, "utf8"); expect(JSON.parse(json).format).toBe("miroisdead-board");
   await page.locator('input[type=file]').setInputFiles({ name: "b.json", mimeType: "application/json", buffer: Buffer.from(json) });
   await page.waitForSelector("[data-testid=board-editor]"); await expect(objs(page)).toHaveCount(14);
   await page.goBack(); await page.waitForSelector("[data-testid=board-card]");
-  const n = await page.getByTestId("board-card").count(); await page.getByRole("button", { name: "Delete" }).first().click(); await expect(page.getByTestId("board-card")).toHaveCount(n - 1);
+  const n = await page.getByTestId("board-card").count(); await rowMenu("Delete"); await expect(page.getByTestId("board-card")).toHaveCount(n - 1);
+  await page.getByRole("button", { name: "Star" }).first().click(); await page.locator(".mx-side nav a", { hasText: "Starred" }).click(); await expect(page.getByTestId("board-card")).toHaveCount(1);
 });
 
 test("bad import file shows an error", async ({ page }) => {

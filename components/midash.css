@@ -77,3 +77,17 @@
 .mx-tm-card b{display:block;font-size:16px;font-weight:600;margin-top:10px;min-height:22px}
 .mx-tm-card:hover .art{box-shadow:0 0 0 2px #cfd6ff}
 @media(max-width:900px){.mx-side{display:none}.mx-main{margin:12px 8px 8px}.mx-hello{font-size:40px;line-height:46px;margin:16px 0 28px}.mx-th,.mx-rowb{grid-template-columns:minmax(0,1fr) 110px}.mx-th span:nth-child(2),.mx-th span:nth-child(3),.mx-th span:nth-child(5),.mx-rowb .mx-c:nth-of-type(1),.mx-rowb .mx-c:nth-of-type(2),.mx-rowb .mx-c:nth-of-type(4){display:none}.mx-bar{padding:0 8px 0 16px}.mx-bar .mx-pill,.mx-bar .mx-blue,.mx-bar .mx-ic:not(.round){display:none}.mx-tm aside{display:none}.mx-tm-grid{grid-template-columns:1fr 1fr}.mx-scrim{padding:12px}}
+
+/* --- parity pass 2026-10-15: round avatar, row menu, stars, spaces, custom templates --- */
+.mx-av{border-radius:50%;background:#1f66d6;color:#fff;font-size:14px}.mx-av.sm{background:#1f66d6}
+.mx-ic.round{background:none}.mx-hello.sm{font-size:40px;line-height:46px;text-align:left;margin:8px 0 24px}
+.mx-acts{gap:0}.mx-acts .mx-ic.sm{width:32px;height:32px;color:#444}.mx-acts .mx-ic.sm.starred{color:#e8a700}.mx-acts-legacy{display:none}
+.mx-rowpop{right:0;top:36px;min-width:230px;z-index:70}.mx-rowpop .mm-item{height:38px}
+.mx-emoji{font-size:22px;line-height:1}
+.mx-spacelist{margin-top:-6px}.mx-spacelist a{font-size:14px}
+.mx-empty{padding:28px 0;color:#555}.mx-empty b{display:block;font-size:16px;color:#222428;margin-bottom:4px}.mx-empty p{margin:0;font-size:14px}
+.mx-tpl-for{cursor:pointer}
+.mx-tm-h3{font-size:18px;margin:28px 0 12px}.mx-tm-card.custom{position:relative;display:block}.mx-tm-card.custom>button{all:unset;cursor:pointer;display:block;width:100%}.mx-tm-del{position:absolute;right:8px;top:8px;width:28px;height:28px;border:0;border-radius:6px;background:#fff;cursor:pointer;display:grid;place-items:center;opacity:0}.mx-tm-card.custom:hover .mx-tm-del{opacity:1}
+.mx-tm-search{display:flex;align-items:center;gap:8px;color:#8c8b85}
+.mx-side .mx-light{height:32px;padding:0 12px;font-size:13px}.mx-side a.mx-dark{height:32px;padding:0 12px;font-size:13px;text-decoration:none}
+.mi-err{cursor:pointer}

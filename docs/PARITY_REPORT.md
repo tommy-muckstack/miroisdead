@@ -29,9 +29,9 @@ Last full pass: 2026-10-15. Scope per the owner: the logged-out surface is the h
 | Auth | Sign-in extras (arrow link, grey "Trouble signing in?" box, fine print) | match | S3 | Arrow link = demo sign-in (when enabled); box requests a password reset; reCAPTCHA line replaced by "New to MiroIsDead?" (exception: no CAPTCHA, no support chat bubble). PR #2 |
 | Auth | Sign-up page (board chrome behind the card) | match | S3 | Real header pill, right pill with avatars/Present/Share, AI button and tool rail drawn behind the card. Providers are Google/Microsoft/SSO vs Google/Office365/Slack (exception). PR #2 |
 | Auth | Google button | match | — | Official G mark, Google Sans Medium (prior pass). |
-| Dashboard | Shell: left rail (workspace, search, Home/Starred/Browse, Spaces, AI promo), top bar, serif greeting, template strip, recents list | match | S3 | Greeting rotates; avatar is round; dates use "Dec 3, 2025" style. PR dashboard |
-| Dashboard | Create menu, profile menu, templates modal | match | — | Verified against signed-in capture. |
-| Dashboard | Starred / Browse / Spaces | missing | S2 | PR dashboard: star boards, Browse = all boards, Spaces as folders. |
+| Dashboard | Shell: left rail (workspace, search, Home/Starred/Browse, Spaces, AI promo), top bar, serif greeting, template strip, recents list | match | — | Rotating greeting (“Let’s build, …” etc.), round blue avatar, workspace named after the user (double-click to rename), search filters boards, “Dec 3, 2025” dates, board emoji in the list, banner/promo dismissal remembered. PR #7 |
+| Dashboard | Create menu, profile menu, templates modal, “Templates for …” picker | match | — | Templates modal gains a “Your templates” section fed by Export ▸ Save board as template (free). PR #7 |
+| Dashboard | Starred / Browse / Spaces, row ⋯ menu (open in new tab, rename, duplicate, star, move to space, backup, delete) | match | S3 | Stars, spaces and board→space assignments are per-device preferences (localStorage), not synced. PR #7 |
 | Dashboard | Board limit banner / Upgrade | n/a | — | Everything is free; Upgrade chrome kept for look only. |
 | Board | Top-left pill (sidebar, logo, emoji picker, title, main menu, export, Upgrade pill) | match | — | Emoji is stored on the board; Upgrade is look-only. PR #3 |
 | Board | Top-right pill (facilitation, activity, call, avatar, present, Share) | match | S3 | Activity and call buttons are stubs (no multiplayer yet). |
