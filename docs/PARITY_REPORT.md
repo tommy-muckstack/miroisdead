@@ -76,12 +76,12 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 
 | # | Finding | Status | Where |
 |---|---|---|---|
-| 1 | Board list › Rename does nothing visible | fixed: "Rename board" modal (Board name, Save/Cancel) | PR #17 |
-| 2 | Board list › options menu renders under the next row | fixed: the row with an open menu is lifted above its siblings (`.mx-acts` is transformed, so the popup's z-index was trapped) | PR #17 |
-| 3 | Board list stale after Duplicate/Delete | fixed: optimistic list update + `cache: "no-store"` on the list fetch | PR #17 |
-| 4 | Native `confirm()` on Delete | fixed: styled "Delete board?" modal (no Free-plan/upgrade copy on purpose, see exceptions) | PR #17 |
-| 5 | Missing menu items | fixed: Open in new tab, Rename, Duplicate, Board details, Share, Copy board link, Make board private/public, starred, Move to Team/Space, Download board backup, Delete | PR #17 |
-| 6 | Hover actions, Today/Yesterday, truncated owner | fixed: Last opened says Today / Yesterday / date; the owner column keeps clear of the hover buttons | PR #17 |
+| 1 | Board list › Rename does nothing visible | fixed: "Rename board" modal (Board name, Save/Cancel) | PR #19 |
+| 2 | Board list › options menu renders under the next row | fixed: the row with an open menu is lifted above its siblings (`.mx-acts` is transformed, so the popup's z-index was trapped) | PR #19 |
+| 3 | Board list stale after Duplicate/Delete | fixed: optimistic list update + `cache: "no-store"` on the list fetch | PR #19 |
+| 4 | Native `confirm()` on Delete | fixed: styled "Delete board?" modal (no Free-plan/upgrade copy on purpose, see exceptions) | PR #19 |
+| 5 | Missing menu items | fixed: Open in new tab, Rename, Duplicate, Board details, Share, Copy board link, Make board private/public, starred, Move to Team/Space, Download board backup, Delete | PR #19 |
+| 6 | Hover actions, Today/Yesterday, truncated owner | fixed: Last opened says Today / Yesterday / date; the owner column keeps clear of the hover buttons | PR #19 |
 
 PostHog project 666931 (IsDead family) with the taxonomy in `docs/ANALYTICS.md`; PR #16.
 
