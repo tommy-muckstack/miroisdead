@@ -27,8 +27,8 @@ function PlanCard({ p }: { p: Plan }) {
     {p.tag && <span className="mpr-tag">{p.tag}</span>}
     <h3>{p.name}</h3><p className="d">{p.desc}</p>
     <div className="mpr-price">{p.id === "enterprise" ? <span className="cust">Custom pricing—from <b>30 members</b></span> : <><span className="n">{p.price}</span>{p.sub && <span className="s">/month per <u>member</u>, billed yearly</span>}</>}</div>
-    {p.href.startsWith("http") ? <a className="mpr-btn" href={p.href}>{p.cta}</a> : <Link className={"mpr-btn" + (biz ? " pri" : "")} href={p.href}>{biz ? <><span className="mpr-dsk">Buy now</span><span className="mpr-mob">Try for free</span></> : p.cta}</Link>}
-    {biz && <p className="mpr-try">or <Link href="/signup"><span className="mpr-dsk">try for free</span><span className="mpr-mob">buy now</span></Link></p>}
+    {p.href.startsWith("http") ? <a className="mpr-btn" href={p.href}>{p.cta}</a> : <Link className={"mpr-btn" + (biz ? " pri" : "")} href={p.href}>{biz ? <><span className="mpr-dsk">Try for free</span><span className="mpr-mob">Buy now</span></> : p.cta}</Link>}
+    {biz && <p className="mpr-try">or <Link href="/signup"><span className="mpr-dsk">buy now</span><span className="mpr-mob">try for free</span></Link></p>}
     <button className="mpr-show" onClick={() => setOpen(!open)} aria-expanded={open}>{open ? "Hide" : "Show"} key features</button>
     <div className="mpr-feats">
       <div className="mpr-head"><b>{p.head}</b><Chev open /></div>
@@ -78,7 +78,7 @@ export function MiPricing() {
           <p className="note">** Migration fees apply for existing customers moving from EU to the US, Australia, or Japan data residency.</p>
         </div>}
       </div>
-      <div className="mpr-trust"><h2>Trusted by the world&apos;s most innovative companies</h2><div className="lg"><span>asos</span><span>Ccontentful</span><span>UBISOFT</span><span>PEPSICO</span><span>★macy&apos;s</span><span className="f">Whi</span></div></div>
+      <div className="mpr-trust"><h2>Trusted by the world&apos;s most innovative companies</h2><div className="lg"><span>asos</span><span>contentful</span><span>UBISOFT</span><span>PEPSICO</span><span>★macy&apos;s</span><span className="f">Whi</span></div></div>
       <div className="mpr-sec"><h2>Security and compliance</h2><p>Rest easy knowing we&apos;re fully certified by numerous organizations.</p><a className="mpr-btn sm" href="https://github.com/tommy-muckstack/miroisdead/blob/main/SECURITY.md">Learn more</a>
         <div className="g">{SEC.map(([t, s, b]) => <div key={t} className="card"><i>{b}</i><h3>{t}</h3><p>{s}</p></div>)}</div></div>
       <div className="mpr-faq"><h2>Frequently asked questions</h2>

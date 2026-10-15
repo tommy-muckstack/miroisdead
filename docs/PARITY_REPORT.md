@@ -1,6 +1,6 @@
 # Parity report: MiroIsDead vs miro.com
 
-Last full pass: 2026-10-15. Scope per the owner: the logged-out surface is the home page and sign-in; the logged-in app must replicate Miro's functionality, with every paid feature available for free (nothing gated).
+Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner: the logged-out surface is the home page and sign-in; the logged-in app must replicate Miro's functionality, with every paid feature available for free (nothing gated).
 
 ## Method
 - Original captured with Playwright (`scripts/parity-capture.mjs`, `scripts/parity-segments.mjs`) at 1440×900 and 390×844: full-page shots, viewport segments and a computed-style dump (font, size, weight, colour, radius, shadow, rects) for every heading, paragraph, button, input and link.
@@ -24,7 +24,7 @@ Last full pass: 2026-10-15. Scope per the owner: the logged-out surface is the h
 | Landing | Cookie banner | match | — | Real consent banner (choice stored locally); replaces the old join bar. PR landing |
 | Landing | Mobile 390 (burger nav, stacked hero, cookie sheet) | match | S3 | Hero heading wraps on 3 lines like Miro. |
 | Landing | Mega-menus on Product/Use Cases/Solutions/Resources | missing | S2 | Hover menus not built (logged-out scope is home + login per owner; open question). |
-| Pricing | Hero, toggle, 4 cards, Guard, compare matrix, trust, security, FAQ | match | S3 | Prior pass. Known: nav is sticky here but not on miro.com/pricing; Business CTA order (Try for free / or buy now) reversed; "Ccontentful" typo. Out of the owner's logged-out scope; left as-is. |
+| Pricing | Hero, toggle, 4 cards, Guard, compare matrix, trust, security, FAQ | match | S3 | Prior pass; PR #9 fixes the non-sticky nav, Business CTA order (Try for free / or buy now) and a wordmark typo. Out of the owner's logged-out scope otherwise. |
 | Auth | Sign-in card (providers row, SSO, email, Remember me, CTA) | match | — | 44px heading, 18px controls; helper copy kept truthful (password sign-in). PR #2 |
 | Auth | Sign-in extras (arrow link, grey "Trouble signing in?" box, fine print) | match | S3 | Arrow link = demo sign-in (when enabled); box requests a password reset; reCAPTCHA line replaced by "New to MiroIsDead?" (exception: no CAPTCHA, no support chat bubble). PR #2 |
 | Auth | Sign-up page (board chrome behind the card) | match | S3 | Real header pill, right pill with avatars/Present/Share, AI button and tool rail drawn behind the card. Providers are Google/Microsoft/SSO vs Google/Office365/Slack (exception). PR #2 |
@@ -58,11 +58,19 @@ Last full pass: 2026-10-15. Scope per the owner: the logged-out surface is the h
 | Share | Invite tab (email field, link row with Can edit/view, Copy team invite link, Board access, Anyone with the link) | match | — | "Anyone with the link" really works: No access / Can view / Can edit persisted on the board; public URL `/b/{id}` with a read-only viewer or guest editing. Emails aren't sent (no mail service); the link is copied for you to send. PR #6 |
 | Share | Embed tab (private notice, start view Board/First frame, View only, preview, Embed code, Copy code / Copy link) | match | — | iframe embeds the public viewer (`?embed=1`). PR #6 |
 | Share | Publish tab (community template / custom template cards) | match | S3 | Custom templates are free (saved locally); community publishing opens a GitHub issue. PR #6 |
-| Perf | 500+ objects, input latency, first load | untested | — | To measure. |
-| States | 404 / offline / loading / error | partial | S2 | Loading + not-found exist; offline falls back to device storage. |
+| Perf | 700 objects (600 stickies/shapes + 100 connectors): first paint 459 ms, idle/pan frame p95 17.5 ms (~57 fps), sticky create→paint 40 ms (`scripts/parity-perf.mjs`, M-series Mac, headless Chromium) | match | — | Measured 2026-10-15 on PR #8. |
+| States | 404 page, runtime error boundary with retry, offline banner in the editor (auto-resync when back online), loading + board-not-found | match | S3 | PR #9 |
 
 ## Exceptions (documented, justified)
 - Trademarks and assets: Miro's logo, customer logos, photos, illustrations and fonts are not copied. Wordmarks are text, art is CSS/SVG, fonts are Albert Sans / Noto Sans (OFL) as stand-ins for Roobert PRO / Noto Sans.
 - Marketing claims about integrations (Jira, Linear, Slack…) and AI agents are rephrased to what the clone actually does.
 - "Contact sales" → "View source"; "No password required" → password sign-in copy; reCAPTCHA / region sign-in / enterprise SSO are not applicable.
 - Paid Miro features are built as free equivalents; Upgrade/Free-plan chrome stays for look only and never gates anything.
+
+## Open items needing a human decision
+1. **Multiplayer**: live cursors and real-time sync need a sync channel. Firestore `onSnapshot` listeners would work with the existing project but add reads per collaborator; a WebSocket relay on Vercel Functions is the zero-Firestore alternative. Not built pending that call.
+2. **Mega-menus** on the marketing nav (Product / Use Cases / Solutions / Resources): Miro opens large hover panels; the owner scoped logged-out parity to the home page + sign-in, so they are left as plain anchors.
+3. **Logos, photos and store badges**: text stand-ins instead of third-party marks (trademark). Keep, or commission original illustrations.
+4. **Email invites**: no mail service; the Share dialog copies the link instead. Wire a provider only if you accept the cost.
+5. **Rotation handle, images/uploads, Docs/Tables/Slides formats, stickers, AI sidekick**: not built. Images/uploads need storage (Firebase Storage is in the shared project; costs apply above the free tier). The AI bar stays a bring-your-own-agent flow (copy scene JSON).
+6. **Mobile (390) for the logged-in app**: Miro's mobile web is a reduced experience that hands off to its native apps; the clone's phone layout works but was not compared screen-by-screen.

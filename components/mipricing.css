@@ -2,7 +2,7 @@
 /* Pricing page mirrored from miro.com/pricing (desktop 1440 + phone 390). */
 .mpr-page{background:#fafafc;position:relative}
 .mpr-page::before{content:"";position:absolute;left:0;right:0;top:72px;height:828px;background:#f0f0f0 radial-gradient(#dcdce0 1px,transparent 1.2px) 0 0/16px 16px;z-index:0}
-.mpr-page .mk-nav{z-index:41}
+.mpr-page .mk-nav{z-index:41;position:static}
 .mpr{position:relative;z-index:1;font-family:var(--ids-font-sans),"Noto Sans",system-ui,sans-serif;color:#1c1c1e}
 .mpr h1,.mpr h2,.mpr h3,.mpr-plan .n,.mpr-sel span{font-family:var(--ids-font-display),sans-serif}
 .mpr-h{height:195px;padding-top:96px;text-align:center}.mpr-h h1{margin:0;font-size:48px;line-height:52.8px;font-weight:500;letter-spacing:-.02em}
