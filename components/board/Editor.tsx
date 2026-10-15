@@ -83,8 +83,10 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const [fly, setFly] = useState<"" | "shapes" | "more">("");
   const [firstRun, setFirstRun] = useState(false); // tool hints are onboarding only: shown until the first board has 8 objects, then never again
   useEffect(() => { try { setFirstRun(localStorage.getItem("mi-onboarded") !== "1"); } catch { /* ignore */ } }, []);
-  useEffect(() => { if (!fly) return; const f = (e: PointerEvent) => { const t = e.target as Element; if (!t.closest(".mb-fly") && !t.closest("[aria-expanded]")) setFly(""); }; window.addEventListener("pointerdown", f, true); return () => window.removeEventListener("pointerdown", f, true); }, [fly]);
+  useEffect(() => { if (!fly) return; const f = (e: PointerEvent) => { const t = e.target as Element; if (!t.closest(".mb-fly") && !t.closest('[aria-label="Shapes and lines"]')) setFly(""); }; window.addEventListener("pointerdown", f, true); return () => window.removeEventListener("pointerdown", f, true); }, [fly]);
   const [share, setShare] = useState<"" | ShareTab>("");
+  const [titlePrompt, setTitlePrompt] = useState<string | null>(null); // "Give your board a title" before the first Share (Miro)
+  const [imgOpts, setImgOpts] = useState<null | { area: "board" | "selection"; quality: "small" | "medium" | "large"; bg: boolean }>(null);
   const [prof, setProf] = useState(false);
   const [chips, setChips] = useState(true);
   const [main, setMain] = useState(false);
@@ -210,7 +212,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const fullscreen = () => { const el = box.current?.closest(".mi-app") as HTMLElement | null; if (document.fullscreenElement) void document.exitFullscreen(); else void el?.requestFullscreen?.(); };
   const jumpTo = (id: Id) => { const o = R.current.doc.objects[id]; if (!o) return; setView(fitView(boundsOf(R.current.doc, o), R.current.size, 120)); setSel([id]); };
   const exportPdf = () => { track(EVENTS.board_exported, { format: "pdf" }); openPrintWindow(title || "board", boardToSvg(doc)); };
-  const exportPng = async () => { track(EVENTS.board_exported, { format: "png" }); try { const blob = await svgToPngBlob(boardToSvg(doc), 2); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${title || "board"}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); } catch { flash("Couldn't render the image"); } };
+  const exportPng = async (o: { area: "board" | "selection"; quality: "small" | "medium" | "large"; bg: boolean } = { area: "board", quality: "medium", bg: true }) => { track(EVENTS.board_exported, { format: "png", area: o.area, quality: o.quality }); try { const src = o.area === "selection" && R.current.sel.length ? (() => { const keep = new Set(withFrameChildren(doc, R.current.sel)); return { ...doc, order: doc.order.filter(i => keep.has(i)) }; })() : doc; const blob = await svgToPngBlob(boardToSvg(src, { background: o.bg ? undefined : null }), { small: 1, medium: 2, large: 4 }[o.quality]); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${title || "board"}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); } catch { flash("Couldn't render the image"); } };
   const exportCsv = () => { track(EVENTS.board_exported, { format: "csv" }); download(`${title || "board"}.csv`, "text/csv", boardToCsv(doc)); };
   const exportBackup = () => { track(EVENTS.board_exported, { format: "json" }); download(`${title || "board"}.miroisdead.json`, "application/json", serialize(boardRef.current)); };
   const saveTemplate = () => { track(EVENTS.board_exported, { format: "template" }); saveCustomTemplate(boardRef.current); flash("Saved as a custom template. Find it under Create ▸ Explore templates."); };
@@ -555,7 +557,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
         {main && <MainMenu onClose={() => setMain(false)} a={{ rename: () => (document.querySelector(".mb-title") as HTMLInputElement | null)?.select(), duplicate: () => { const b = { ...boardRef.current, id: nid(), title: `${title} copy`, createdAt: Date.now(), updatedAt: Date.now() }; void store.save(b).then(() => flash("Board duplicated. It's on your dashboard."), () => flash("Couldn't duplicate")); }, back: () => (window.location.href = `${BP}/app`), undo: doUndo, redo: doRedo, canUndo: canUndo(hist), canRedo: canRedo(hist), selectAll: () => setSel(doc.order.slice()), dup, del, hasSel: sel.length > 0, minimap: map, toggleMinimap: () => setMap(m => !m), grid, toggleGrid: () => setGrid(g => !g), fullscreen, fit: fitAll, snap, toggleSnap: () => { snapRef.current = !snap; setSnap(s => !s); }, dims, toggleDims: () => setDims(d => !d), shortcuts: () => setHelp(true), flash }} />}</span>
       <span className="mi-menuwrap">
         <button className="mb-i" onClick={() => setMenu(m => !m)} aria-expanded={menu} aria-haspopup="menu" aria-label="Export this board" title="Export this board">{X.upload}</button>
-        {menu && <ExportMenu onClose={() => setMenu(false)} a={{ pdf: exportPdf, image: () => void exportPng(), template: saveTemplate, csv: exportCsv, backup: exportBackup, embed: () => setShare("Embed"), drive: () => { exportBackup(); flash("Backup downloaded. Upload it to Drive to keep a copy there."); }, scene: () => void copyScene() }} />}
+        {menu && <ExportMenu onClose={() => setMenu(false)} a={{ pdf: exportPdf, image: () => setImgOpts({ area: "board", quality: "medium", bg: true }), template: saveTemplate, csv: exportCsv, backup: exportBackup, embed: () => setShare("Embed"), drive: () => { exportBackup(); flash("Backup downloaded. Upload it to Drive to keep a copy there."); } }} />}
       </span>
       <span className="mx-sr" data-testid="save-status" role="status">{readOnly ? "View only" : statusText}</span>
     </header>}
@@ -570,12 +572,12 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
           <Link href="/app" role="menuitem" className="mb-link">All boards</Link>
           {signOutAction && <form action={signOutAction}><button role="menuitem">Sign out</button></form>}</div>}</span>
       <button className="mb-play hm" aria-label="Present" title="Present" onClick={startPresent}>{X.play}</button>
-      {!guest && <button className="mb-sharebtn" onClick={() => { setShare("Invite"); track(EVENTS.board_share_opened, { tab: "Invite" }); }} data-testid="share">Share</button>}
+      {!guest && <button className="mb-sharebtn" onClick={() => { if (!title.trim() || title.trim() === "Untitled") { setTitlePrompt(title.trim() === "Untitled" ? "" : title); return; } setShare("Invite"); track(EVENTS.board_share_opened, { tab: "Invite" }); }} data-testid="share">Share</button>}
     </div>}
 
     {!readOnly && !embed && !present && <nav className="mb-rail" data-ui aria-label="Tools" style={{ top: compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0)) }}>
       <div className="mb-pill">
-        <button className="mb-t ai" aria-label="Create with AI" title="Create with AI" onClick={() => { setFly(""); flash("Copy scene JSON in Export to use your own AI agent"); }}>{X.sparkle}</button>
+        <button className="mb-t ai" aria-label="Create with AI" title="Create with AI" onClick={() => { setFly(""); setShare("AI"); }}>{X.sparkle}</button>
       </div>
       <div className="mb-pill main">
         {([["select", X.select, "Select"], [null, X.notes, "Formats and Flows"], [null, X.tpl, "Templates"], ["sticky", X.sticky, "Sticky note"], ...(compact ? [] : [["text", X.text, "Text"]])] as [Tool | null, React.ReactNode, string][]).map(([t, ic, label]) => t
@@ -647,7 +649,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     {chips && !readOnly && doc.order.length === 0 && !edit && <div className="mb-chips" data-ui>
       <button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c1" />Prep a workshop</button><button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c2" />Map a process</button><button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c3" />Build a roadmap</button>
       <button className="x" aria-label="Dismiss suggestions" onClick={() => setChips(false)}>{X.close}</button></div>}
-    {!readOnly && !embed && !present && <div className="mb-ai" data-ui onClick={() => flash("Use “Copy scene JSON for an AI agent” in Export to bring your own AI")}>{X.plusS}<span>Where shall we start?</span>{X.mic}</div>}
+    {!readOnly && !embed && !present && <div className="mb-ai" data-ui onClick={() => setShare("AI")}>{X.plusS}<span>Where shall we start?</span>{X.mic}</div>}
     <div className="mb-zoom" data-ui>
       <button className={"mb-t sm" + (frames ? " on" : "")} onClick={() => setFrames(f => !f)} aria-label="Frames" title="Frames" aria-expanded={frames}>{X.frame}</button>
       <button className="mb-t sm" onClick={() => zoomBy(0.8)} aria-label="Zoom out" title="Zoom out (⌘ −)">{X.minus}</button>
@@ -677,6 +679,21 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     <input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden data-testid="upload-input" onChange={e => { void addImages([...(e.target.files ?? [])]); e.target.value = ""; }} />
     {tools && <ToolsPanel top={compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0))} onClose={() => setTools(false)} tools={toolEntries} />}
     {(status === "device" || status === "error") && <div className="mb-save" data-ui role="status">{statusText}</div>}
+    {titlePrompt !== null && <div className="mb-scrim mb-dlg-scrim" data-ui onMouseDown={e => { if (e.target === e.currentTarget) setTitlePrompt(null); }}>
+      <form className="mb-dlg" role="dialog" aria-label="Give your board a title" data-testid="title-prompt" onSubmit={e => { e.preventDefault(); const t = titlePrompt.trim(); if (t) { setTitle(t); flash("Saved"); } setTitlePrompt(null); setShare("Invite"); track(EVENTS.board_share_opened, { tab: "Invite" }); }}>
+        <h3>Give your board a title</h3><p>A clear name helps your team find it later.</p>
+        <input autoFocus value={titlePrompt} onChange={e => setTitlePrompt(e.target.value)} placeholder="Untitled" aria-label="Board title" maxLength={120} onKeyDown={e => e.stopPropagation()} />
+        <div className="mb-dlg-acts"><button type="button" className="mb-btn" onClick={() => { setTitlePrompt(null); setShare("Invite"); track(EVENTS.board_share_opened, { tab: "Invite" }); }}>Skip</button><button type="submit" className="mb-btn primary" disabled={!titlePrompt.trim()}>Save</button></div>
+      </form></div>}
+    {imgOpts && <div className="mb-scrim mb-dlg-scrim" data-ui onMouseDown={e => { if (e.target === e.currentTarget) setImgOpts(null); }}>
+      <form className="mb-dlg" role="dialog" aria-label="Export as image" data-testid="export-image" onSubmit={e => { e.preventDefault(); const o = imgOpts; setImgOpts(null); void exportPng(o); }}>
+        <h3>Export as image</h3>
+        <label className="mb-dlg-row"><span>Area</span><select value={imgOpts.area} onChange={e => setImgOpts({ ...imgOpts, area: e.target.value as "board" | "selection" })}><option value="board">Whole board</option><option value="selection" disabled={!sel.length}>Selected objects{sel.length ? ` (${sel.length})` : ""}</option></select></label>
+        <label className="mb-dlg-row"><span>Quality</span><select value={imgOpts.quality} onChange={e => setImgOpts({ ...imgOpts, quality: e.target.value as "small" | "medium" | "large" })}><option value="small">Small (1×)</option><option value="medium">Medium (2×)</option><option value="large">Large (4×)</option></select></label>
+        <label className="mb-dlg-row"><span>Background</span><span className="mb-dlg-chk"><input type="checkbox" checked={imgOpts.bg} onChange={e => setImgOpts({ ...imgOpts, bg: e.target.checked })} /> Include board background</span></label>
+        <p className="mb-dlg-note">PNG, rendered on this device. Large exports of big boards can take a few seconds.</p>
+        <div className="mb-dlg-acts"><button type="button" className="mb-btn" onClick={() => setImgOpts(null)}>Cancel</button><button type="submit" className="mb-btn primary">Export</button></div>
+      </form></div>}
     {share && <ShareModal tab={share} setTab={setShare} onClose={() => setShare("")} who={who} doc={doc} title={title} boardId={initial.id} access={access} setAccess={a => { setAccess(a); track(EVENTS.board_share_access_changed, { access: a }); }} canShare={store.kind === "cloud" && !guest} onTemplate={saveTemplate} onScene={() => void copyScene()} flash={flash} />}
     {map && <Minimap doc={doc} view={view} size={size} onJump={(x, y) => setView(v => ({ ...v, x, y }))} />}
     {help && <ShortcutsPanel onClose={() => setHelp(false)} />}

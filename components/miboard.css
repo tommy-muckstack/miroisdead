@@ -49,8 +49,8 @@
 .mb-pal{position:absolute;left:50%;top:44px;transform:translateX(-50%);display:flex;gap:6px;padding:10px;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.2);z-index:5}
 .mb-more{position:absolute;right:0;top:44px;min-width:180px;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.2);padding:6px;z-index:5;display:flex;flex-direction:column}.mb-more button{display:flex;align-items:center;gap:10px;border:0;background:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;text-align:left}.mb-more button:hover{background:#f3f3f3}.mb-more .danger:hover{color:#c0172e}
 /* share modal */
-.mb-scrim{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.384);display:flex;align-items:flex-start;justify-content:center;padding-top:min(223px,20vh)}
-.mb-share{width:600px;max-width:calc(100vw - 24px);background:#fff;border-radius:24px;padding:0 32px 24px;box-shadow:0 10px 40px rgba(0,0,0,.25);font-family:var(--ids-font-sans)}
+.mb-scrim{position:fixed;inset:0;z-index:300;background:transparent;display:flex;align-items:flex-start;justify-content:center;padding-top:min(223px,20vh)}
+.mb-share{width:600px;box-shadow:0 10px 40px rgba(0,0,0,.25),0 0 0 1px rgba(0,0,0,.06);max-width:calc(100vw - 24px);background:#fff;border-radius:24px;padding:0 32px 24px;box-shadow:0 10px 40px rgba(0,0,0,.25);font-family:var(--ids-font-sans)}
 .mb-tabs{display:flex;gap:40px;border-bottom:1px solid #ececec;margin:0 -32px 32px;padding:0 32px}.mb-tabs button{border:0;background:none;padding:20px 0 16px;font-size:15px;color:#777;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;display:inline-flex;align-items:center;gap:8px}.mb-tabs .on{color:#111;font-weight:700;border-bottom-color:#4262ff}
 .mb-aiic{display:inline-flex;align-items:center;background:#f4f4f4;border-radius:12px;padding:2px 6px;gap:3px}.mb-aiic i{width:10px;height:10px;border-radius:50%;display:block}.mb-aiic .a{background:#e8603c}.mb-aiic .b{background:#555}.mb-aiic .c{background:#3a7bd5}.mb-aiic em{font-style:normal;font-size:11px;color:#888}
 .mb-mail{display:flex;align-items:center;gap:8px;height:43px;border:2px solid #4262ff;border-radius:10px;padding:0 12px;color:#333}.mb-mail input{flex:1;border:0;outline:0;font-size:16px;font-family:inherit;min-width:0}.mb-mail input::placeholder{color:#8a8a8a}
@@ -172,3 +172,16 @@
 /* --- stickers panel, rotation handle --- */
 .mm-stickers{width:420px}.mm-stickers section h4{margin:10px 0 6px;font-size:13px;color:#555}.mm-emojigrid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}.mm-emojigrid button{height:40px;border:0;background:none;border-radius:8px;font-size:24px;cursor:pointer}.mm-emojigrid button:hover{background:#f1f1f1}
 .mi-canvas.dropping{outline:3px dashed #4262ff;outline-offset:-3px}
+
+.mb-mail-ph{position:absolute;left:40px;right:12px;top:0;height:100%;display:flex;align-items:center;pointer-events:none;color:#8a8a8a;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mb-mail-ph u{text-decoration:underline}
+.mb-who-t{flex:1;color:#555;font-size:15px}.mb-any span{flex:1}.mb-any .mi-menuwrap{margin-left:auto}
+.mb-dlg-scrim{background:rgba(0,0,0,.37)!important;align-items:center!important;padding-top:0!important}
+.mb-dlg{width:440px;max-width:calc(100vw - 24px);background:#fff;border-radius:16px;padding:22px 24px 24px;box-shadow:0 12px 48px rgba(0,0,0,.22);font-family:var(--ids-font-sans)}.mb-dlg h3{margin:0 0 6px;font-size:20px;font-weight:600;color:#222428}.mb-dlg p{margin:0 0 14px;font-size:14px;line-height:20px;color:#555}
+.mb-dlg input:not([type]){width:100%;height:40px;border:1px solid #c6c6c4;border-radius:8px;padding:0 12px;font:inherit;font-size:14px;color:#222428;box-sizing:border-box}.mb-dlg input:not([type]):focus{outline:2px solid #4262ff;outline-offset:-1px}
+.mb-dlg-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0;font-size:14px;color:#222428}.mb-dlg-row select{height:36px;border:1px solid #c6c6c4;border-radius:8px;padding:0 10px;font:inherit;font-size:14px;background:#fff;min-width:200px}.mb-dlg-chk{display:inline-flex;align-items:center;gap:8px;color:#444}
+.mb-dlg-note{font-size:12.5px!important;color:#777!important;margin:6px 0 0!important}.mb-dlg-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.mb-btn{height:40px;padding:0 16px;border-radius:8px;border:1px solid #c6c6c4;background:#fff;font:inherit;font-size:14px;font-weight:500;color:#222428;cursor:pointer}.mb-btn:hover{background:#f4f4f2}.mb-btn.primary{background:#4262ff;border-color:#4262ff;color:#fff}.mb-btn.primary:hover{background:#3650e0}.mb-btn.primary:disabled{opacity:.5;cursor:default}
+/* #27: rail icons carry Miro's weight */
+.mb-rail .mb-t svg{stroke-width:2}.mb-t.ai{width:42px;height:42px}.mb-pill.hist .mb-t{height:42px}
+/* #18: no empty circle in the top bar; the emoji slot appears on hover until an emoji is chosen */
+.mb-emoji:not(.has){opacity:0;width:0;min-width:0;margin:0;padding:0;overflow:hidden}.mb-tl:hover .mb-emoji:not(.has),.mb-emoji:not(.has):focus-visible,.mb-emoji[aria-expanded=true]{opacity:1;width:auto;padding:0 6px}
