@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { FirebaseClientConfig } from "@/lib/isdead-auth/config";
 import { signInWithEmail, signUpWithEmail, signInWithGoogle, resetPassword, authErrorMessage } from "@/lib/isdead-auth/client";
 import { BP } from "@/lib/basepath";
+import { GoogleButton } from "@/vendor/isdead-design/src/google";
 type Props = { config: FirebaseClientConfig | null; demo: boolean; to: string };
 export function LoginForm({ config, demo, to }: Props) {
   const [mode, setMode] = useState<"signin" | "signup" | "reset">("signin");
@@ -31,7 +32,7 @@ export function LoginForm({ config, demo, to }: Props) {
         <button className="ids-btn ids-btn--primary ids-btn--block" style={{ marginTop: 16 }} disabled={busy}>{mode === "signup" ? "Create account" : mode === "reset" ? "Email me a reset link" : "Continue with email"}</button>
       </form>
       {mode !== "reset" && <><div role="separator" className="ids-divider">or</div>
-        <button className="ids-btn ids-btn--outline ids-btn--block" disabled={busy} onClick={() => run(async () => { await signInWithGoogle(config, session); done(); })}>Continue with Google</button></>}
+        <GoogleButton block disabled={busy} onClick={() => run(async () => { await signInWithGoogle(config, session); done(); })} /></>}
       <p className="ids-auth__footer">{mode === "signin" ? <>New here?{link("signup", "Create an account")} · {link("reset", "Forgot password?")}</> : link("signin", "Back to sign in")}</p></>}
     {err && <p role="alert" style={{ color: "var(--ids-color-danger)" }}>{err}</p>}
     {note && <p role="status" className="ids-muted">{note}</p>}
