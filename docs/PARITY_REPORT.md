@@ -71,6 +71,9 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 - "Contact sales" → "View source"; "No password required" → password sign-in copy; reCAPTCHA / region sign-in / enterprise SSO are not applicable.
 - Paid Miro features are built as free equivalents; Upgrade / Free-plan chrome and the notification banner were removed on the owner's request (2026-10-15), and sign-in is Google + email only.
 
+## Analytics
+PostHog project 666931 (IsDead family) with the taxonomy in `docs/ANALYTICS.md`; PR #16.
+
 ## Open items needing a human decision
 1. **Multiplayer**: the Vercel WebSocket relay turned out to put every connection on its own instance (Vercel's docs point to Redis for rooms, which costs), so live sync now runs as a WebRTC mesh with Firestore signalling (PR #14). One-time step: add the `miroisdead_live` block from `firestore.rules` to the shared `yourappisdead` ruleset (the repo file is MiroIsDead-only; deploying it alone would drop the other apps' rules). Guests who aren't signed in get tab-sync only; ~10% of networks without TURN can't connect peer-to-peer.
 2. **Mega-menus**: built in PR #11.
