@@ -80,6 +80,14 @@ export function withFrameChildren(doc: Doc, ids: Id[]): Id[] {
   for (const id of ids) if (doc.objects[id]?.type === "frame") for (const c of frameChildren(doc, id)) set.add(c);
   return [...set];
 }
+/** Expand a selection to whole groups (Miro: clicking a grouped object selects the group). */
+export function withGroups(doc: Doc, ids: Id[]): Id[] {
+  const groups = new Set(ids.map(i => doc.objects[i]?.group).filter(Boolean) as string[]); if (!groups.size) return ids;
+  const set = new Set(ids); for (const id of doc.order) { const g = doc.objects[id].group; if (g && groups.has(g)) set.add(id); } return [...set];
+}
+/** ⌘G: put the selection in one new group (replacing any groups they were in). ⌘⇧G: clear. */
+export function groupObjects(doc: Doc, ids: Id[]): Doc { if (ids.length < 2) return doc; const g = nid(); return updateObjects(doc, ids, { group: g } as Partial<Obj>); }
+export function ungroupObjects(doc: Doc, ids: Id[]): Doc { return updateObjects(doc, withGroups(doc, ids), o => (o.group ? { group: undefined } : {}) as Partial<Obj>); }
 export function bringToFront(doc: Doc, ids: Id[]): Doc { const s = new Set(ids); return { ...doc, order: [...doc.order.filter(i => !s.has(i)), ...doc.order.filter(i => s.has(i))] }; }
 export function sendToBack(doc: Doc, ids: Id[]): Doc { const s = new Set(ids); return { ...doc, order: [...doc.order.filter(i => s.has(i)), ...doc.order.filter(i => !s.has(i))] }; }
 /** Render order: frames behind everything else, otherwise insertion/z order. */

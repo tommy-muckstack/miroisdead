@@ -5,7 +5,7 @@ import type { Board, Box, Doc, End, Id, Obj, Pt, Side, View, ShapeObj, StickyObj
 import { ShareModal, type ShareTab } from "./ShareModal";
 import { STICKY_COLORS, isBox } from "@/lib/canvas/types";
 import { DIR, OPPOSITE, anchorPoint, boxOf, normBox, simplify, snapBox, unionBox, type Guide } from "@/lib/canvas/geometry";
-import { addObjects, align, bringToFront, cloneObjects, connector, createConnected, distribute, frame, frameAround, moveObjects, nid, pasteObjects, pen, removeObjects, resizeObject, sendToBack, shape, sticky, textObj, updateObjects, withFrameChildren, type Align } from "@/lib/canvas/doc";
+import { addObjects, align, bringToFront, cloneObjects, connector, createConnected, distribute, frame, frameAround, groupObjects, moveObjects, nid, pasteObjects, pen, removeObjects, resizeObject, sendToBack, shape, sticky, textObj, ungroupObjects, updateObjects, withFrameChildren, withGroups, type Align } from "@/lib/canvas/doc";
 import { boundsOf, resolveConnector, routeConnector } from "@/lib/canvas/connectors";
 import { hitTest, marquee } from "@/lib/canvas/hit";
 import { LINE_HEIGHT, fitFontSize, wrapText } from "@/lib/canvas/text";
@@ -23,14 +23,14 @@ import { BP } from "@/lib/basepath";
 import "@/components/miboard.css";
 import { SelectionToolbar } from "./SelectionToolbar";
 import { Minimap } from "./Minimap";
-import { ContextMenu, EmojiPicker, ExportMenu, FramesPanel, HelpMenu, MainMenu, ShortcutsPanel, StickyPicker, ToolsPanel, ZoomMenu, type ToolEntry } from "./Menus";
+import { CommandPalette, PresentBar, type Command, ContextMenu, EmojiPicker, ExportMenu, FramesPanel, HelpMenu, MainMenu, ShortcutsPanel, StickyPicker, ToolsPanel, ZoomMenu, type ToolEntry } from "./Menus";
 import { svgToPngBlob, boardToCsv, saveCustomTemplate, openPrintWindow } from "./exportMore";
 import { CommentThread, CommentsPanel } from "./Comments";
 import { FacilitationPopover, Reactions, TimerPanel, TimerChip, VotingPanel, NotePanel, type Timer, type Voting } from "./Facilitation";
 
 type Gesture =
   | { k: "pan"; sx: number; sy: number; v: View }
-  | { k: "move"; ids: Id[]; start: Doc; w0: Pt; cp: boolean; dup: boolean; clickId: Id | null; shift: boolean; moved: boolean }
+  | { k: "move"; ids: Id[]; start: Doc; w0: Pt; cp: boolean; dup: boolean; clickId: Id | null; shift: boolean; moved: boolean; was: boolean }
   | { k: "resize"; id: Id; h: string; start: Doc; b0: Box; cp: boolean }
   | { k: "marquee"; w0: Pt; base: Id[] }
   | { k: "draw"; tool: Tool; w0: Pt }
@@ -88,6 +88,9 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const styleClip = useRef<Partial<Obj> | null>(null);
   const [fac, setFac] = useState(false);
   const [thread, setThread] = useState<Id | null>(null);
+  const [palette, setPalette] = useState(false);
+  const [, setTick] = useState(0);
+  const [present, setPresent] = useState<{ i: number } | null>(null);
   const [commentsPanel, setCommentsPanel] = useState(false);
   const [hideComments, setHideComments] = useState(false);
   const [timer, setTimer] = useState<Timer>(null);
@@ -151,7 +154,10 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const backToSelect = () => setTool("select");
   const patchSel = (p: Partial<Obj> | ((o: Obj) => Partial<Obj>), remember?: Record<string, unknown>) => { commitDoc(updateObjects(R.current.doc, R.current.sel, p)); if (remember) Object.assign(last.current, remember); };
   const del = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; commitDoc(removeObjects(d, s)); setSel([]); };
-  const dup = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; const c = cloneObjects(d, s); commitDoc(addObjects(d, c.objs)); setSel(c.ids); };
+  const regroup = (objs: Obj[]): Obj[] => { const map = new Map<string, string>(); return objs.map(o => { if (!o.group) return o; if (!map.has(o.group)) map.set(o.group, nid()); return { ...o, group: map.get(o.group) } as Obj; }); };
+  const dup = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; const c = cloneObjects(d, s); commitDoc(addObjects(d, regroup(c.objs))); setSel(c.ids); };
+  const groupSel = () => { const { doc: d, sel: s } = R.current; if (s.length < 2) { flash("Select two or more objects to group"); return; } commitDoc(groupObjects(d, s)); flash("Grouped"); };
+  const ungroupSel = () => { const { doc: d, sel: s } = R.current; if (!s.some(i => d.objects[i]?.group)) return; commitDoc(ungroupObjects(d, s)); flash("Ungrouped"); };
   const copy = (cut: boolean) => { const { doc: d, sel: s } = R.current; if (!s.length) return; const set = new Set(s); clip.current = d.order.filter(i => set.has(i)).map(i => d.objects[i]); pasteN.current = 0; navigator.clipboard?.writeText("MiroIsDead board objects").catch(() => {}); if (cut) del(); else flash(`Copied ${s.length} object${s.length > 1 ? "s" : ""}`); };
   const paste = () => { if (!clip.current.length) return false; pasteN.current++; const o = 24 * pasteN.current; const r = pasteObjects(R.current.doc, clip.current, o, o); commitDoc(r.doc); setSel(r.ids); return true; };
   const fitAll = () => { const { doc: d, size: s } = R.current; setView(fitView(unionBox(d.order.map(i => boundsOf(d, d.objects[i]))), s)); };
@@ -189,6 +195,12 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     { id: "keys", icon: X.keys, label: "Keyboard shortcuts", desc: "Every shortcut on one sheet (?)", onPick: () => setHelp(true) },
   ];
   const compact = size.h < 720;
+  const frameIds = () => R.current.doc.order.filter(i => R.current.doc.objects[i].type === "frame");
+  const fitFrame = (b: Box) => { const sz = R.current.size, pad = 48; const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min((sz.w - pad * 2) / Math.max(1, b.w), (sz.h - pad * 2) / Math.max(1, b.h)))); setView({ zoom, x: b.x + b.w / 2, y: b.y + b.h / 2 }); };
+  const presentGo = (dir: number) => setPresent(p => { if (!p) return p; const fs = frameIds(); const i = Math.max(0, Math.min(fs.length - 1, p.i + dir)); if (fs[i]) fitFrame(boundsOf(R.current.doc, R.current.doc.objects[fs[i]])); return { i }; });
+  const startPresent = () => { const fs = frameIds(); setSel([]); setEdit(null); setTool("select"); setPresent({ i: 0 }); if (fs[0]) fitFrame(boundsOf(R.current.doc, R.current.doc.objects[fs[0]])); else fitAll(); const el = box.current?.closest(".mi-app") as HTMLElement | null; void el?.requestFullscreen?.().catch(() => {}); };
+  const exitPresent = () => { setPresent(null); if (document.fullscreenElement) void document.exitFullscreen().catch(() => {}); };
+  useEffect(() => { const f = () => { if (!document.fullscreenElement) setPresent(null); }; document.addEventListener("fullscreenchange", f); return () => document.removeEventListener("fullscreenchange", f); }, []);
   const frameSel = () => { const { doc: d, sel: s } = R.current; const r = frameAround(d, s.filter(i => d.objects[i]?.type !== "frame")); if (r) { commitDoc(r.doc); setSel([r.id]); } };
   const newFrom = (x: number, y: number, kind: Tool): Obj => {
     const L = last.current;
@@ -241,11 +253,11 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
       if (id && dbl && textual(d.objects[id])) { g.current = null; startEdit(id); return; }
       if (id && d.objects[id].type === "comment") setThread(id); else if (R.current.thread) setThread(null);
       if (id) {
-        const shift = e.shiftKey || e.metaKey || e.ctrlKey;
+        const shift = e.shiftKey || e.metaKey || e.ctrlKey; const was = s.includes(id);
         let ids = s;
         if (shift) { ids = s.includes(id) ? s.filter(i => i !== id) : [...s, id]; setSel(ids); if (!ids.includes(id)) { g.current = null; return; } }
-        else if (!s.includes(id)) { ids = [id]; setSel(ids); }
-        const movable = withFrameChildren(d, ids).filter(i => !(d.objects[i] as { locked?: boolean }).locked); if (!movable.length) { g.current = null; return; } g.current = { k: "move", ids: movable, start: d, w0: w, cp: false, dup: e.altKey, clickId: id, shift, moved: false };
+        else if (!s.includes(id)) { ids = withGroups(d, [id]); setSel(ids); }
+        const movable = withFrameChildren(d, ids).filter(i => !(d.objects[i] as { locked?: boolean }).locked); if (!movable.length) { g.current = null; return; } g.current = { k: "move", ids: movable, start: d, w0: w, cp: false, dup: e.altKey, clickId: id, shift, moved: false, was };
       } else { g.current = { k: "marquee", w0: w, base: e.shiftKey ? s : [] }; if (!e.shiftKey) setSel([]); }
       return;
     }
@@ -292,7 +304,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
         if (e.shiftKey && gg.h.length === 2 && gg.b0.w && gg.b0.h) { const r = gg.b0.w / gg.b0.h; if (bw / bh > r) bh = bw / r; else bw = bh * r; if (gg.h.includes("w")) x = gg.b0.x + gg.b0.w - bw; if (gg.h.includes("n")) y = gg.b0.y + gg.b0.h - bh; }
         liveDoc(resizeObject(gg.start, gg.id, { x, y, w: bw, h: bh })); return;
       }
-      case "marquee": { const b = normBox(gg.w0, w); setMarq(b); const hit = marquee(d, b); setSel([...new Set([...gg.base, ...hit])]); return; }
+      case "marquee": { const b = normBox(gg.w0, w); setMarq(b); const hit = marquee(d, b); setSel(withGroups(d, [...new Set([...gg.base, ...hit])])); return; }
       case "draw": setDraft({ kind: "box", tool: gg.tool, box: normBox(gg.w0, w) }); return;
       case "pen": gg.pts.push(w); setDraft({ kind: "pen", pts: gg.pts.slice() }); return;
       case "conn": {
@@ -316,9 +328,9 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const onPointerUp = (e: React.PointerEvent) => {
     const gg = g.current; g.current = null; if (!gg) return;
     const { doc: d, view: v } = R.current, w = toWorld(e);
-    setGuides([]); setMarq(null);
+    setGuides([]); setMarq(null); setTick(t => t + 1); // re-render so chrome that hides during a gesture comes back after a plain click
     switch (gg.k) {
-      case "move": if (!gg.moved && !gg.shift && R.current.sel.length > 1 && gg.clickId) setSel([gg.clickId]); return;
+      case "move": if (!gg.moved && !gg.shift && gg.was && R.current.sel.length > 1 && gg.clickId) setSel([gg.clickId]); return;
       case "draw": {
         setDraft(null);
         const b = normBox(gg.w0, w), tiny = b.w * v.zoom < 8 && b.h * v.zoom < 8;
@@ -373,6 +385,10 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     if (mod && k === "s") { e.preventDefault(); void saveNow(); flash("Saved"); return; }
     if (mod && k === "a") { e.preventDefault(); setSel(d.order.slice()); return; }
     if (mod && k === "d") { e.preventDefault(); dup(); return; }
+    if (mod && k === "g") { e.preventDefault(); e.shiftKey ? ungroupSel() : groupSel(); return; }
+    if (mod && e.shiftKey && k === "l") { e.preventDefault(); toggleLock(); return; }
+    if (mod && k === "k") { e.preventDefault(); setPalette(p => !p); return; }
+    if (mod && e.shiftKey && k === "c") { e.preventDefault(); void copyImage(); return; }
     if (mod && k === "c") { copy(false); return; }
     if (mod && k === "x") { e.preventDefault(); copy(true); return; }
     if (mod && k === "v") { if (paste()) e.preventDefault(); return; }
@@ -382,7 +398,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     if (mod && e.key === "-") { e.preventDefault(); zoomBy(0.8); return; }
     if (mod && e.key === "0") { e.preventDefault(); setView(v => zoomAt(v, R.current.size, { x: R.current.size.w / 2, y: R.current.size.h / 2 }, 1)); return; }
     if (mod) return;
-    if (e.key === "Escape") { if (g.current) { g.current = null; setDraft(null); setMarq(null); } else if (R.current.tool !== "select") setTool("select"); else setSel([]); setHelp(false); setMenu(false); setCtx(null); setTools(false); setThread(null); return; }
+    if (e.key === "Escape") { if (g.current) { g.current = null; setDraft(null); setMarq(null); } else if (R.current.tool !== "select") setTool("select"); else setSel([]); setHelp(false); setMenu(false); setCtx(null); setTools(false); setThread(null); setPalette(false); if (present) exitPresent(); return; }
     if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); del(); return; }
     if (e.key === "?") { setHelp(h => !h); return; }
     if (e.shiftKey && k === "c") { e.preventDefault(); setHideComments(h => !h); return; }
@@ -404,6 +420,8 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     if (e.key === "-") { zoomBy(0.8); return; }
     if (k === "m" && !e.shiftKey) { setMap(m => !m); return; }
     if (k === "f" && s.length > 1) { frameSel(); return; }
+    if (k === "s" && !e.shiftKey && !e.altKey) { setFly(f => f === "shapes" ? "" : "shapes"); return; }
+    if (present) { if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); presentGo(1); } else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); presentGo(-1); } return; }
     if (KEY_TO_TOOL[k] && !e.shiftKey && !e.altKey) { setTool(KEY_TO_TOOL[k]); setEdit(null); }
   };
   useEffect(() => {
@@ -430,10 +448,16 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const gridSize = 80 * z, bgPos = `${size.w / 2 - view.x * z}px ${size.h / 2 - view.y * z}px`;
   const statusText = status === "saving" ? "Saving…" : status === "saved" ? (store.kind === "cloud" ? "Saved to your account" : "Saved on this device") : status === "device" ? "Saved on this device · sync failed" : "Couldn't save";
 
-  return <div className="mi-app" data-testid="board-editor">
-    {banner && <div className="mx-banner" data-ui role="status"><span className="mx-banner-i">{X.info}</span><span>Never miss an important update.</span><a href="#notifications" onClick={e => { e.preventDefault(); setBanner(false); }}>Turn on real-time notifications</a><button aria-label="Dismiss" className="mx-banner-x" onClick={() => setBanner(false)}>{X.close}</button></div>}
+  const commands: Command[] = [
+    { id: "sticky", label: "Sticky note", kbd: "N", group: "Create", icon: X.sticky, run: () => setTool("sticky") }, { id: "text", label: "Text", kbd: "T", group: "Create", icon: X.text, run: () => setTool("text") }, { id: "rect", label: "Rectangle", kbd: "R", group: "Create", icon: X.rect, run: () => setTool("rect") }, { id: "ellipse", label: "Oval", kbd: "O", group: "Create", icon: X.oval, run: () => setTool("ellipse") }, { id: "diamond", label: "Rhombus", kbd: "D", group: "Create", icon: X.rhombus, run: () => setTool("diamond") }, { id: "line", label: "Connection line", kbd: "L", group: "Create", icon: X.arrow, run: () => setTool("connector") }, { id: "pen", label: "Pen", kbd: "P", group: "Create", icon: X.pen, run: () => setTool("pen") }, { id: "frame", label: "Frame", kbd: "F", group: "Create", icon: X.frame, run: () => setTool("frame") }, { id: "comment", label: "Comment", kbd: "C", group: "Create", icon: X.comment, run: () => setTool("comment") },
+    { id: "fit", label: "Zoom to fit", kbd: "⌥1", group: "View", icon: X.fit, run: fitAll }, { id: "100", label: "Zoom to 100%", kbd: "⌘0", group: "View", icon: X.zoomIn, run: () => zoomTo(1) }, { id: "grid", label: grid ? "Hide grid" : "Show grid", kbd: "G", group: "View", icon: X.grid2, run: () => setGrid(g => !g) }, { id: "map", label: map ? "Hide minimap" : "Show minimap", kbd: "M", group: "View", icon: X.map, run: () => setMap(m => !m) }, { id: "full", label: "Enter full screen", group: "View", icon: X.fullscreen, run: fullscreen }, { id: "present", label: "Present", group: "View", icon: X.play, run: startPresent }, { id: "frames", label: "Frames panel", group: "View", icon: X.frame, run: () => setFrames(true) }, { id: "comments", label: "Comments panel", group: "View", icon: X.chat, run: () => setCommentsPanel(true) },
+    { id: "group", label: "Group selection", kbd: "⌘G", group: "Edit", run: groupSel }, { id: "ungroup", label: "Ungroup", kbd: "⌘⇧G", group: "Edit", run: ungroupSel }, { id: "lock", label: "Lock / unlock selection", kbd: "⌘⇧L", group: "Edit", icon: X.lock, run: toggleLock }, { id: "dup", label: "Duplicate", kbd: "⌘D", group: "Edit", icon: X.copy, run: dup }, { id: "selall", label: "Select all", kbd: "⌘A", group: "Edit", run: () => setSel(doc.order.slice()) }, { id: "frameSel", label: "Frame the selection", group: "Edit", icon: X.frame, run: frameSel },
+    { id: "share", label: "Share board", group: "Board", icon: X.link, run: () => setShare("Invite") }, { id: "pdf", label: "Save as PDF", group: "Board", icon: X.pdf, run: exportPdf }, { id: "png", label: "Export as image", group: "Board", icon: X.image, run: () => void exportPng() }, { id: "csv", label: "Export to spreadsheet (CSV)", group: "Board", icon: X.table, run: exportCsv }, { id: "backup", label: "Download board backup", group: "Board", icon: X.download, run: exportBackup }, { id: "tpl", label: "Save board as template", group: "Board", icon: X.tplS, run: saveTemplate }, { id: "timer", label: "Timer", group: "Facilitation", icon: X.timer, run: () => setTimerOpen(true) }, { id: "vote", label: "Voting", group: "Facilitation", icon: X.vote, run: () => setVotingOpen(true) }, { id: "note", label: "Board note", group: "Facilitation", icon: X.note, run: () => setNoteOpen(true) }, { id: "keys", label: "Keyboard shortcuts", kbd: "?", group: "Help", icon: X.keys, run: () => setHelp(true) },
+  ];
+  return <div className={"mi-app" + (present ? " presenting" : "")} data-testid="board-editor">
+    {banner && !present && <div className="mx-banner" data-ui role="status"><span className="mx-banner-i">{X.info}</span><span>Never miss an important update.</span><a href="#notifications" onClick={e => { e.preventDefault(); setBanner(false); }}>Turn on real-time notifications</a><button aria-label="Dismiss" className="mx-banner-x" onClick={() => setBanner(false)}>{X.close}</button></div>}
     {(readOnly || guest) && <div className="mb-ro" data-ui>{X.globe} {readOnly ? "View only" : "Editing as a guest"} · {title || "Untitled"}{guest && <a href={`${BP}/signup`}>Sign up to keep a copy</a>}</div>}
-    {!embed && <header className="mb-tl" data-ui style={{ top: banner ? 66 : 10 }}>
+    {!embed && !present && <header className="mb-tl" data-ui style={{ top: banner ? 66 : 10 }}>
       <Link href="/app" className="mb-i" aria-label="Back to boards" title="Back to boards">{X.panel}</Link>
       <Link href="/app" className="mb-logo hm" aria-label="MiroIsDead home">miro</Link>
       <button className="mb-i hm" aria-label="Reactions" onClick={() => flash("Reactions are for live sessions")}>{X.smile}</button>
@@ -448,7 +472,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
       <button className="mb-upg hm" onClick={() => flash("Everything in MiroIsDead is free. Nothing to upgrade.")}>Upgrade</button>
       <span className="mx-sr" data-testid="save-status" role="status">{readOnly ? "View only" : statusText}</span>
     </header>}
-    {!embed && <div className="mb-tr" data-ui style={{ top: banner ? 66 : 10 }}>
+    {!embed && !present && <div className="mb-tr" data-ui style={{ top: banner ? 66 : 10 }}>
       <TimerChip timer={timer} onClick={() => setTimerOpen(o => !o)} />
       <span className="mi-menuwrap"><button className={"mb-i wide hm" + (fac ? " on" : "")} aria-label="Facilitation tools and reactions" aria-haspopup="menu" aria-expanded={fac} onClick={() => setFac(f => !f)}><span className="mb-facic">{X.timer}{X.vote}<i>✦</i></span></button>
         {fac && <FacilitationPopover onClose={() => setFac(false)} onReact={react} timer={timer} onTimer={() => setTimerOpen(true)} voting={voting} onVoting={() => setVotingOpen(true)} priv={priv} onPrivate={() => { setPriv(p => !p); flash(priv ? "Private mode off: new stickies are visible to everyone" : "Private mode on: new stickies stay hidden until you reveal them"); }} onNote={() => setNoteOpen(true)} />}</span>
@@ -458,11 +482,11 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
         {prof && <div className="mi-menu mb-menu" role="menu" style={{ right: 0 }} onPointerDown={e => e.stopPropagation()}><div className="mb-menu-h">{who}</div>
           <Link href="/app" role="menuitem" className="mb-link">All boards</Link>
           {signOutAction && <form action={signOutAction}><button role="menuitem">Sign out</button></form>}</div>}</span>
-      <button className="mb-play hm" aria-label="Present" onClick={() => flash("Presentation mode isn't in MiroIsDead yet")}>{X.play}</button>
+      <button className="mb-play hm" aria-label="Present" title="Present" onClick={startPresent}>{X.play}</button>
       {!guest && <button className="mb-sharebtn" onClick={() => setShare("Invite")} data-testid="share">Share</button>}
     </div>}
 
-    {!readOnly && !embed && <nav className="mb-rail" data-ui aria-label="Tools" style={{ top: compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0)) }}>
+    {!readOnly && !embed && !present && <nav className="mb-rail" data-ui aria-label="Tools" style={{ top: compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0)) }}>
       <div className="mb-pill">
         <button className="mb-t ai" aria-label="Create with AI" title="Create with AI" onClick={() => { setFly(""); flash("Copy scene JSON in Export to use your own AI agent"); }}>{X.sparkle}</button>
       </div>
@@ -522,14 +546,14 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
         </g>
       </svg>
       {edit && doc.objects[edit.id] && <TextEditor key={edit.id} doc={doc} id={edit.id} view={view} size={size} onDone={finishEdit} />}
-      {sBox && !edit && !g.current && tool === "select" && one?.type !== "comment" && <SelectionToolbar doc={doc} ids={sel} screenBox={sBox} canvas={size} patch={patchSel} onDelete={del} onDuplicate={dup} onFront={() => commitDoc(bringToFront(doc, sel))} onBack={() => commitDoc(sendToBack(doc, sel))} onFrame={frameSel} onAlign={(a: Align) => commitDoc(align(doc, sel, a))} onDistribute={a => commitDoc(distribute(doc, sel, a))} />}
+      {sBox && !edit && !g.current && tool === "select" && one?.type !== "comment" && <SelectionToolbar doc={doc} ids={sel} screenBox={sBox} canvas={size} patch={patchSel} onDelete={del} onDuplicate={dup} onFront={() => commitDoc(bringToFront(doc, sel))} onBack={() => commitDoc(sendToBack(doc, sel))} onFrame={frameSel} onAlign={(a: Align) => commitDoc(align(doc, sel, a))} onDistribute={a => commitDoc(distribute(doc, sel, a))} onGroup={() => (selObjs.some(o => o.group) ? ungroupSel() : groupSel())} />}
     </div>
 
     {(edit || tool !== "select" || sel.length > 0 || doc.order.length === 0) && <div className={"mi-hint" + (doc.order.length === 0 && chips && !edit ? " hi" : "")} data-ui data-testid={doc.order.length === 0 && !edit ? "empty-hint" : "hint"}>{hint}</div>}
     {chips && !readOnly && doc.order.length === 0 && !edit && <div className="mb-chips" data-ui>
       <button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c1" />Prep a workshop</button><button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c2" />Map a process</button><button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c3" />Build a roadmap</button>
       <button className="x" aria-label="Dismiss suggestions" onClick={() => setChips(false)}>{X.close}</button></div>}
-    {!readOnly && !embed && <div className="mb-ai" data-ui onClick={() => flash("Use “Copy scene JSON for an AI agent” in Export to bring your own AI")}>{X.plusS}<span>Where shall we start?</span>{X.mic}</div>}
+    {!readOnly && !embed && !present && <div className="mb-ai" data-ui onClick={() => flash("Use “Copy scene JSON for an AI agent” in Export to bring your own AI")}>{X.plusS}<span>Where shall we start?</span>{X.mic}</div>}
     <div className="mb-zoom" data-ui>
       <button className={"mb-t sm" + (frames ? " on" : "")} onClick={() => setFrames(f => !f)} aria-label="Frames" title="Frames" aria-expanded={frames}>{X.frame}</button>
       <button className="mb-t sm" onClick={() => zoomBy(0.8)} aria-label="Zoom out" title="Zoom out (⌘ −)">{X.minus}</button>
@@ -539,9 +563,11 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
       <span className="mi-menuwrap"><button className={"mb-t sm" + (helpMenu ? " on" : "")} onClick={() => setHelpMenu(m => !m)} aria-label="Help and resources" title="Help and resources" aria-haspopup="menu" aria-expanded={helpMenu}>{X.help}</button>
         {helpMenu && <HelpMenu onClose={() => setHelpMenu(false)} a={{ feedback: () => window.open("https://github.com/tommy-muckstack/miroisdead/issues/new", "_blank"), help: () => window.open("https://github.com/tommy-muckstack/miroisdead#readme", "_blank"), learn: () => window.open(`${BP}/app`, "_self"), news: () => window.open("https://github.com/tommy-muckstack/miroisdead/commits/main", "_blank"), shortcuts: () => setHelp(true) }} />}</span>
     </div>
-    {frames && <FramesPanel doc={doc} onClose={() => setFrames(false)} onJump={jumpTo} onCreate={createFrame} onRename={id => startEdit(id)} onPresent={() => { const f = doc.order.find(i => doc.objects[i].type === "frame"); if (f) jumpTo(f); fullscreen(); }} />}
+    {frames && <FramesPanel doc={doc} onClose={() => setFrames(false)} onJump={jumpTo} onCreate={createFrame} onRename={id => startEdit(id)} onPresent={startPresent} />}
     {ctx && <ContextMenu x={ctx.x} y={ctx.y} canvas={size} onClose={() => setCtx(null)} target={ctx.id ? doc.objects[ctx.id] : null} a={{ copy: () => copy(false), copyLink: () => copyLink(ctx.id ?? undefined), copyImage: () => void copyImage(), dup, del, comment: () => { const o = ctx.id ? doc.objects[ctx.id] : null; if (!o || !isBox(o)) return; const c: CommentObj = { id: nid(), type: "comment", x: o.x + o.w - 20, y: o.y - 36, w: 40, h: 36, thread: [] }; commitDoc(addObjects(doc, [c])); setSel([c.id]); setThread(c.id); setHideComments(false); }, copyStyle, pasteStyle, canPasteStyle: !!styleClip.current, clear: clearContent, front: () => commitDoc(bringToFront(doc, sel)), back: () => commitDoc(sendToBack(doc, sel)), forward, backward, link: () => flash("Links on objects aren't in MiroIsDead yet"), lock: toggleLock, locked: !!(ctx.id && (doc.objects[ctx.id] as { locked?: boolean }).locked), frame: frameSel, template: saveTemplate, csv: exportCsv, paste: () => void paste(), canPaste: clip.current.length > 0, selectAll: () => setSel(doc.order.slice()), fit: fitAll, grid: () => setGrid(g => !g), gridOn: grid }} />}
     {tool === "sticky" && <StickyPicker top={compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 250 + (banner ? 56 : 0))} value={last.current.stickyColor} onPick={c => { last.current.stickyColor = c; if (sel.length) patchSel({ color: c } as Partial<Obj>); setTool(t => t); }} />}
+    {palette && <CommandPalette commands={commands} onClose={() => setPalette(false)} />}
+    {present && <PresentBar index={present.i} total={frameIds().length} onPrev={() => presentGo(-1)} onNext={() => presentGo(1)} onExit={exitPresent} title={title || "Untitled"} />}
     <Reactions items={reacts} />
     {thread && doc.objects[thread]?.type === "comment" && <CommentThread c={doc.objects[thread] as CommentObj} view={view} size={size} who={who} onClose={() => setThread(null)}
       onReply={text => commitDoc(updateObjects(doc, [thread], o => ({ thread: [...(o as CommentObj).thread, { by: who, text, at: Date.now() }] }) as Partial<Obj>))}
