@@ -1,0 +1,20 @@
+{
+  "name": "miro",
+  "source": "miro.com homepage + pricing CSS/tokens (fetched 2026-10-14), Brainz whiteboard research /workspace/whiteboard-research/miro-notes.md",
+  "font": { "sans": "Noto Sans", "display": "Albert Sans", "files": { "Albert Sans": "miro/AlbertSans-Variable.woff2", "Noto Sans": "miro/NotoSans-Variable.woff2" }, "mono": "ui-monospace, SFMono-Regular, Menlo, monospace", "note": "miro.com sets headings in Roobert PRO (proprietary, NOT copied) and body in Noto Sans (OFL, shipped). Albert Sans (OFL) is our closest geometric-grotesque lookalike for Roobert: round bowls, single-storey g, tight -0.03em tracking. DM Sans is not used." },
+  "color": {
+    "bg": "#FFFFFF", "surface": "#FFFFFF", "surfaceAlt": "#F1F2F5",
+    "text": "#1C1C1E", "textMuted": "#555A6A", "textSubtle": "#8A8FA3",
+    "border": "#E0E2E8", "borderStrong": "#1C1C1E",
+    "primary": "#4262FF", "primaryHover": "#314CD9", "onPrimary": "#FFFFFF",
+    "accent": "#4262FF", "accentHover": "#2A41B6", "accentSoft": "#E5E2FF", "onAccent": "#FFFFFF",
+    "danger": "#D6334A", "success": "#067429", "warning": "#FDE050",
+    "focus": "#4262FF",
+    "heroFrom": "#FAFAFC", "heroMid": "#E5E2FF", "heroTo": "#E1FBF9"
+  },
+  "radius": { "xs": "4px", "sm": "6px", "md": "8px", "lg": "12px", "xl": "20px", "pill": "9999px" },
+  "space": { "1": "4px", "2": "8px", "3": "12px", "4": "16px", "5": "20px", "6": "24px", "8": "32px", "10": "40px", "12": "48px", "16": "64px" },
+  "shadow": { "sm": "0 1px 2px rgba(28,28,30,.08)", "md": "0 4px 16px rgba(28,28,30,.10)", "lg": "0 16px 48px rgba(28,28,30,.14)" },
+  "type": { "xs": "12px", "sm": "14px", "md": "16px", "lg": "18px", "xl": "24px", "2xl": "32px", "3xl": "44px", "4xl": "56px", "weightBody": 400, "weightStrong": 600, "weightHeading": 500, "tracking": "-0.03em", "lineHeight": 1.5 },
+  "control": { "height": "48px", "heightSm": "36px", "borderWidth": "1px", "buttonRadius": "12px", "inputRadius": "8px", "cardRadius": "20px" }
+}
