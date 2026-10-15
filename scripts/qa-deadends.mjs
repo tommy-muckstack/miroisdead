@@ -1,0 +1,20 @@
+import { chromium } from "@playwright/test";
+const BASE = "http://localhost:3111/miroisdead";
+const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1440, height: 900 } }); const errs = [];
+p.on("pageerror", e => errs.push(e.message));
+// guest session (no sign-in): dashboard + board
+await p.context().clearCookies(); await p.goto(`${BASE}/app`); await p.waitForSelector("[data-testid=board-card]");
+await p.getByLabel("Account").click(); await p.getByRole("menuitem", { name: "Profile" }).click(); await p.waitForTimeout(200); console.log("guest profile dialog:", await p.getByTestId("profile-dialog").textContent().then(t => t.slice(0, 120)));
+await p.keyboard.press("Escape"); await p.locator(".mx-tpl-for").click(); await p.getByRole("menuitem", { name: "Engineering" }).click(); await p.waitForTimeout(150); console.log("strip for Engineering:", await p.locator(".mx-tpls .mx-tpl-name").allTextContents().then(a => a.join(" | ")));
+await p.getByTestId("new-blank").click(); await p.waitForSelector("[data-testid=board-editor]"); await p.waitForTimeout(300);
+console.log("rail has Formats?", await p.getByLabel("Formats and Flows").count(), "| call button?", await p.getByLabel("Start a call").count());
+await p.getByLabel("Templates").click(); await p.waitForTimeout(150); console.log("templates panel:", await p.getByTestId("templates-panel").count()); await p.getByRole("button", { name: /Kanban board/ }).click(); await p.waitForTimeout(300); console.log("objects after insert:", await p.locator("[data-obj]").count());
+await p.keyboard.press("Escape"); await p.getByLabel("Shapes and lines").click(); console.log("flyout items:", await p.locator(".mb-fly.shapes [role=menuitem]").allTextContents().then(a => a.join(", ")));
+await p.getByRole("menuitem", { name: "Divider" }).click(); await p.waitForTimeout(150); console.log("objects after divider:", await p.locator("[data-obj]").count());
+await p.getByRole("button", { name: "Reactions", exact: true }).click(); await p.waitForTimeout(150); console.log("reactions popover open:", await p.locator("[aria-label='Facilitation tools and reactions'][aria-expanded=true]").count()); await p.keyboard.press("Escape");
+await p.locator(".mb-ai").click(); await p.waitForTimeout(150); console.log("AI bar → palette:", await p.getByPlaceholder(/Type what you want/).count()); await p.keyboard.press("Escape");
+await p.mouse.click(700, 500, { button: "right" }); await p.waitForTimeout(150); const ctx = await p.locator(".mm-ctx").textContent().catch(() => ""); console.log("context menu has Link to?", /Link to/.test(ctx)); await p.keyboard.press("Escape");
+await p.getByLabel("Main menu").click(); const mm = await p.locator(".mi-menu, .mb-menu, .mm-main").first().textContent().catch(() => ""); console.log("main menu has Assign status?", /Assign status|interactive display/.test(mm)); await p.keyboard.press("Escape");
+await p.getByTestId("share").click(); await p.waitForTimeout(200); if (await p.getByTestId("title-prompt").count()) { await p.getByRole("button", { name: "Skip" }).click(); await p.waitForTimeout(200); } console.log("guest share sign-in prompt:", await p.locator(".mb-signin").textContent().catch(() => "none"));
+await p.keyboard.press("Escape"); await p.getByLabel("Stickers, Emoji and GIFs").click(); await p.waitForTimeout(150); console.log("sticker tabs:", await p.locator(".mm-stickers .mm-tabs button, .mm-tabs button").allTextContents().then(a => a.join(",")));
+console.log("errors:", errs.length ? errs : "none"); await b.close();

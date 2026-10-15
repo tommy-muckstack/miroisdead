@@ -75,6 +75,30 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 ### Self-tests from the brief (2026-10-15, `scripts/qa-selftest.mjs`)
 Comment tool (C + click → thread, post), image upload, rotation handle (shape rotates), snapping guides (pink guide appears while dragging a sticky into alignment), pinch zoom (Ctrl+wheel = trackpad pinch → 165 % after one tick), and the "?" shortcuts panel all work. Miro's own logged-out landing/login/signup were compared in earlier passes (PR #1/#2) and their layout is unchanged.
 
+## Dead-end sweep (2026-10-15, after the QA pass)
+Every control now does something real or is gone; nothing toasts "not in MiroIsDead yet" any more.
+
+| Surface | Was | Now |
+|---|---|---|
+| Rail › Formats and Flows | stub toast | removed (separate Miro products) |
+| Rail › Templates | stub toast | panel that inserts any template into the open board, centred on the view |
+| Shapes flyout › Block arrow, More shapes, Diagram | stub toasts | removed |
+| Shapes flyout › Divider | stub toast | inserts a horizontal line |
+| Top bar › Reactions smiley | toast | opens the facilitation/reactions popover |
+| Top-right › Start a call | toast | removed |
+| Empty-board chips (workshop / process / roadmap) | toast | insert the Brainstorm / Flowchart / Roadmap templates |
+| AI bar "Where shall we start?" | opened Share › AI | opens the ⌘K command palette (every action by name) |
+| Context menu › Link to | toast | removed |
+| ⋮ menu › Assign status, Send to interactive display | toasts | removed |
+| Stickers › GIFs / Stickers tabs | toast | removed; Emoji stays |
+| Share › link access as guest/demo | toast mentioning the demo account | inline "Sign in to sync it and share it by link" with a sign-in link that returns to the board |
+| Public board banner for signed-in visitors | "Sign up to keep a copy" | "Open your boards" |
+| Profile menu › Profile | nothing | profile dialog (account, storage, workspace; sign-in CTA for guests/demo) |
+| Profile menu › Admin Console, Trash, Apps | nothing | removed |
+| Workspace rename | native prompt | dialog |
+| Dashboard "Templates for …" | did nothing | filters the strip by template tags |
+| Templates modal › Blueprints, Format templates, For you / View all, "Show when creating a board" | nothing | removed |
+
 ## Analytics
 ## QA findings (hands-on pass, 2026-10-15)
 41 findings from the external QA pass; each is closed here as fixed (PR) or a justified exception.

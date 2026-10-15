@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import type { BoardAccess, Doc } from "@/lib/canvas/types";
 import { X } from "@/components/mxi";
+import { BP } from "@/lib/basepath";
 import { shareLink, canUseShareSheet } from "@/lib/share";
 import { track, EVENTS } from "@/lib/analytics";
 import { boardToSvg } from "./exportSvg";
@@ -31,7 +32,7 @@ export function ShareModal({ tab, setTab, onClose, who, doc, title, boardId, acc
   const code = `<iframe width="768" height="432" src="${embedSrc}" frameborder="0" scrolling="no" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe>`;
   const [thumb, setThumb] = useState(""); useEffect(() => { setThumb(boardToSvg(doc, { maxW: 480, pad: 30, background: "#F2F2F2" })); }, [doc]);
   const firstFrame = doc.order.map(i => doc.objects[i]).find(o => o.type === "frame");
-  const pick = (a: BoardAccess) => { setAccMenu(false); if (!canShare && a !== "none") { flash("Sign in to share this board with a link (the demo account lives on this device only)"); return; } setAccess(a); flash(a === "none" ? "Link access turned off" : a === "view" ? "Anyone with the link can view" : "Anyone with the link can edit"); };
+  const pick = (a: BoardAccess) => { setAccMenu(false); if (!canShare && a !== "none") { flash("Sign in to share this board by link"); return; } setAccess(a); flash(a === "none" ? "Link access turned off" : a === "view" ? "Anyone with the link can view" : "Anyone with the link can edit"); };
   return <div className="mb-scrim" data-ui onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
     <div className="mb-share" role="dialog" aria-label="Share board" data-testid="share-modal">
       <div className="mb-tabs" role="tablist">{(["Invite", "Embed", "Publish", "AI"] as const).map(t => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{t}{t === "AI" && <span className="mb-aiic"><i className="a" /><i className="b" /><i className="c" /><em>+</em></span>}</button>)}</div>
@@ -46,6 +47,7 @@ export function ShareModal({ tab, setTab, onClose, who, doc, title, boardId, acc
         <div className="mb-any">{X.globe}<span>Anyone with the link</span>
           <span className="mi-menuwrap"><button aria-haspopup="menu" aria-expanded={accMenu} onClick={() => setAccMenu(m => !m)} data-testid="link-access">{ACCESS_LABEL[access]} {X.chev}</button>
             {accMenu && <Pop className="mb-accpop right" onClose={() => setAccMenu(false)}>{(["none", "view", "edit"] as BoardAccess[]).map(a => <Item key={a} label={ACCESS_LABEL[a]} on={access === a} onClick={() => pick(a)} />)}</Pop>}</span></div>
+        {!canShare && <p className="mb-signin">{X.lock} This board lives in this browser. <a href={`${BP}/login?callbackUrl=${encodeURIComponent(location.pathname)}`}>Sign in</a> to sync it and share it by link.</p>}
       </>}
       {tab === "Embed" && <>
         {access === "none" ? <div className="mb-notice">{X.lock}<p><b>This board is private.</b> Only you can see it. Change who can see it in the <a href="#" onClick={e => { e.preventDefault(); setTab("Invite"); }}>invite section</a>.</p></div>
