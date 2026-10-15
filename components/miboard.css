@@ -5,7 +5,7 @@
 .mb-tl,.mb-tr,.mb-pill,.mb-zoom,.mb-ai,.mb-fly{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.04),0 1px 6px rgba(0,0,0,.14);border-radius:12px}
 .mb-tl{position:absolute;left:8px;z-index:40;height:46px;display:flex;align-items:center;gap:6px;padding:0 6px 0 8px;font-family:var(--ids-font-sans)}
 .mb-i{position:relative;display:grid;place-items:center;min-width:34px;height:34px;border:0;background:none;border-radius:8px;color:#1a1a1a;cursor:pointer;padding:0 4px;text-decoration:none}.mb-i:hover{background:#f1f1f1}
-.mb-logo{font-family:var(--ids-font-display);font-weight:800;font-size:29px;letter-spacing:-.05em;color:#050038;text-decoration:none;line-height:1;padding:0 8px 0 2px}
+.mb-logo{display:inline-flex;align-items:center;gap:6px;font-family:var(--ids-font-display);font-weight:700;font-size:17px;letter-spacing:-.03em;color:#1c1c1e;text-decoration:none;line-height:1;padding:0 8px 0 2px;white-space:nowrap}
 .mb-title{border:1px solid transparent;border-radius:8px;background:transparent;height:34px;width:96px;padding:0 8px;font-size:13px;font-weight:600;color:#1a1a1a;outline:0;font-family:inherit}.mb-title:hover{border-color:#ddd}.mb-title:focus{border-color:#4262ff;background:#fff}
 .mb-plan{margin-left:6px;height:34px;padding:0 12px;border-radius:17px;border:0;background:#f4f2ec;font-size:13px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;color:#1a1a1a;font-family:inherit}.mb-plan b{font-weight:700}
 .mb-tr{position:absolute;right:8px;z-index:40;height:46px;display:flex;align-items:center;gap:6px;padding:0 5px 0 8px}

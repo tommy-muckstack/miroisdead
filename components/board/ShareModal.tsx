@@ -49,7 +49,7 @@ export function ShareModal({ tab, setTab, onClose, who, doc, title, boardId, acc
       </>}
       {tab === "Publish" && <>
         <div className="mb-pubcard"><span className="ic">{X.verse}</span><div><b>Community template</b><p>Publish as a community template and give everyone access to your ideas. MiroIsDead is open source: templates ship with the app.</p></div><a className="mb-copy" href="https://github.com/tommy-muckstack/miroisdead/issues/new?title=Template%20proposal" target="_blank" rel="noreferrer">Publish template</a></div>
-        <div className="mb-pubcard"><span className="ic">{X.tplS}</span><div><b>Custom template</b><p>Save this board as a custom template and reuse it from Create ▸ Explore templates. Free, no plan needed.</p></div><button className="mb-copy" onClick={() => { onTemplate(); onClose(); }}>Save template</button></div>
+        <div className="mb-pubcard"><span className="ic">{X.tplS}</span><div><b>Custom template</b><p>Save this board as a custom template and reuse it from Create ▸ Explore templates.</p></div><button className="mb-copy" onClick={() => { onTemplate(); onClose(); }}>Save template</button></div>
       </>}
       {tab === "AI" && <div className="mb-pubcard"><span className="ic">{X.ai}</span><div><b>Bring your own AI</b><p>Copy the board as plain scene JSON and paste it into any assistant (Claude, ChatGPT, Gemini…). Nothing is sent anywhere by MiroIsDead.</p></div><button className="mb-copy" onClick={() => { onScene(); onClose(); }}>Copy scene JSON</button></div>}
     </div>

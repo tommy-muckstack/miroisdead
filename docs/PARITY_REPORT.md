@@ -25,15 +25,15 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 | Landing | Mobile 390 (burger nav, stacked hero, cookie sheet) | match | S3 | Hero heading wraps on 3 lines like Miro. |
 | Landing | Mega-menus on Product / Use Cases / Solutions / Resources (hover panels with column groups) | match | S3 | Column groups mirror miro.com's; links go to the matching section, pricing or sign-up. PR #11 |
 | Pricing | Hero, toggle, 4 cards, Guard, compare matrix, trust, security, FAQ | match | S3 | Prior pass; PR #9 fixes the non-sticky nav, Business CTA order (Try for free / or buy now) and a wordmark typo. Out of the owner's logged-out scope otherwise. |
-| Auth | Sign-in card (providers row, SSO, email, Remember me, CTA) | match | — | 44px heading, 18px controls; helper copy kept truthful (password sign-in). PR #2 |
+| Auth | Sign-in card (Google + email only, Remember me, CTA) | differs (by design) | — | Owner decision: Microsoft, SSO and the "+" providers are removed; Google and email are the only sign-in methods. PR #15 |
 | Auth | Sign-in extras (arrow link, grey "Trouble signing in?" box, fine print) | match | S3 | Arrow link = demo sign-in (when enabled); box requests a password reset; reCAPTCHA line replaced by "New to MiroIsDead?" (exception: no CAPTCHA, no support chat bubble). PR #2 |
-| Auth | Sign-up page (board chrome behind the card) | match | S3 | Real header pill, right pill with avatars/Present/Share, AI button and tool rail drawn behind the card. Providers are Google/Microsoft/SSO vs Google/Office365/Slack (exception). PR #2 |
+| Auth | Sign-up page (board chrome behind the card) | differs (by design) | — | Google + email only; backdrop and rail use the MiroIsDead wordmark. PR #15 |
 | Auth | Google button | match | — | Official G mark, Google Sans Medium (prior pass). |
 | Dashboard | Shell: left rail (workspace, search, Home/Starred/Browse, Spaces, AI promo), top bar, serif greeting, template strip, recents list | match | — | Rotating greeting (“Let’s build, …” etc.), round blue avatar, workspace named after the user (double-click to rename), search filters boards, “Dec 3, 2025” dates, board emoji in the list, banner/promo dismissal remembered. PR #7 |
 | Dashboard | Create menu, profile menu, templates modal, “Templates for …” picker | match | — | Templates modal gains a “Your templates” section fed by Export ▸ Save board as template (free). PR #7 |
 | Dashboard | Starred / Browse / Spaces, row ⋯ menu (open in new tab, rename, duplicate, star, move to space, backup, delete) | match | S3 | Stars, spaces and board→space assignments are per-device preferences (localStorage), not synced. PR #7 |
-| Dashboard | Board limit banner / Upgrade | n/a | — | Everything is free; Upgrade chrome kept for look only. |
-| Board | Top-left pill (sidebar, logo, emoji picker, title, main menu, export, Upgrade pill) | match | — | Emoji is stored on the board; Upgrade is look-only. PR #3 |
+| Dashboard | Board limit banner / Upgrade / Free plan chrome | differs (by design) | — | Removed entirely: everything is free, so there is no Upgrade button or plan badge anywhere in the app, and the notifications banner is gone. PR #15 |
+| Board | Top-left pill (sidebar, MiroIsDead wordmark, emoji picker, title, main menu, export) | match | — | "miro" wordmark replaced by the MiroIsDead mark + name everywhere (board, dashboard, sign-up backdrop); Upgrade pill removed. PR #15 |
 | Board | Top-right pill (facilitation, activity, call, avatar, present, Share) | match | S3 | Activity and call buttons are stubs (no multiplayer yet). |
 | Board | Tool rail (AI, select, formats, templates, sticky, text, shapes, pen, frame, stickers, comment, +) | match | — | Compact rail under 720px like Miro; "+" opens the searchable Tools/Marketplace panel with the pinned tools. PR #3 |
 | Board | Shapes & lines flyout | match | — | Prior pass. |
@@ -69,7 +69,7 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 - Trademarks and assets: Miro's logo, customer logos, photos, illustrations and fonts are not copied. Wordmarks are text, art is CSS/SVG, fonts are Albert Sans / Noto Sans (OFL) as stand-ins for Roobert PRO / Noto Sans.
 - Marketing claims about integrations (Jira, Linear, Slack…) and AI agents are rephrased to what the clone actually does.
 - "Contact sales" → "View source"; "No password required" → password sign-in copy; reCAPTCHA / region sign-in / enterprise SSO are not applicable.
-- Paid Miro features are built as free equivalents; Upgrade/Free-plan chrome stays for look only and never gates anything.
+- Paid Miro features are built as free equivalents; Upgrade / Free-plan chrome and the notification banner were removed on the owner's request (2026-10-15), and sign-in is Google + email only.
 
 ## Open items needing a human decision
 1. **Multiplayer**: the Vercel WebSocket relay turned out to put every connection on its own instance (Vercel's docs point to Redis for rooms, which costs), so live sync now runs as a WebRTC mesh with Firestore signalling (PR #14). One-time step: add the `miroisdead_live` block from `firestore.rules` to the shared `yourappisdead` ruleset (the repo file is MiroIsDead-only; deploying it alone would drop the other apps' rules). Guests who aren't signed in get tab-sync only; ~10% of networks without TURN can't connect peer-to-peer.

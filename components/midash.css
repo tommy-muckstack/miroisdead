@@ -21,7 +21,7 @@
 .mx-main{flex:1;min-width:0;margin:17px 10px 10px 0;background:#fbfaf7;border:1px solid #e9e7e0;border-radius:16px;min-height:calc(100vh - 27px);overflow:hidden}
 .mx-dash:not(:has(.mx-banner)) .mx-main{margin-top:10px}
 .mx-bar{display:flex;align-items:center;gap:8px;height:64px;padding:0 16px 0 32px}
-.mx-logo{font-family:var(--ids-font-display);font-weight:800;font-size:34px;letter-spacing:-.05em;color:#050038;text-decoration:none;margin-right:12px;line-height:1}
+.mx-logo{display:inline-flex;align-items:center;gap:8px;font-family:var(--ids-font-display);font-weight:700;font-size:22px;letter-spacing:-.03em;color:#1c1c1e;text-decoration:none;margin-right:12px;line-height:1;white-space:nowrap}
 .mx-plan{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 10px;border-radius:14px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.12);font-size:13px}.mx-plan b{font-weight:700}
 .mx-pill{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;border:0;background:#eeeeeb;font-weight:700;font-size:14px;cursor:pointer;color:#222428}
 .mx-blue{height:32px;padding:0 12px;border-radius:8px;border:0;background:#4262ff;color:#fff;font-weight:700;font-size:14px;cursor:pointer}
