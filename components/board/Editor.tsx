@@ -24,10 +24,11 @@ import { I, Mark } from "./icons";
 import { kbd, useMac } from "@/lib/keys";
 import { X } from "@/components/mxi";
 import { BP } from "@/lib/basepath";
+import { TEMPLATES, templateDoc, type TemplateId } from "@/lib/canvas/templates";
 import "@/components/miboard.css";
 import { SelectionToolbar } from "./SelectionToolbar";
 import { Minimap } from "./Minimap";
-import { CommandPalette, PresentBar, type Command, ContextMenu, EmojiPicker, ExportMenu, FramesPanel, HelpMenu, MainMenu, ShortcutsPanel, StickyPicker, ToolsPanel, ZoomMenu, type ToolEntry } from "./Menus";
+import { CommandPalette, PresentBar, type Command, ContextMenu, EmojiPicker, ExportMenu, FramesPanel, HelpMenu, MainMenu, Pop, ShortcutsPanel, StickyPicker, ToolsPanel, ZoomMenu, type ToolEntry } from "./Menus";
 import { svgToPngBlob, boardToCsv, saveCustomTemplate, openPrintWindow } from "./exportMore";
 import { CommentThread, CommentsPanel } from "./Comments";
 import { LiveChannel, PEER_COLORS, type LiveMsg, type Peer } from "@/lib/live";
@@ -62,7 +63,7 @@ const textOf = (o: Obj) => (o.type === "frame" ? o.name : o.type === "connector"
 const download = (name: string, mime: string, data: string) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: mime })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
 const textHeight = (text: string, w: number, size: number, bold: boolean) => Math.max(size * 1.6, wrapText(text || " ", w, size, undefined, bold).length * size * LINE_HEIGHT + 8);
 
-export function Editor({ initial, store, who, signOutAction, readOnly = false, guest = false, embed = false, startFrame, rtc = null }: { initial: Board; store: BoardStore; who: string; signOutAction?: () => void | Promise<void>; readOnly?: boolean; guest?: boolean; embed?: boolean; startFrame?: string; rtc?: FirebaseClientConfig | null }) {
+export function Editor({ initial, store, who, signOutAction, readOnly = false, guest = false, visitorSignedIn = false, embed = false, startFrame, rtc = null }: { initial: Board; visitorSignedIn?: boolean; store: BoardStore; who: string; signOutAction?: () => void | Promise<void>; readOnly?: boolean; guest?: boolean; embed?: boolean; startFrame?: string; rtc?: FirebaseClientConfig | null }) {
   const [hist, setHist] = useState<History<Doc>>(() => createHistory(initial.doc));
   const [view, setView] = useState<View>(initial.view);
   const [title, setTitle] = useState(initial.title);
@@ -96,6 +97,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const [helpMenu, setHelpMenu] = useState(false);
   const [ctx, setCtx] = useState<{ x: number; y: number; id: Id | null } | null>(null);
   const [frames, setFrames] = useState(false);
+  const [tplPanel, setTplPanel] = useState(false); // rail › Templates: insert a template into this board
   const [tools, setTools] = useState(false);
   const [emojiPick, setEmojiPick] = useState(false);
   const [emoji, setEmoji] = useState(initial.emoji ?? "");
@@ -201,6 +203,12 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     if (ids.length) { commitDoc(nd); setSel(ids); } };
   const patchSel = (p: Partial<Obj> | ((o: Obj) => Partial<Obj>), remember?: Record<string, unknown>) => { commitDoc(updateObjects(R.current.doc, R.current.sel, p)); if (remember) Object.assign(last.current, remember); };
   const del = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; commitDoc(removeObjects(d, s)); setSel([]); };
+  const insertTemplate = (id: TemplateId) => {
+    const t = templateDoc(id); const objs = t.order.map(i => t.objects[i]); if (!objs.length) return;
+    const { doc: d, view: v, size: sz } = R.current; const b = unionBox(objs.filter(isBox).map(o => boxOf(o))); const c = screenToWorld(v, sz, { x: sz.w / 2, y: sz.h / 2 });
+    const r = pasteObjects(d, objs, b ? c.x - (b.x + b.w / 2) : 0, b ? c.y - (b.y + b.h / 2) : 0); commitDoc(r.doc); setSel(r.ids); setTplPanel(false); track(EVENTS.board_template_inserted, { template: id, objects: objs.length });
+    if (d.order.length === 0) setTimeout(fitAll, 0);
+  };
   const regroup = (objs: Obj[]): Obj[] => { const map = new Map<string, string>(); return objs.map(o => { if (!o.group) return o; if (!map.has(o.group)) map.set(o.group, nid()); return { ...o, group: map.get(o.group) } as Obj; }); };
   const dup = () => { const { doc: d, sel: s } = R.current; if (!s.length) return; const c = cloneObjects(d, s); commitDoc(addObjects(d, regroup(c.objs))); setSel([]); };
   const groupSel = () => { const { doc: d, sel: s } = R.current; if (s.length < 2) { flash("Select two or more objects to group"); return; } commitDoc(groupObjects(d, s)); track(EVENTS.board_group_changed, { action: "group", count: s.length }); flash("Grouped"); };
@@ -549,11 +557,11 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   return <div className={"mi-app" + (present ? " presenting" : "")} data-testid="board-editor">
     {banner && !present && <div className="mx-banner" data-ui role="status"><span className="mx-banner-i">{X.info}</span><span>Never miss an important update.</span><a href="#notifications" onClick={e => { e.preventDefault(); setBanner(false); }}>Turn on real-time notifications</a><button aria-label="Dismiss" className="mx-banner-x" onClick={() => setBanner(false)}>{X.close}</button></div>}
     {!online && <div className="mb-ro mb-offline" data-ui role="status">{X.info} You’re offline. Changes are saved on this device and sync when you’re back.</div>}
-    {(readOnly || guest) && <div className="mb-ro" data-ui>{X.globe} {readOnly ? "View only" : "Editing as a guest"} · {title || "Untitled"}{guest && <a href={`${BP}/signup`}>Sign up to keep a copy</a>}</div>}
+    {(readOnly || guest) && <div className="mb-ro" data-ui>{X.globe} {readOnly ? "View only" : "Editing as a guest"} · {title || "Untitled"}{guest && (visitorSignedIn ? <a href={`${BP}/app`}>Open your boards</a> : <a href={`${BP}/signup`}>Sign up to keep a copy</a>)}</div>}
     {!embed && !present && <header className="mb-tl" data-ui style={{ top: banner ? 66 : 10 }}>
       <Link href="/app" className="mb-i" aria-label="Back to boards" title="Back to boards">{X.panel}</Link>
       <Link href="/app" className="mb-logo hm" aria-label="MiroIsDead home"><Mark size={24} />MiroIsDead</Link>
-      <button className="mb-i hm" aria-label="Reactions" onClick={() => flash("Reactions are for live sessions")}>{X.smile}</button>
+      <button className="mb-i hm" aria-label="Reactions" onClick={() => setFac(true)}>{X.smile}</button>
       <span className="mi-menuwrap"><button className={"mb-i mb-emoji" + (emoji ? " has" : "")} aria-label="Choose emoji" title="Choose emoji" onClick={() => setEmojiPick(p => !p)}>{emoji || <span className="mb-emoji-ph" />}</button>{emojiPick && <EmojiPicker onPick={setEmoji} onClose={() => setEmojiPick(false)} />}</span>
       <input className="mb-title" aria-label="Board title" value={title} placeholder="Untitled" readOnly={readOnly} onChange={e => setTitle(e.target.value)} onKeyDown={e => { e.stopPropagation(); if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
       <span className="mi-menuwrap"><button className="mb-i" aria-label="Main menu" aria-haspopup="menu" aria-expanded={main} onClick={() => setMain(m => !m)}>{X.kebab}</button>
@@ -569,7 +577,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
       <span className="mi-menuwrap"><button className={"mb-i wide hm" + (fac ? " on" : "")} aria-label="Facilitation tools and reactions" aria-haspopup="menu" aria-expanded={fac} onClick={() => setFac(f => !f)}><span className="mb-facic">{X.timer}{X.vote}<i>✦</i></span></button>
         {fac && <FacilitationPopover onClose={() => setFac(false)} onReact={react} timer={timer} onTimer={() => setTimerOpen(true)} voting={voting} onVoting={() => setVotingOpen(true)} priv={priv} onPrivate={() => { setPriv(p => !p); flash(priv ? "Private mode off: new stickies are visible to everyone" : "Private mode on: new stickies stay hidden until you reveal them"); }} onNote={() => setNoteOpen(true)} />}</span>
       <button className={"mb-i hm" + (commentsPanel ? " on" : "")} aria-label="Comments" aria-expanded={commentsPanel} onClick={() => setCommentsPanel(p => !p)}>{X.chat}{doc.order.some(i => doc.objects[i].type === "comment" && !(doc.objects[i] as CommentObj).resolved) && <i className="mb-badge" />}</button>
-      <button className="mb-i hm" aria-label="Start a call" onClick={() => flash("Calls aren't part of MiroIsDead")}>{X.video}</button>
+
       <span className="mi-menuwrap"><button className="mb-av" aria-label="Account" aria-expanded={prof} onClick={() => setProf(p => !p)}><PeerAvatars peers={Object.values(peers)} me={me.current} />{X.chev}</button>
         {prof && <div className="mi-menu mb-menu" role="menu" style={{ right: 0 }} onPointerDown={e => e.stopPropagation()}><div className="mb-menu-h">{who}</div>
           <Link href="/app" role="menuitem" className="mb-link">All boards</Link>
@@ -583,9 +591,9 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
         <button className="mb-t ai" aria-label="Create with AI" title="Create with AI" onClick={() => { setFly(""); setShare("AI"); }}>{X.sparkle}</button>
       </div>
       <div className="mb-pill main">
-        {([["select", X.select, "Select"], [null, X.notes, "Formats and Flows"], [null, X.tpl, "Templates"], ["sticky", X.sticky, "Sticky note"], ...(compact ? [] : [["text", X.text, "Text"]])] as [Tool | null, React.ReactNode, string][]).map(([t, ic, label]) => t
+        {([["select", X.select, "Select"], [null, X.tpl, "Templates"], ["sticky", X.sticky, "Sticky note"], ...(compact ? [] : [["text", X.text, "Text"]])] as [Tool | null, React.ReactNode, string][]).map(([t, ic, label]) => t
           ? <button key={t} className={"mb-t" + (tool === t ? " on" : "")} aria-pressed={tool === t} title={`${label} (${TOOLS.find(x => x.tool === t)!.key.toUpperCase()})`} aria-label={label} data-tool={t} onClick={() => { setTool(t); setEdit(null); setFly(""); }}>{ic}</button>
-          : <button key={label} className="mb-t" title={label} aria-label={label} onClick={() => { setFly(""); flash(`${label} aren't in MiroIsDead yet`); }}>{ic}</button>)}
+          : <button key={label} className={"mb-t" + (tplPanel ? " on" : "")} title={label} aria-label={label} aria-expanded={tplPanel} onClick={() => { setFly(""); setTplPanel(p => !p); }}>{ic}</button>)}
         {!compact && <>
         <button className={"mb-t" + (fly === "shapes" || ["rect", "ellipse", "diamond", "connector"].includes(tool) ? " on" : "")} aria-label="Shapes and lines" title="Shapes and lines (S)" aria-expanded={fly === "shapes"} onClick={() => setFly(f => f === "shapes" ? "" : "shapes")}>{X.shapes}</button>
         <button className={"mb-t" + (tool === "pen" ? " on" : "")} aria-pressed={tool === "pen"} title="Pen (P)" aria-label="Pen" data-tool="pen" onClick={() => { setTool("pen"); setEdit(null); setFly(""); }}>{X.pen}</button>
@@ -599,15 +607,12 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
         <button className="mb-t" disabled={!canRedo(hist)} onClick={doRedo} title={kbd("Redo (⇧⌘Z)", mac)} aria-label="Redo">{X.redo}</button>
       </div>
       <div className={"mb-fly shapes" + (fly === "shapes" ? " open" : "")} role="menu">
-        {([["Line", X.line, "connector", "L", { style: "straight", arrow: false }], ["Arrow", X.arrow, "connector", "", { style: "straight", arrow: true }], ["Elbow arrow", X.elbow, "connector", "", { style: "elbow", arrow: true }], ["Block arrow", X.blockArrow, null, "", null]] as [string, React.ReactNode, Tool | null, string, { style: ConnectorStyle; arrow: boolean } | null][]).map(([label, ic, t, k, cfg]) =>
-          <button key={label} role="menuitem" className={"mb-f" + (t === "connector" && tool === "connector" && cfg && last.current.line === label ? " on" : "")} data-tool={label === "Elbow arrow" ? "connector" : undefined} aria-pressed={label === "Elbow arrow" ? tool === "connector" : undefined} onClick={() => { if (!t || !cfg) { flash("Block arrows aren't in MiroIsDead yet"); return; } last.current.connectorStyle = cfg.style; last.current.arrow = cfg.arrow; last.current.line = label; setTool("connector"); setEdit(null); setFly(""); }}><span className="ic">{ic}</span>{label}<kbd>{k}</kbd></button>)}
+        {([["Line", X.line, "connector", "L", { style: "straight", arrow: false }], ["Arrow", X.arrow, "connector", "", { style: "straight", arrow: true }], ["Elbow arrow", X.elbow, "connector", "", { style: "elbow", arrow: true }]] as [string, React.ReactNode, Tool | null, string, { style: ConnectorStyle; arrow: boolean } | null][]).map(([label, ic, t, k, cfg]) =>
+          <button key={label} role="menuitem" className={"mb-f" + (t === "connector" && tool === "connector" && cfg && last.current.line === label ? " on" : "")} data-tool={label === "Elbow arrow" ? "connector" : undefined} aria-pressed={label === "Elbow arrow" ? tool === "connector" : undefined} onClick={() => { if (!t || !cfg) return; last.current.connectorStyle = cfg.style; last.current.arrow = cfg.arrow; last.current.line = label; setTool("connector"); setEdit(null); setFly(""); }}><span className="ic">{ic}</span>{label}<kbd>{k}</kbd></button>)}
         <hr />
         {([["Rectangle", X.rect, "rect", "R", "rect"], ["Oval", X.oval, "ellipse", "O", "rect"], ["Rhombus", X.rhombus, "diamond", "", "rect"], ["Triangle", X.triangle, "rect", "", "triangle"]] as [string, React.ReactNode, Tool, string, ShapeObj["shape"]][]).map(([label, ic, t, k, sh]) =>
           <button key={label} role="menuitem" className={"mb-f" + ((tool === t && (label === "Triangle" ? last.current.shape === "triangle" : t !== "rect" || last.current.shape !== "triangle")) || (label === "Rectangle" && !["rect", "ellipse", "diamond", "connector"].includes(tool)) ? " on" : "")} data-tool={label === "Rectangle" ? "rect" : label === "Oval" ? "ellipse" : label === "Rhombus" ? "diamond" : undefined} aria-pressed={label === "Rectangle" ? tool === "rect" : label === "Oval" ? tool === "ellipse" : label === "Rhombus" ? tool === "diamond" : undefined} onClick={() => { last.current.shape = sh; setTool(t); setEdit(null); setFly(""); }}><span className="ic">{ic}</span>{label}<kbd>{k}</kbd></button>)}
-        <button role="menuitem" className="mb-f" onClick={() => { setFly(""); flash("Divider isn't in MiroIsDead yet"); }}><span className="ic">{X.divider}</span>Divider</button>
-        <button role="menuitem" className="mb-f plain" onClick={() => { setFly(""); flash("More shapes are coming. Contributions welcome.") }}>More shapes</button>
-        <hr />
-        <button role="menuitem" className="mb-f" onClick={() => { setFly(""); flash("Diagramming from text isn't in MiroIsDead yet"); }}><span className="ic">{X.diagram}</span>Diagram</button>
+        <button role="menuitem" className="mb-f" onClick={() => { setFly(""); const { doc: d, view: v, size: sz } = R.current; const c = screenToWorld(v, sz, { x: sz.w / 2, y: sz.h / 2 }); const k = connector({ x: c.x - 160, y: c.y }, { x: c.x + 160, y: c.y }, { style: "straight", endArrow: false, startArrow: false }); commitDoc(addObjects(d, [k])); setSel([k.id]); }}><span className="ic">{X.divider}</span>Divider</button>
       </div>
     </nav>}
 
@@ -650,9 +655,9 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
 
     {hint && (doc.order.length === 0 || (firstRun && (edit || tool !== "select"))) && <div className={"mi-hint" + (doc.order.length === 0 && chips && !edit ? " hi" : "")} data-ui data-testid={doc.order.length === 0 && !edit ? "empty-hint" : "hint"}>{hint}</div>}
     {chips && !readOnly && doc.order.length === 0 && !edit && <div className="mb-chips" data-ui>
-      <button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c1" />Prep a workshop</button><button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c2" />Map a process</button><button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c3" />Build a roadmap</button>
+      <button onClick={() => insertTemplate("brainstorm")}><i className="c1" />Prep a workshop</button><button onClick={() => insertTemplate("flowchart")}><i className="c2" />Map a process</button><button onClick={() => insertTemplate("roadmap")}><i className="c3" />Build a roadmap</button>
       <button className="x" aria-label="Dismiss suggestions" onClick={() => setChips(false)}>{X.close}</button></div>}
-    {!readOnly && !embed && !present && <div className="mb-ai" data-ui onClick={() => setShare("AI")}>{X.plusS}<span>Where shall we start?</span>{X.mic}</div>}
+    {!readOnly && !embed && !present && <div className="mb-ai" data-ui role="button" tabIndex={0} onClick={() => setPalette(true)} onKeyDown={e => { if (e.key === "Enter") setPalette(true); }}>{X.plusS}<span>Where shall we start? Type a command (⌘K)</span></div>}
     <div className="mb-zoom" data-ui>
       <button className={"mb-t sm" + (frames ? " on" : "")} onClick={() => setFrames(f => !f)} aria-label="Frames" title="Frames" aria-expanded={frames}>{X.frame}</button>
       <button className="mb-t sm" onClick={() => zoomBy(0.8)} aria-label="Zoom out" title={kbd("Zoom out (⌘ −)", mac)}>{X.minus}</button>
@@ -662,8 +667,12 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
       <span className="mi-menuwrap"><button className={"mb-t sm" + (helpMenu ? " on" : "")} onClick={() => setHelpMenu(m => !m)} aria-label="Help and resources" title="Help and resources" aria-haspopup="menu" aria-expanded={helpMenu}>{X.help}</button>
         {helpMenu && <HelpMenu onClose={() => setHelpMenu(false)} a={{ feedback: () => window.open("https://github.com/tommy-muckstack/miroisdead/issues/new", "_blank"), help: () => window.open("https://github.com/tommy-muckstack/miroisdead#readme", "_blank"), learn: () => window.open(`${BP}/app`, "_self"), news: () => window.open("https://github.com/tommy-muckstack/miroisdead/commits/main", "_blank"), shortcuts: () => setHelp(true) }} />}</span>
     </div>
+    {tplPanel && <Pop className="mm-tools mm-tpl" style={{ top: compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0)) }} onClose={() => setTplPanel(false)} role="dialog" testid="templates-panel">
+      <h4>Insert a template</h4><p className="mm-sub">Adds the template's objects to this board, centred on your view.</p>
+      {TEMPLATES.filter(t => t.id !== "blank").map(t => <button key={t.id} className="mm-tool" onClick={() => insertTemplate(t.id)}><span className="ic">{X.tplS}</span><span><b>{t.name}</b><small>{t.blurb}</small></span></button>)}
+    </Pop>}
     {frames && <FramesPanel doc={doc} onClose={() => setFrames(false)} onJump={jumpTo} onCreate={createFrame} onRename={id => startEdit(id)} onPresent={startPresent} />}
-    {ctx && <ContextMenu x={ctx.x} y={ctx.y} canvas={size} onClose={() => setCtx(null)} target={ctx.id ? doc.objects[ctx.id] : null} a={{ copy: () => copy(false), copyLink: () => copyLink(ctx.id ?? undefined), copyImage: () => void copyImage(), dup, del, comment: () => { const o = ctx.id ? doc.objects[ctx.id] : null; if (!o || !isBox(o)) return; const c: CommentObj = { id: nid(), type: "comment", x: o.x + o.w - 20, y: o.y - 36, w: 40, h: 36, thread: [] }; commitDoc(addObjects(doc, [c])); setSel([c.id]); setThread(c.id); setHideComments(false); }, copyStyle, pasteStyle, canPasteStyle: !!styleClip.current, clear: clearContent, front: () => commitDoc(bringToFront(doc, sel)), back: () => commitDoc(sendToBack(doc, sel)), forward, backward, link: () => flash("Links on objects aren't in MiroIsDead yet"), lock: toggleLock, locked: !!(ctx.id && (doc.objects[ctx.id] as { locked?: boolean }).locked), frame: frameSel, template: saveTemplate, csv: exportCsv, paste: () => void paste(), canPaste: clip.current.length > 0, selectAll: () => setSel(doc.order.slice()), fit: fitAll, grid: () => setGrid(g => !g), gridOn: grid }} />}
+    {ctx && <ContextMenu x={ctx.x} y={ctx.y} canvas={size} onClose={() => setCtx(null)} target={ctx.id ? doc.objects[ctx.id] : null} a={{ copy: () => copy(false), copyLink: () => copyLink(ctx.id ?? undefined), copyImage: () => void copyImage(), dup, del, comment: () => { const o = ctx.id ? doc.objects[ctx.id] : null; if (!o || !isBox(o)) return; const c: CommentObj = { id: nid(), type: "comment", x: o.x + o.w - 20, y: o.y - 36, w: 40, h: 36, thread: [] }; commitDoc(addObjects(doc, [c])); setSel([c.id]); setThread(c.id); setHideComments(false); }, copyStyle, pasteStyle, canPasteStyle: !!styleClip.current, clear: clearContent, front: () => commitDoc(bringToFront(doc, sel)), back: () => commitDoc(sendToBack(doc, sel)), forward, backward, lock: toggleLock, locked: !!(ctx.id && (doc.objects[ctx.id] as { locked?: boolean }).locked), frame: frameSel, template: saveTemplate, csv: exportCsv, paste: () => void paste(), canPaste: clip.current.length > 0, selectAll: () => setSel(doc.order.slice()), fit: fitAll, grid: () => setGrid(g => !g), gridOn: grid }} />}
     {tool === "sticky" && <StickyPicker top={compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 250 + (banner ? 56 : 0))} value={last.current.stickyColor} onPick={c => { last.current.stickyColor = c; if (sel.length) patchSel({ color: c } as Partial<Obj>); setTool(t => t); }} />}
     {palette && <CommandPalette commands={commands.map(c => ({ ...c, run: () => { track(EVENTS.board_command_run, { command: c.id }); c.run(); } }))} onClose={() => setPalette(false)} />}
     {present && <PresentBar index={present.i} total={frameIds().length} onPrev={() => presentGo(-1)} onNext={() => presentGo(1)} onExit={exitPresent} title={title || "Untitled"} />}

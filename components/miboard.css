@@ -185,3 +185,5 @@
 .mb-rail .mb-t svg{stroke-width:2}.mb-t.ai{width:42px;height:42px}.mb-pill.hist .mb-t{height:42px}
 /* #18: no empty circle in the top bar; the emoji slot appears on hover until an emoji is chosen */
 .mb-emoji:not(.has){opacity:0;width:0;min-width:0;margin:0;padding:0;overflow:hidden}.mb-tl:hover .mb-emoji:not(.has),.mb-emoji:not(.has):focus-visible,.mb-emoji[aria-expanded=true]{opacity:1;width:auto;padding:0 6px}
+
+.mm-tpl h4{margin:4px 0 2px;font-size:16px}.mm-sub{margin:0 0 10px;font-size:13px;color:#666}.mb-signin{display:flex;align-items:center;gap:8px;margin:14px 0 0;padding:10px 12px;border-radius:8px;background:#f4f4f2;font-size:14px;color:#444}.mb-signin a{color:#4262ff;font-weight:600}

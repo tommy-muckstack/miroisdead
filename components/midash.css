@@ -107,3 +107,5 @@
 .mx-pill.mx-save{color:#fff;background:#4262ff;border-color:#4262ff;text-decoration:none}.mx-pill.mx-save:hover{background:#2f4ad9}
 
 .mx-bicon{display:grid;place-items:center;width:34px;height:24px;border-radius:6px;background:#fff3b0;color:#8a6a00;border:1px solid #f0dc7a}.mx-list.grid .mx-bicon{display:none}
+
+.mx-prof-card{display:flex;align-items:center;gap:14px;margin-bottom:16px}.mx-prof-card p{margin:2px 0 0;font-size:13px;color:#666}.mx-av.lg{width:48px;height:48px;font-size:20px}.mx-pop a.on{background:#f1f1ee;font-weight:600}.mx-btn.primary{text-decoration:none}

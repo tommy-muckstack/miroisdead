@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Board, BoardMeta } from "@/lib/canvas/types";
 import { CloudBoardStore, LocalBoardStore, type BoardStore } from "@/lib/store";
-import { boardFromTemplate, TEMPLATES, type TemplateId } from "@/lib/canvas/templates";
+import { boardFromTemplate, TEMPLATES, type TemplateId, type TemplateTag } from "@/lib/canvas/templates";
 import { metaOf, newBoard, parseBoard, serialize } from "@/lib/canvas/board";
 import { nid } from "@/lib/canvas/doc";
 import { Editor } from "@/components/board/Editor";
@@ -24,7 +24,7 @@ export function makeStore(who: Who): BoardStore { const local = new LocalBoardSt
 /** Miro's "Last opened" column: Today / Yesterday, then a date. */
 export const when = (t: number, now = Date.now()) => { const day = (x: number) => { const d = new Date(x); return Math.floor((x - d.getTimezoneOffset() * 60000) / 86400000); }; const diff = day(now) - day(t); if (diff <= 0) return "Today"; if (diff === 1) return "Yesterday"; return new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
 const fullDate = (t: number) => new Date(t).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
-type Dlg = { kind: "rename"; m: BoardMeta } | { kind: "delete"; m: BoardMeta } | { kind: "details"; m: BoardMeta; b: Board | null } | { kind: "space" } | { kind: "moveTeam"; m: BoardMeta };
+type Dlg = { kind: "rename"; m: BoardMeta } | { kind: "delete"; m: BoardMeta } | { kind: "details"; m: BoardMeta; b: Board | null } | { kind: "space" } | { kind: "moveTeam"; m: BoardMeta } | { kind: "profile" } | { kind: "workspace" };
 /** Styled dialog (Miro uses modals, not native prompt/confirm, for board actions). */
 function Dialog({ title, onClose, children, testid }: { title: string; onClose: () => void; children: React.ReactNode; testid?: string }) {
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } }; window.addEventListener("keydown", k, true); return () => window.removeEventListener("keydown", k, true); }, [onClose]);
@@ -98,13 +98,12 @@ function TemplatesModal({ onClose, onPick, onPickCustom }: { onClose: () => void
         <a className={side === "team" ? "on" : ""} onClick={() => setSide("team")}>{X.tplS} Your templates {X.info}</a>
         <h4>Use cases</h4>
         {cats.map(c => <a key={c} className="sm" onClick={() => { setSide("all"); setQ(c.split(" ")[0]); }}>{c}</a>)}
-        <h4>Types</h4><a className="sm">Blueprints {X.info}</a><a className="sm">Format templates</a>
       </aside>
       <section>
-        <div className="mx-tm-top"><label className="mx-tm-search">{X.search}<input placeholder="Search templates by name, category or company" value={q} onChange={e => setQ(e.target.value)} /></label><label className="mx-tm-check"><input type="checkbox" defaultChecked /> Show when creating a board</label></div>
+        <div className="mx-tm-top"><label className="mx-tm-search">{X.search}<input placeholder="Search templates by name, category or company" value={q} onChange={e => setQ(e.target.value)} /></label></div>
         <h2>{side === "team" ? "Your templates" : side === "ai" ? "AI Accelerated" : side === "verse" ? "MiroIsDeadverse" : "All templates"}</h2>
         {side !== "team" && <div className="mx-tm-promo"><div><b>{side === "verse" ? "Templates from the community" : "Templates with AI built in"}</b><p>{side === "verse" ? "Boards shared by other MiroIsDead users. Publish your own from Share ▸ Publish." : "Every template is a plain board you can hand to your own AI agent: copy the scene JSON from Share ▸ AI. No setup, no credits."}</p><button className="mx-dark" onClick={() => onPick("blank")}>Start with a blank board</button></div></div>}
-        {side !== "team" && <><div className="mx-tm-tabs"><span className="on">For you</span><span>View all</span></div>
+        {side !== "team" && <>
           <div className="mx-tm-grid">{list.map(t => <button key={t.id} className="mx-tm-card" onClick={() => onPick(t.id)} data-testid={`tm-${t.id}`}><span className="art"><TplArt id={t.id} /></span><span className="by"><i />MiroIsDead</span><b>{t.name}</b></button>)}</div>
           {!q && side === "all" && <><h3 className="mx-tm-h3">Product team templates</h3><div className="mx-tm-grid">{product.map(t => <button key={"p-" + t.id} className="mx-tm-card" onClick={() => onPick(t.id)}><span className="art"><TplArt id={t.id} /></span><span className="by"><i />MiroIsDead</span><b>{t.name}</b></button>)}</div></>}</>}
         {(side === "team" || cust.length > 0) && <><h3 className="mx-tm-h3">Your templates</h3>
@@ -124,6 +123,9 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
   const [prefs, setPrefsState] = useState<Prefs>({ starred: [], spaces: [], spaceOf: {} });
   const setPrefs = (f: (p: Prefs) => Prefs) => setPrefsState(p => { const n = f(p); try { localStorage.setItem(prefsKey(who.uid), JSON.stringify(n)); } catch { /* quota */ } return n; });
   const [menu, setMenu] = useState<"" | "create" | "profile" | "tplfor">("");
+  const [tplFor, setTplFor] = useState("you"); // "you" = every template; the role filters narrow the strip
+  const FOR: Record<string, TemplateTag[]> = { "you": [], "Product management": ["product"], "Design & UX": ["ideation", "diagram"], "Engineering": ["diagram", "agile"], "Marketing": ["planning", "strategy", "ideation"], "Operations": ["planning", "agile", "strategy"] };
+  const strip = tplFor === "you" ? TEMPLATES : TEMPLATES.filter(t => t.id === "blank" || t.id === "welcome" || t.tags.some(g => (FOR[tplFor] ?? []).includes(g))); // Blank + Welcome tour always show
   const [rowMenu, setRowMenu] = useState<string | null>(null);
   const [tm, setTmState] = useState(false); const setTm = (v: boolean) => { if (v) track(EVENTS.app_templates_modal_opened); setTmState(v); };
   const [view, setView] = useState<"list" | "grid">("list");
@@ -174,7 +176,7 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
   return <div className="mx-dash">
     <div className="mx-shell">
       <aside className="mx-side">
-        <div className="mx-ws"><span className="mx-ws-av">{initials}</span><b title="Rename workspace" onDoubleClick={() => { const n = window.prompt("Workspace name", workspace); if (n?.trim()) setPrefs(p => ({ ...p, workspace: n.trim() })); }}>{workspace}</b><button className="mx-sq" aria-label="Create or join a workspace" onClick={() => setErr("MiroIsDead has one workspace per account; use Spaces to organise boards.")}>{X.plusS}</button></div>
+        <div className="mx-ws"><span className="mx-ws-av">{initials}</span><b title="Rename workspace" onDoubleClick={() => setDlg({ kind: "workspace" })}>{workspace}</b><button className="mx-sq" aria-label="Create or join a workspace" onClick={() => setErr("MiroIsDead has one workspace per account; use Spaces to organise boards.")}>{X.plusS}</button></div>
         <div className="mx-srch"><label>{X.search}<input placeholder="Search by title or topic" aria-label="Search boards" value={q} onChange={e => setQ(e.target.value)} /></label><button className="mx-sq big" aria-label="Create new" onClick={() => setMenu("create")}>{X.plusS}</button></div>
         <nav><a className={nav === "home" ? "on" : ""} onClick={() => setNav("home")}>{X.home}<span>Home</span></a><a className={nav === "starred" ? "on" : ""} onClick={() => setNav("starred")}>{X.star}<span>Starred</span></a><a className={nav === "browse" ? "on" : ""} onClick={() => setNav("browse")}>{X.browse}<span>Browse</span></a></nav>
         <div className="mx-spaces"><b>Spaces</b><button className="mx-sq" aria-label="Create Space" onClick={newSpace}>{X.plusS}</button></div>
@@ -191,8 +193,8 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
           <button className="mx-ic" aria-label="Feed" title="Feed" onClick={() => setPrefs(p => ({ ...p, banner: true }))}>{X.bell}</button>
           <span data-menu className="mx-menuwrap"><button className="mx-av" aria-label="Account" aria-expanded={menu === "profile"} onClick={() => setMenu(m => m === "profile" ? "" : "profile")}>{initials[0]}</button>
             {menu === "profile" && <div className="mx-pop mx-prof" role="menu"><div className="mx-prof-h"><span className="mx-av sm">{initials[0]}</span><b>{user}</b></div>
-              <a role="menuitem">{X.user} Profile</a><a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead#readme" target="_blank" rel="noreferrer">{X.ai} Connect your AI tools</a><a role="menuitem">{X.gear} Admin Console</a><hr />
-              <a role="menuitem">{X.trash} Trash</a><a role="menuitem" onClick={() => { void create("welcome"); }}>{X.learn} Learning Center</a><a role="menuitem">{X.apps} iOS, Android, Desktop Apps</a><hr />
+              <a role="menuitem" onClick={() => { setMenu(""); setDlg({ kind: "profile" }); }}>{X.user} Profile</a><a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead#readme" target="_blank" rel="noreferrer">{X.ai} Connect your AI tools</a><hr />
+              <a role="menuitem" onClick={() => { setMenu(""); void create("welcome"); }}>{X.learn} Learning Center</a><hr />
               <a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead" target="_blank" rel="noreferrer">{X.dev} Developer Hub</a><a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead" target="_blank" rel="noreferrer">{X.market} MiroIsDead Marketplace</a>              <form action={signOutAction} onSubmit={() => { track(EVENTS.auth_signed_out); resetIdentity(); }}><button role="menuitem">{X.logout} Log out</button></form></div>}
           </span>
         </header>
@@ -208,9 +210,9 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
                   <a role="menuitem" onClick={() => { setMenu(""); setTm(true); }}>{X.tplS} Explore templates</a><a role="menuitem" onClick={() => { setMenu(""); setTm(true); }}>{X.verse} Explore MiroIsDeadverse</a>
                 </div>}
               </span></div>
-            <span data-menu className="mx-menuwrap"><p className="mx-tpl-for" onClick={() => setMenu(m => m === "tplfor" ? "" : "tplfor")}>Templates for Product management {X.chev}</p>
-              {menu === "tplfor" && <div className="mx-pop mx-cr" role="menu">{["Product management", "Design & UX", "Engineering", "Marketing", "Operations"].map(t => <a key={t} role="menuitem" onClick={() => setMenu("")}>{t}</a>)}</div>}</span>
-            <div className="mx-tpls">{TEMPLATES.map(t => <TplCard key={t.id} id={t.id} name={t.name} onPick={() => create(t.id, curSpace)} testid={`new-${t.id}`} />)}
+            <span data-menu className="mx-menuwrap"><p className="mx-tpl-for" onClick={() => setMenu(m => m === "tplfor" ? "" : "tplfor")}>Templates for {tplFor} {X.chev}</p>
+              {menu === "tplfor" && <div className="mx-pop mx-cr" role="menu">{Object.keys(FOR).map(t => <a key={t} role="menuitem" className={t === tplFor ? "on" : ""} onClick={() => { setTplFor(t); setMenu(""); track(EVENTS.app_template_filter_changed, { filter: t }); }}>{t === "you" ? "Everyone" : t}</a>)}</div>}</span>
+            <div className="mx-tpls">{strip.map(t => <TplCard key={t.id} id={t.id} name={t.name} onPick={() => create(t.id, curSpace)} testid={`new-${t.id}`} />)}
               <a className="mx-tpl mx-tpl-verse" onClick={() => setTm(true)}><span className="mx-tpl-art blank">{X.verse}</span><span className="mx-tpl-name">From MiroIsDeadverse →</span></a>
               <label className="mx-tpl"><span className="mx-tpl-art blank">{X.imp}</span><span className="mx-tpl-name">Import a board file</span><input type="file" accept="application/json,.json" hidden onChange={e => onImport(e.target.files?.[0])} /></label></div></section>}
           <section aria-label="Your boards">
@@ -242,6 +244,12 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
       </main>
     </div>
     {dlg?.kind === "rename" && <RenameDialog m={dlg.m} onClose={() => setDlg(null)} onSave={t => void rename(dlg.m, t)} />}
+    {dlg?.kind === "profile" && <Dialog title="Profile" onClose={() => setDlg(null)} testid="profile-dialog">
+      <div className="mx-prof-card"><span className="mx-av lg">{initials[0]}</span><div><b>{user}</b><p>{who.kind === "firebase" ? who.name : who.kind === "demo" ? "Demo account · boards stay in this browser" : "Guest · boards stay in this browser"}</p></div></div>
+      <dl className="mx-dlg-dl"><dt>Boards</dt><dd>{(boards ?? []).length}</dd><dt>Storage</dt><dd>{who.kind === "firebase" ? "Synced to your account" : "This browser only"}</dd><dt>Workspace</dt><dd>{workspace}</dd></dl>
+      <div className="mx-dlg-acts">{who.kind !== "firebase" && <Link className="mx-btn primary" href="/login">Sign in to sync &amp; share</Link>}<button className="mx-btn" onClick={() => setDlg(null)}>Done</button></div>
+    </Dialog>}
+    {dlg?.kind === "workspace" && <NameDialog title="Rename workspace" label="Workspace name" initial={workspace} cta="Save" onClose={() => setDlg(null)} onSave={n => { setPrefs(p => ({ ...p, workspace: n })); setDlg(null); }} />}
     {dlg?.kind === "space" && <NameDialog title="Create a space" label="Space name" initial="New space" cta="Create" onClose={() => setDlg(null)} onSave={t => createSpace(t)} />}
     {dlg?.kind === "moveTeam" && (prefs.spaces.length === 0 ? <NameDialog title="Move to a new space" label="Space name" initial="New space" cta="Create and move" onClose={() => setDlg(null)} onSave={t => createSpace(t, dlg.m.id)} /> :
       <Dialog title="Move to Space" onClose={() => setDlg(null)} testid="move-dialog"><div className="mx-dlg-list">{prefs.spaces.map(s => <button key={s.id} className="mx-btn" onClick={() => { moveTo(dlg.m.id, s.id); setDlg(null); }}>{X.space} {s.name}</button>)}</div></Dialog>)}

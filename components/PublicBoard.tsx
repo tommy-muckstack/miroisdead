@@ -16,7 +16,7 @@ class PublicBoardStore implements BoardStore {
   async save(board: Board) { if (this.readOnly) return; const r = await fetch(`${BP}/api/public/${board.id}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(board) }); if (!r.ok) throw new Error("Could not sync"); }
   async remove() { /* guests cannot delete */ }
 }
-export function PublicBoardPage({ board, access, who, embed, startFrame, rtc = null }: { board: Board; access: "view" | "edit"; who: string; embed: boolean; startFrame?: string; rtc?: import("@/lib/isdead-auth/config").FirebaseClientConfig | null }) {
+export function PublicBoardPage({ board, access, who, embed, startFrame, rtc = null, signedIn = false }: { board: Board; access: "view" | "edit"; who: string; embed: boolean; signedIn?: boolean; startFrame?: string; rtc?: import("@/lib/isdead-auth/config").FirebaseClientConfig | null }) {
   const store = useMemo(() => new PublicBoardStore(access === "view"), [access]);
-  return <Editor initial={board} store={store} who={who} readOnly={access === "view"} guest embed={embed} startFrame={startFrame} rtc={rtc} />;
+  return <Editor initial={board} store={store} who={who} readOnly={access === "view"} guest visitorSignedIn={signedIn} embed={embed} startFrame={startFrame} rtc={rtc} />;
 }

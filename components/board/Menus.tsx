@@ -48,7 +48,7 @@ export function MainMenu({ onClose, a }: { onClose: () => void; a: MainActions }
   const Row = ({ k, icon, label }: { k: typeof sub; icon: React.ReactNode; label: string }) => <div onPointerEnter={() => setSub(k)}><Item icon={icon} label={label} sub on={sub === k} /></div>;
   return <Pop className="mm-main" onClose={onClose} testid="main-menu">
     <Row k="board" icon={X.board} label="Board" /><Row k="edit" icon={X.pen2} label="Edit" /><Row k="view" icon={X.eye} label="View" /><Row k="prefs" icon={X.sliders} label="Preferences" /><Row k="a11y" icon={X.a11y} label="Accessibility" />
-    <Hr /><Item icon={X.check} label="Assign status" info onClick={go(() => a.flash("Board status is set from the dashboard"))} /><Item icon={X.display} label="Send to interactive display" onClick={go(() => a.flash("No interactive displays are paired"))} />
+    <Hr />
     {sub && <div className="mm-sub" onPointerLeave={() => setSub("")}>
       {sub === "board" && <><Item icon={X.pen2} label="Rename board" onClick={go(a.rename)} /><Item icon={X.copy} label="Duplicate board" onClick={go(a.duplicate)} /><Item icon={X.board} label="All boards" onClick={go(a.back)} /></>}
       {sub === "edit" && <><Item icon={X.undo} label="Undo" kbd="⌘Z" disabled={!a.canUndo} onClick={go(a.undo)} /><Item icon={X.redo} label="Redo" kbd="⇧⌘Z" disabled={!a.canRedo} onClick={go(a.redo)} /><Hr /><Item label="Select all" kbd="⌘A" onClick={go(a.selectAll)} /><Item label="Duplicate" kbd="⌘D" disabled={!a.hasSel} onClick={go(a.dup)} /><Item label="Delete" kbd="⌫" disabled={!a.hasSel} onClick={go(a.del)} /></>}
@@ -101,7 +101,7 @@ export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
 }
 
 // ---------- context menu ----------
-export type CtxActions = { copy: () => void; copyLink: () => void; copyImage: () => void; dup: () => void; del: () => void; comment: () => void; copyStyle: () => void; pasteStyle: () => void; canPasteStyle: boolean; clear: () => void; front: () => void; back: () => void; forward: () => void; backward: () => void; link: () => void; lock: () => void; locked: boolean; frame: () => void; template: () => void; csv: () => void; paste: () => void; canPaste: boolean; selectAll: () => void; fit: () => void; grid: () => void; gridOn: boolean };
+export type CtxActions = { copy: () => void; copyLink: () => void; copyImage: () => void; dup: () => void; del: () => void; comment: () => void; copyStyle: () => void; pasteStyle: () => void; canPasteStyle: boolean; clear: () => void; front: () => void; back: () => void; forward: () => void; backward: () => void; lock: () => void; locked: boolean; frame: () => void; template: () => void; csv: () => void; paste: () => void; canPaste: boolean; selectAll: () => void; fit: () => void; grid: () => void; gridOn: boolean };
 export function ContextMenu({ x, y, canvas, onClose, target, a }: { x: number; y: number; canvas: { w: number; h: number }; onClose: () => void; target: Obj | null; a: CtxActions }) {
   const [arr, setArr] = useState(false);
   const go = (f: () => void) => () => { onClose(); f(); };
@@ -111,7 +111,7 @@ export function ContextMenu({ x, y, canvas, onClose, target, a }: { x: number; y
       <Item label="Copy" kbd="⌘ + C" onClick={go(a.copy)} /><Item label="Copy link" kbd="⌘ + ⌥ + shift + C" onClick={go(a.copyLink)} /><Item label="Copy as image" kbd="⌘ + shift + C" onClick={go(a.copyImage)} /><Item label="Duplicate" kbd="⌘ + D" onClick={go(a.dup)} /><Item label="Delete" kbd="Delete" onClick={go(a.del)} /><Hr />
       <Item label="Add comment" onClick={go(a.comment)} /><Item label="Copy style" kbd="⌘ + ⌥ + C" onClick={go(a.copyStyle)} /><Item label="Paste style" kbd="⌘ + ⌥ + V" disabled={!a.canPasteStyle} onClick={go(a.pasteStyle)} /><Item label="Clear content" kbd="⌘ + Backspace" onClick={go(a.clear)} /><Hr />
       <div onPointerEnter={() => setArr(true)} onPointerLeave={() => setArr(false)} className="mm-arrwrap"><Item label="Arrange" sub on={arr} />{arr && <div className="mm-sub mm-arr"><Item label="Bring to front" kbd="fn + ↑" onClick={go(a.front)} /><Item label="Bring forward" kbd="⌘ + ]" onClick={go(a.forward)} /><Item label="Send backward" kbd="⌘ + [" onClick={go(a.backward)} /><Item label="Send to back" kbd="fn + ↓" onClick={go(a.back)} /></div>}</div><Hr />
-      <Item label="Link to" kbd="⌥ + ⌘ + K" onClick={go(a.link)} /><Item label={a.locked ? "Unlock" : "Lock"} kbd="⌘ + shift + L" onClick={go(a.lock)} /><Item label="Create frame" onClick={go(a.frame)} /><Hr />
+      <Item label={a.locked ? "Unlock" : "Lock"} kbd="⌘ + shift + L" onClick={go(a.lock)} /><Item label="Create frame" onClick={go(a.frame)} /><Hr />
       <Item label="Save as template" info onClick={go(a.template)} /><Item label="Export to CSV (Excel)" onClick={go(a.csv)} />
     </> : <>
       <Item label="Paste" kbd="⌘ + V" disabled={!a.canPaste} onClick={go(a.paste)} /><Item label="Select all" kbd="⌘ + A" onClick={go(a.selectAll)} /><Hr /><Item label="Zoom to fit" kbd="⇧ + 1" onClick={go(a.fit)} /><Item label={a.gridOn ? "Hide grid" : "Show grid"} kbd="G" onClick={go(a.grid)} />
