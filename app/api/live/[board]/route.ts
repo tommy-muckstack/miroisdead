@@ -11,9 +11,17 @@ export const maxDuration = 300;
  */
 const rooms = new Map<string, Set<WebSocket>>();
 const ID = /^[A-Za-z0-9_-]{4,64}$/;
-export async function GET(_: NextRequest, { params }: { params: Promise<{ board: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ board: string }> }) {
   const { board } = await params;
   if (!ID.test(board)) return new Response("Bad board id", { status: 400 });
+  // Capability probe: a plain GET (no Upgrade header) says whether this runtime can upgrade sockets at all, so the
+  // client never opens a WebSocket that is bound to fail (a failed WebSocket always logs a console error).
+  if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") {
+    // Same lookup @vercel/functions' getContext() does (it is not exported from the package index).
+    const ctx = (globalThis as unknown as Record<symbol, { get?: () => { upgradeWebSocket?: unknown } } | undefined>)[Symbol.for("@vercel/request-context")]?.get?.();
+    const websocket = typeof ctx?.upgradeWebSocket === "function";
+    return Response.json({ websocket, fallback: "webrtc-mesh+broadcastchannel" }, { headers: { "cache-control": "no-store" } });
+  }
   try {
     return await upgradeWebSocket(ws => {
       const room = rooms.get(board) ?? new Set<WebSocket>(); rooms.set(board, room); room.add(ws);
