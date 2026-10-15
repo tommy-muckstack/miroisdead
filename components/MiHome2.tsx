@@ -3,21 +3,32 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BP } from "@/lib/basepath";
 import { Cursor } from "@/components/MiMk";
+import { Mark } from "@/components/board/icons";
 import { track, EVENTS } from "@/lib/analytics";
 import "./mihome2.css";
 
+const GH = "https://github.com/tommy-muckstack/miroisdead";
+/** Footer links go to real places: in-app pages, repo pages, or this site's sections. */
+const LINK: Record<string, string> = {
+  "Apps & Integrations": GH + "#readme", "Templates": "/app", "Developer Platform": GH + "/blob/main/docs/ANALYTICS.md", "Devices": "/app", "Enterprise Guard": "/pricing", "Accessibility": GH + "/issues", "Changelog": GH + "/commits/main",
+  "AI Platform": "/#solutions", "Product Acceleration": "/#product", "Business Acceleration": "/#product", "Platform and Capabilities": "/#product",
+  "Agile Tools": "/app", "Graphs": "/app", "Online Sticky Notes": "/app", "Customer Journey Mapping": "/app", "Wireframe": "/app", "Kanban Board": "/app", "Online Whiteboard": "/app", "Diagram Online": "/app", "Flowchart Online": "/app",
+  "Customer Stories": GH + "/discussions", "Academy": GH + "#readme", "Help Center": GH + "/issues", "Blog": GH + "/commits/main", "Status": "https://www.vercel-status.com", "Community": GH + "/discussions", "Events": GH + "/discussions", "Solution Partners": GH, "Security": GH + "/security",
+  "About Us": GH + "#readme", "In the News": GH + "/discussions",
+  "Pricing": "/pricing", "Business": "/pricing#mp-business", "Enterprise": "/pricing#mp-enterprise", "Consultants": "/pricing", "Education": "/pricing", "Startups": "/pricing", "NPOs": "/pricing",
+};
 const FOOT: [string, string[]][] = [
   ["Product", ["Apps & Integrations", "Templates", "Developer Platform", "Devices", "Enterprise Guard", "Accessibility", "Changelog"]],
   ["Solutions", ["AI Platform", "Product Acceleration", "Business Acceleration", "Platform and Capabilities"]],
-  ["Tools", ["Agile Tools", "Graphs", "Online Sticky Notes", "Customer Journey Mapping", "Wireframe", "Kanban Board", "Image Color Picker", "AI Prototype Generator", "AI Wireframe Generator", "AI Diagram Generator", "AI Flowchart Generator", "AI Design Generator", "AI Mind Map Generator", "AI Dashboard Generator", "Gradient Generator", "Online Whiteboard", "Diagram Online", "Flowchart Online"]],
+  ["Tools", ["Agile Tools", "Graphs", "Online Sticky Notes", "Customer Journey Mapping", "Wireframe", "Kanban Board", "Online Whiteboard", "Diagram Online", "Flowchart Online"]],
   ["Resources", ["Customer Stories", "Academy", "Help Center", "Blog", "Status", "Community", "Events", "Solution Partners", "Security"]],
-  ["Company", ["About Us", "Careers 🚀", "In the News"]],
+  ["Company", ["About Us", "In the News"]],
   ["Plans & Pricing", ["Pricing", "Business", "Enterprise", "Consultants", "Education", "Startups", "NPOs"]],
 ];
-const GH = "https://github.com/tommy-muckstack/miroisdead";
-const LOGOS = ["SONY", "PayPal", "UBISOFT", "workday.", "salesforce", "asos", "servicenow", "Contentful", "PEPSICO", "macy's", "Whirlpool", "Hanes"];
+// No invented customers: the strip names what MiroIsDead is actually built with (all true, all open or free tiers).
+const BUILT = ["Next.js", "React", "TypeScript", "Firebase Auth", "Firestore", "WebRTC", "SVG canvas", "Vercel", "PostHog", "Playwright", "Apache-2.0"];
 export function MiLogos() {
-  return <section className="mh-logos" aria-label="Customer logos"><div className="mh-logos-in"><div className="mh-logos-track">{[...LOGOS, ...LOGOS].map((l, i) => <span key={l + i}>{l}</span>)}</div></div></section>;
+  return <section className="mh-logos" aria-label="Built with"><div className="mh-logos-in"><span className="mh-logos-lbl">Built in the open with</span><div className="mh-logos-track">{[...BUILT, ...BUILT].map((l, i) => <span key={l + i}>{l}</span>)}</div></div></section>;
 }
 const SLIDES: [string, string][] = [["AI", "Accelerate your team with collaborative AI workflows"], ["Intelligent Canvas", "Empower teamwork on one, infinite, multiplayer canvas"], ["Formats", "Move quickly from ideas to structured plans and work with Docs, Tables, Slides, Diagrams and more"], ["Blueprints", "Automate key processes and ensure your workflows are scalable, repeatable, and efficient"], ["Enterprise Security & Scale", "Secure and scalable collaboration on an enterprise-grade platform you can trust"], ["Integrations", "Connects with 250+ apps so teams stay aligned and productive in one scalable, secure workspace."]];
 export function MiNeedle() {
@@ -52,7 +63,7 @@ export function MiExperience() {
       <div className="mh-clip"><div className="mh-track" ref={track}>
         {SLIDES.map((sl, i) => <div className="mh-slide" key={sl[0]}>
           <div className={"mh-slide-art mh-sa" + i}><Art i={i} />{(i === 2 || i === 4) && <Cursor name="Bea" color="#0e8f8f" bg="#c6f3ee" x={i === 2 ? 240 : 310} y={i === 2 ? 20 : 40} />}</div>
-          <h4>{sl[0]}</h4><p>{sl[1]}</p><Link href="/signup" className="mk-dark mh-btn">Learn more</Link></div>)}
+          <h4>{sl[0]}</h4><p>{sl[1]}</p><a href={BP + (i === 0 ? "/#solutions" : i === 1 ? "/app" : i === 2 ? "/#templates" : i === 3 ? "/#product" : "/pricing")} className="mk-dark mh-btn">Learn more</a></div>)}
       </div></div></div></div></div></section>;
 }
 export function MiFlow() {
@@ -60,7 +71,7 @@ export function MiFlow() {
 }
 export function MiPlatform() {
   return <section className="mh-plat" id="solutions"><Cursor name="Bea" color="#0e8f8f" bg="#c6f3ee" x={1185} y={70} />
-    <h2>The AI platform<br />for teamwork</h2><p>Move beyond individual AI productivity to team and cross-team collaboration with AI</p><Link href="/signup" className="mh-plat-btn" onClick={() => track(EVENTS.site_cta_clicked, { cta: "platform_explore" })}>Explore the solution</Link>
+    <h2>The AI platform<br />for teamwork</h2><p>Move beyond individual AI productivity to team and cross-team collaboration with AI</p><Link href="/app" className="mh-plat-btn" onClick={() => track(EVENTS.site_cta_clicked, { cta: "platform_explore" })}>Explore the solution</Link>
     <div className="mh-platart" aria-hidden><div className="mh-pgrid">{Array.from({ length: 9 }, (_, i) => <div key={i} className={"pc c" + (i % 3)} />)}</div><span className="mh-play">▶</span></div></section>;
 }
 export function MiHelp() {
@@ -74,12 +85,12 @@ const SOC = [["X", "M4 4l16 16M20 4L4 20"], ["Facebook", "M14 8h3V4h-3a4 4 0 00-
 export function MiFooter() {
   const [open, setOpen] = useState<string | null>(null);
   return <footer className="mh-foot"><div className="mh-foot-in">
-    <div className="mh-fcols">{FOOT.map(([t, ls]) => <div key={t} className={open === t ? "open" : ""}><h5 onClick={() => setOpen(open === t ? null : t)}>{t}<i /></h5>{ls.map(l => <a key={l} href={l === "Pricing" ? BP + "/pricing" : "#"}>{l}</a>)}{t === "Plans & Pricing" && <a href={BP + "/signup"} className="mh-fcs">Contact sales <span>→</span></a>}</div>)}</div>
+    <div className="mh-fcols">{FOOT.map(([t, ls]) => <div key={t} className={open === t ? "open" : ""}><h5 onClick={() => setOpen(open === t ? null : t)}>{t}<i /></h5>{ls.map(l => { const h = LINK[l] ?? GH; const ext = h.startsWith("http"); return <a key={l} href={ext ? h : BP + h} {...(ext ? { target: "_blank", rel: "noreferrer" } : {})}>{l}</a>; })}{t === "Plans & Pricing" && <a href={GH + "/discussions"} className="mh-fcs" target="_blank" rel="noreferrer">Contact us <span>→</span></a>}</div>)}</div>
     <div className="mh-badges">{[["ISO 42001", "READY"], ["ISO 27001", "CERTIFIED"], ["SOC 2", "COMPLIANT"], ["GDPR", "COMPLIANT"]].map(([a, b]) => <span key={a} className="mh-badge"><i>{a.split(" ")[0]}<small>{a.split(" ")[1]}</small></i><em>{a}<br />{b}</em></span>)}<b>◢ Capterra <u>★★★★½</u></b><b>G2 <u>★★★★½</u></b><b>TR <u>★★★★★</u></b></div>
     <p className="mh-rev">20,000+ reviews from Capterra, G2 and Trustradius</p>
     <div className="mh-rule" />
-    <div className="mh-fmid"><div className="mh-soc">{SOC.map(([n, d]) => <a key={n} href="#" aria-label={n}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d={d} /></svg></a>)}<span className="mh-lang"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></svg>English <i>⌄</i></span></div><div className="mh-store"><span><small>Download on the</small>App Store</span><span><small>GET IT ON</small>Google Play</span></div></div>
-    <div className="mh-legal"><b className="mh-flogo" /> MiroIsDead © 2026 <a href="#">Terms of Service</a><a href="#">Privacy Policy</a><a href="#">Manage Cookies</a><a href="#">Do Not Sell or Share My Personal Information</a><a href={GH}>Source (Apache-2.0)</a></div>
+    <div className="mh-fmid"><div className="mh-soc">{SOC.map(([n, d]) => <a key={n} href={GH} target="_blank" rel="noreferrer" aria-label={`${n} (opens the project on GitHub)`}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d={d} /></svg></a>)}<span className="mh-lang"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></svg>English <i>⌄</i></span></div><div className="mh-store"><span><small>Download on the</small>App Store</span><span><small>GET IT ON</small>Google Play</span></div></div>
+    <div className="mh-legal"><Mark size={16} /> MiroIsDead © 2026 <a href={BP + "/terms"}>Terms of Service</a><a href={BP + "/privacy"}>Privacy Policy</a><a href={BP + "/privacy#cookies"}>Manage Cookies</a><a href={GH}>Source (Apache-2.0)</a></div>
     <p className="mh-disc">MiroIsDead is an independent open-source project. It is not affiliated with, endorsed by or sponsored by RealtimeBoard, Inc. (Miro). Miro is a trademark of its owner.</p>
   </div></footer>;
 }

@@ -8,7 +8,7 @@ export const FEATURES: { name: string; plan: string; ours: string }[] = [
   { name: "Private boards", plan: "Starter", ours: "Every board is private to your account" },
   { name: "Full-resolution board export", plan: "Starter (Free is low-res only)", ours: "SVG and JSON file" },
   { name: "Manual board backup", plan: "Starter", ours: "Export and import a .json file" },
-  { name: "Starter templates", plan: "Free", ours: "5 built-in templates" },
+  { name: "Starter templates", plan: "Free", ours: "11 built-in templates" },
   { name: "Layers (z-order)", plan: "Free", ours: "Bring to front, send to back" },
   { name: "Basic diagramming shapes", plan: "Free", ours: "Rectangle, rounded, ellipse, diamond, triangle" },
 ];

@@ -7,16 +7,55 @@ import "./mipricing.css";
 const Chev = ({ open = false }: { open?: boolean }) => <svg className={"mpr-chev" + (open ? " open" : "")} width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#1c1c1e" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M4 6l4 4 4-4" /></svg>;
 const Right = () => <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#1c1c1e" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6 3l5 5-5 5" /></svg>;
 const Ic = ({ list }: { list: [string, string][] }) => <div className="mpr-ics">{list.map(([c, t], i) => <span key={i} style={{ color: c }}>{t}</span>)}<span className="more">…</span></div>;
-const AI: [string, string][] = [["#e2562b", "✱"], ["#1c1c1e", "◉"], ["#1c1c1e", "◎"]];
-const APPS: [string, string][] = [["#2f7cf6", "▣"], ["#e0287d", "●"], ["#1c1c1e", "◐"], ["#e44a4a", "✓"], ["#0078d4", "◆"]];
-const DOCS: [string, string][] = [["#2b6df0", "▦"], ["#e0287d", "#"], ["#4a8af4", "G"], ["#e03e2f", "A"]];
+const AI: [string, string][] = [["#e2562b", "Cl"], ["#1c1c1e", "Gp"], ["#1c1c1e", "Cx"]];
+const APPS: [string, string][] = [["#2f7cf6", "Jr"], ["#e0287d", "As"], ["#1c1c1e", "No"], ["#e44a4a", "Td"], ["#0078d4", "Az"]];
+const DOCS: [string, string][] = [["#2b6df0", "Ms"], ["#e0287d", "Sl"], ["#4a8af4", "Go"], ["#e03e2f", "Ad"]];
 
-type Item = { t: string; ics?: [string, string][]; vid?: boolean; ent?: boolean };
+type Item = { t: string; d?: string; ics?: [string, string][]; vid?: boolean; ent?: boolean };
+/** One-line descriptions under each feature (Miro shows these; ours describe what the plan line means). */
+const DESC: Record<string, string> = {
+  "3 boards": "Create up to 3 boards, shared with your team",
+  "Templates": "Start from ready-made boards for workshops, planning and diagrams",
+  "Formats incl. Docs, Tables, Slides, and Kanban": "Switch between canvas, documents, tables, slides and kanban",
+  "Explore AI": "Try AI features with a monthly allowance of credits",
+  "250+ integrations": "Connect the tools your team already uses",
+  "Unlimited & private boards": "No board limit, and boards only you and invitees can open",
+  "Visitor editing": "People without an account can edit via a link",
+  "High-resolution exports": "Full-quality PDF and image exports",
+  "Unlimited project spaces & blueprints": "Organise boards into spaces with reusable blueprints",
+  "Timer and voting": "Run timed sessions and dot-voting on the board",
+  "25 AI credits/member/month": "A monthly allowance for AI actions per member",
+  "500 MCP calls per day": "Connect your own AI agents to boards",
+  "Custom fonts & styles": "Upload fonts and set brand styles",
+  "Unlimited workspaces": "Separate workspaces for teams and clients",
+  "Unlimited guests": "Invite anyone to collaborate at no cost",
+  "Visualize processes & technical systems": "Advanced diagramming shapes and packs",
+  "Data tables for roadmapping, projects, & more": "Structured tables that stay in sync with the canvas",
+  "Engage activities incl. polls and 2x2 matrix": "Facilitation tools for live sessions",
+  "Interactive prototypes": "Click-through prototypes on the canvas",
+  "AI workflows & agents": "Automate multi-step work with agents",
+  "50 AI credits/member/month": "Twice the monthly AI allowance of Starter",
+  "2,000 MCP calls per day": "More capacity for agent integrations",
+  "Two-way integrations": "Sync items with work-tracking tools both ways",
+  "User groups": "Manage access by group instead of per person",
+  "Single Sign-On (SSO)": "Sign in with your identity provider",
+  "Licenses built for Enterprise scale": "Flexible licensing across the organisation",
+  "Enterprise-grade security": "Advanced security controls and audit logs",
+  "Regional data hosting": "Choose where board data is stored",
+  "Centralized user management & analytics": "Admin console with usage reporting",
+  "Admin controls for AI": "Decide which AI features teams can use",
+  "Starts from 2500 credits per month": "Pooled AI allowance for the organisation",
+  "10,000 MCP calls per day": "Highest agent-integration capacity",
+  "SCIM provisioning": "Automate user provisioning from your directory",
+  "Org-wide controls for third party integrations": "Approve which integrations teams can install",
+  "Sandbox": "A safe environment to test changes",
+  "Customer success program": "A dedicated team to help you roll out",
+};
 type Plan = { name: string; desc: string; price: string; sub?: string; cta: string; href: string; head: string; items: Item[]; extra?: Item[]; tag?: string; id: string };
 const PLANS: Plan[] = [
   { id: "free", name: "Free", desc: "For small teams getting started with MiroIsDead", price: "$0", cta: "Start for free", href: "/signup", head: "Key features:", items: [{ t: "3 boards" }, { t: "Templates" }, { t: "Formats incl. Docs, Tables, Slides, and Kanban" }, { t: "Explore AI" }, { t: "250+ integrations", ics: DOCS }] },
   { id: "starter", name: "Starter", desc: "For small teams collaborating regularly with unlimited boards", price: "$8", sub: "/month per member, billed yearly", cta: "Buy this plan", href: "/signup", head: "Everything in Free, plus:", items: [{ t: "Unlimited & private boards" }, { t: "Visitor editing" }, { t: "High-resolution exports" }, { t: "Unlimited project spaces & blueprints" }, { t: "Timer and voting" }, { t: "25 AI credits/member/month" }, { t: "500 MCP calls per day", ics: AI }, { t: "Custom fonts & styles" }] },
-  { id: "business", name: "Business", tag: "Best for teams and consultants", desc: "For growing organizations and consultants to streamline workflows with AI", price: "$20", sub: "/month per member, billed yearly", cta: "Buy now", href: "/signup", head: "Everything in Starter, plus:", items: [{ t: "Unlimited workspaces" }, { t: "Unlimited guests" }, { t: "Visualize processes & technical systems" }, { t: "Data tables for roadmapping, projects, & more" }, { t: "Engage activities incl. polls and 2x2 matrix", vid: true }, { t: "Interactive prototypes", vid: true }, { t: "AI workflows & agents", vid: true }, { t: "50 AI credits/member/month" }, { t: "2,000 MCP calls per day", ics: AI }, { t: "Two-way integrations", ics: [["#2f7cf6", "◆"], ["#e0472f", "▲"], ["#1c1c1e", "◐"], ["#e03e6f", "✿"], ["#2b6df0", "◈"]] }, { t: "User groups" }, { t: "Single Sign-On (SSO)" }] },
+  { id: "business", name: "Business", tag: "Best for teams and consultants", desc: "For growing organizations and consultants to streamline workflows with AI", price: "$20", sub: "/month per member, billed yearly", cta: "Buy now", href: "/signup", head: "Everything in Starter, plus:", items: [{ t: "Unlimited workspaces" }, { t: "Unlimited guests" }, { t: "Visualize processes & technical systems" }, { t: "Data tables for roadmapping, projects, & more" }, { t: "Engage activities incl. polls and 2x2 matrix", vid: true }, { t: "Interactive prototypes", vid: true }, { t: "AI workflows & agents", vid: true }, { t: "50 AI credits/member/month" }, { t: "2,000 MCP calls per day", ics: AI }, { t: "Two-way integrations", ics: [["#2f7cf6", "Jr"], ["#e0472f", "Az"], ["#1c1c1e", "No"], ["#e03e6f", "As"], ["#2b6df0", "Li"]] }, { t: "User groups" }, { t: "Single Sign-On (SSO)" }] },
   { id: "enterprise", name: "Enterprise", desc: "For large organizations that need security, governance, and AI at scale", price: "", cta: "Contact sales", href: "https://yourappisdead.com", head: "Everything in Business, plus:", items: [{ t: "Licenses built for Enterprise scale" }, { t: "Enterprise-grade security" }, { t: "Regional data hosting" }, { t: "Centralized user management & analytics" }, { t: "Admin controls for AI" }, { t: "Starts from 2500 credits per month" }, { t: "10,000 MCP calls per day", ics: AI }, { t: "SCIM provisioning" }, { t: "Org-wide controls for third party integrations" }, { t: "Sandbox" }, { t: "Customer success program" }], extra: [{ t: "Add Enterprise Guard" }, { t: "Add Premium support" }] },
 ];
 
@@ -31,8 +70,8 @@ function PlanCard({ p }: { p: Plan }) {
     {biz && <p className="mpr-try">or <Link href="/signup"><span className="mpr-dsk">buy now</span><span className="mpr-mob">try for free</span></Link></p>}
     <button className="mpr-show" onClick={() => setOpen(!open)} aria-expanded={open}>{open ? "Hide" : "Show"} key features</button>
     <div className="mpr-feats">
-      <div className="mpr-head"><b>{p.head}</b><Chev open /></div>
-      <ul>{p.items.map(i => <li key={i.t}><Right /><span>{i.t}{i.vid && <i className="vid">▣</i>}</span>{i.ics && <Ic list={i.ics} />}</li>)}</ul>
+      <div className="mpr-head"><b>{p.head}</b><Chev /></div>
+      <ul>{p.items.map(i => <li key={i.t}><Right /><span>{i.t}{i.vid && <i className="vid">▣</i>}</span>{(i.d ?? DESC[i.t]) && <small className="mpr-desc">{i.d ?? DESC[i.t]}</small>}{i.ics && <Ic list={i.ics} />}</li>)}</ul>
       {p.extra && <ul className="ex">{p.extra.map(i => <li key={i.t}><Right /><span>{i.t}</span><em>$</em></li>)}</ul>}
     </div>
   </div>;

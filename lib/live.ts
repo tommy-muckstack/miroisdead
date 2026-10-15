@@ -17,8 +17,15 @@ export class LiveChannel {
     try { this.bc = new BroadcastChannel(`mi-live-${key}`); this.bc.onmessage = e => this.recv(e.data); } catch { /* no BroadcastChannel */ }
     this.connect();
   }
-  private connect() {
+  /** Asks the relay (plain GET) whether the host can upgrade sockets; remembered per tab so the probe runs once. */
+  private async relayAvailable(): Promise<boolean> {
+    const http = this.url.replace(/^ws/, "http"); let ss: Storage | null = null; try { ss = sessionStorage; } catch { /* private mode */ }
+    const key = "mi-live-relay"; const cached = ss?.getItem(key); if (cached) return cached === "1";
+    try { const r = await fetch(http, { cache: "no-store" }); const ok = r.ok && (await r.json()).websocket === true; ss?.setItem(key, ok ? "1" : "0"); return ok; } catch { return false; }
+  }
+  private async connect() {
     if (this.closed || typeof WebSocket === "undefined") return;
+    if (!(await this.relayAvailable()) || this.closed) return; // no relay here: WebRTC mesh + BroadcastChannel carry the session
     try {
       const ws = new WebSocket(this.url); this.ws = ws;
       ws.onopen = () => { this.delay = 1000; this.opened = true; this.failures = 0; this.send({ t: "hello", from: this.me }); };
