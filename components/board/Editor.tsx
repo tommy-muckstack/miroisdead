@@ -85,6 +85,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   useEffect(() => { try { setFirstRun(localStorage.getItem("mi-onboarded") !== "1"); } catch { /* ignore */ } }, []);
   useEffect(() => { if (!fly) return; const f = (e: PointerEvent) => { const t = e.target as Element; if (!t.closest(".mb-fly") && !t.closest("[aria-expanded]")) setFly(""); }; window.addEventListener("pointerdown", f, true); return () => window.removeEventListener("pointerdown", f, true); }, [fly]);
   const [share, setShare] = useState<"" | ShareTab>("");
+  useEffect(() => { if (location.hash === "#share" && !guest) { setShare("Invite"); history.replaceState(null, "", location.pathname + location.search); } }, [guest]); // dashboard row menu › Share
   const [prof, setProf] = useState(false);
   const [chips, setChips] = useState(true);
   const [main, setMain] = useState(false);

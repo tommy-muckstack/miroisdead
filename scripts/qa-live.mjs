@@ -1,0 +1,13 @@
+import { chromium } from "@playwright/test";
+const BASE = "http://localhost:3111/miroisdead";
+const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1440, height: 800 } });
+const errs = []; const mk = async () => { const p = await ctx.newPage(); p.on("console", m => { if (m.type() === "error") errs.push(m.text()); }); p.on("pageerror", e => errs.push("pageerror " + e.message)); return p; };
+const p1 = await mk(); await p1.goto(`${BASE}/login`); await p1.getByText("Sign in with the demo account instead").click(); await p1.waitForURL("**/app"); await p1.waitForSelector("[data-testid=board-card]");
+await p1.getByTestId("board-card").first().locator("a").first().click(); await p1.waitForSelector("[data-testid=board-editor]"); const url = p1.url();
+const p2 = await mk(); await p2.goto(url); await p2.waitForSelector("[data-testid=board-editor]"); await p2.waitForTimeout(800);
+const probe = await p1.evaluate(async () => (await fetch(location.pathname.replace(/\/app\/board\//, "/api/live/"), { cache: "no-store" })).json()); console.log("probe:", JSON.stringify(probe));
+const count = async (p) => p.locator("[data-testid=board-editor] [data-obj]").count().catch(() => p.locator("[data-obj]").count());
+const before = await count(p2); await p1.mouse.click(700, 400); await p1.keyboard.press("n"); await p1.mouse.click(700, 400); await p1.keyboard.type("hi from tab 1"); await p1.keyboard.press("Escape"); await p1.waitForTimeout(1200);
+console.log("objects tab2 before/after:", before, await count(p2)); await p1.mouse.move(500, 300); await p1.waitForTimeout(400);
+console.log("cursor chip in tab2:", await p2.locator(".lv-cur").count());
+console.log("console errors:", errs.length ? errs : "none"); await b.close();
