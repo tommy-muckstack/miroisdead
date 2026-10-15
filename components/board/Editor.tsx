@@ -24,6 +24,7 @@ import { SelectionToolbar } from "./SelectionToolbar";
 import { Minimap } from "./Minimap";
 import { ContextMenu, EmojiPicker, ExportMenu, FramesPanel, HelpMenu, MainMenu, ShortcutsPanel, StickyPicker, ToolsPanel, ZoomMenu, type ToolEntry } from "./Menus";
 import { svgToPngBlob, boardToCsv, saveCustomTemplate, openPrintWindow } from "./exportMore";
+import { FacilitationPopover, Reactions, TimerPanel, TimerChip, VotingPanel, NotePanel, type Timer, type Voting } from "./Facilitation";
 
 type Gesture =
   | { k: "pan"; sx: number; sy: number; v: View }
@@ -82,6 +83,16 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
   const [snap, setSnap] = useState(true);
   const [dims, setDims] = useState(false);
   const styleClip = useRef<Partial<Obj> | null>(null);
+  const [fac, setFac] = useState(false);
+  const [timer, setTimer] = useState<Timer>(null);
+  const [timerOpen, setTimerOpen] = useState(false);
+  const [voting, setVoting] = useState<Voting>(null);
+  const [votingOpen, setVotingOpen] = useState(false);
+  const [priv, setPriv] = useState(false);
+  const [note, setNote] = useState(initial.note ?? "");
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [reacts, setReacts] = useState<{ id: number; e: string; x: number }[]>([]);
+  const react = (e: string) => { const id = Date.now() + Math.random(); setReacts(r => [...r, { id, e, x: 44 + Math.random() * 12 }]); setTimeout(() => setReacts(r => r.filter(x => x.id !== id)), 2200); };
   const doc = hist.present;
 
   const box = useRef<HTMLDivElement>(null);
@@ -93,6 +104,7 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
   const last = useRef<Last>({ stickyColor: STICKY_COLORS[0], fill: "#FFFFFF", stroke: "#1C1C1E", penColor: "#1C1C1E", penWidth: 3, textColor: "#1C1C1E", connectorStyle: "elbow", shape: "rect", arrow: true, line: "Elbow arrow" });
   const lastClick = useRef({ t: 0, id: "" });
   const snapRef = useRef(true);
+  const votingRef = useRef<Voting>(null); votingRef.current = voting;
 
   // ---- size ----
   useLayoutEffect(() => {
@@ -111,14 +123,14 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
 
   // ---- autosave ----
   const first = useRef(true);
-  const board = useMemo<Board>(() => ({ ...initial, title, doc, view, emoji, updatedAt: Date.now() }), [initial, title, doc, view, emoji]);
+  const board = useMemo<Board>(() => ({ ...initial, title, doc, view, emoji, note, updatedAt: Date.now() }), [initial, title, doc, view, emoji, note]);
   const boardRef = useRef(board); boardRef.current = board;
   const saveNow = useCallback(async () => {
     setStatus("saving");
     try { await store.save({ ...boardRef.current, updatedAt: Date.now() }); setStatus("saved"); }
     catch { setStatus(store.kind === "cloud" ? "device" : "error"); }
   }, [store]);
-  useEffect(() => { if (first.current) { first.current = false; return; } setStatus("saving"); const t = setTimeout(saveNow, 600); return () => clearTimeout(t); }, [doc, title, view, emoji, saveNow]);
+  useEffect(() => { if (first.current) { first.current = false; return; } setStatus("saving"); const t = setTimeout(saveNow, 600); return () => clearTimeout(t); }, [doc, title, view, emoji, note, saveNow]);
   useEffect(() => { const f = () => { void store.save({ ...boardRef.current, updatedAt: Date.now() }).catch(() => {}); }; window.addEventListener("pagehide", f); const v = () => document.visibilityState === "hidden" && f(); document.addEventListener("visibilitychange", v); return () => { window.removeEventListener("pagehide", f); document.removeEventListener("visibilitychange", v); }; }, [store]);
 
   // ---- coordinates ----
@@ -173,7 +185,7 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
   const frameSel = () => { const { doc: d, sel: s } = R.current; const r = frameAround(d, s.filter(i => d.objects[i]?.type !== "frame")); if (r) { commitDoc(r.doc); setSel([r.id]); } };
   const newFrom = (x: number, y: number, kind: Tool): Obj => {
     const L = last.current;
-    if (kind === "sticky") return sticky(x - 90, y - 90, { color: L.stickyColor });
+    if (kind === "sticky") return sticky(x - 90, y - 90, { color: L.stickyColor, ...(priv ? { private: true } : {}) } as Partial<StickyObj>);
     if (kind === "text") return textObj(x, y - 18, { color: L.textColor });
     const sh = kind === "ellipse" ? "ellipse" : kind === "diamond" ? "diamond" : L.shape === "triangle" ? "triangle" : "rect";
     return shape(x - 80, y - 55, { shape: sh, fill: L.fill, stroke: L.stroke });
@@ -217,6 +229,7 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
       const id = hitTest(d, w, tol());
       const now = Date.now(), dbl = e.detail >= 2 || (lastClick.current.id === id && now - lastClick.current.t < 350 && id);
       lastClick.current = { t: now, id: id ?? "" };
+      if (id && votingRef.current?.running) { g.current = null; const v = votingRef.current; const used = Object.values(v.votes).reduce((a, b) => a + b, 0); const cur = v.votes[id] ?? 0; if (cur > 0 && e.altKey) setVoting({ ...v, votes: { ...v.votes, [id]: cur - 1 } }); else if (used < v.perPerson) setVoting({ ...v, votes: { ...v.votes, [id]: cur + 1 } }); else flash("No votes left. Alt-click removes a vote."); return; }
       if (id && dbl && textual(d.objects[id])) { g.current = null; startEdit(id); return; }
       if (id) {
         const shift = e.shiftKey || e.metaKey || e.ctrlKey;
@@ -422,7 +435,9 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
       <span className="mx-sr" data-testid="save-status" role="status">{statusText}</span>
     </header>
     <div className="mb-tr" data-ui style={{ top: banner ? 66 : 10 }}>
-      <button className="mb-i wide hm" aria-label="Timer and voting" onClick={() => flash("Timer and voting are for live sessions")}>{X.timer}</button>
+      <TimerChip timer={timer} onClick={() => setTimerOpen(o => !o)} />
+      <span className="mi-menuwrap"><button className={"mb-i wide hm" + (fac ? " on" : "")} aria-label="Facilitation tools and reactions" aria-haspopup="menu" aria-expanded={fac} onClick={() => setFac(f => !f)}><span className="mb-facic">{X.timer}{X.vote}<i>✦</i></span></button>
+        {fac && <FacilitationPopover onClose={() => setFac(false)} onReact={react} timer={timer} onTimer={() => setTimerOpen(true)} voting={voting} onVoting={() => setVotingOpen(true)} priv={priv} onPrivate={() => { setPriv(p => !p); flash(priv ? "Private mode off: new stickies are visible to everyone" : "Private mode on: new stickies stay hidden until you reveal them"); }} onNote={() => setNoteOpen(true)} />}</span>
       <button className="mb-i hm" aria-label="Comments" onClick={() => flash("Comments aren't in MiroIsDead yet")}>{X.chat}</button>
       <button className="mb-i hm" aria-label="Start a call" onClick={() => flash("Calls aren't part of MiroIsDead")}>{X.video}</button>
       <span className="mi-menuwrap"><button className="mb-av" aria-label="Account" aria-expanded={prof} onClick={() => setProf(p => !p)}><i>{(who.split("@")[0][0] ?? "T").toUpperCase()}</i>{X.chev}</button>
@@ -482,6 +497,8 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
           {dims && tool === "select" && one && isBox(one) && !edit && <text x={one.x + one.w / 2} y={one.y + one.h + px(18)} textAnchor="middle" fontSize={px(12)} fill="#4262FF" fontFamily="var(--ids-font-sans)" style={{ pointerEvents: "none" }}>{Math.round(one.w)} × {Math.round(one.h)}</text>}
           {tool === "select" && selObjs.some(o => (o as { locked?: boolean }).locked) && selObjs.filter(o => (o as { locked?: boolean }).locked).map(o => { const b = boundsOf(doc, o); return <g key={"lk" + o.id} transform={`translate(${b.x + b.w - px(18)} ${b.y + px(4)}) scale(${px(1)})`} style={{ pointerEvents: "none" }}><rect x="0" y="0" width="16" height="16" rx="4" fill="#fff" stroke="#8E8E93" /><path d="M5 8V6.5a3 3 0 016 0V8M4.5 8h7v5h-7z" fill="none" stroke="#1C1C1E" strokeWidth="1.3" /></g>; })}
           {tool === "select" && one?.type === "connector" && !edit && (() => { const r = resolveConnector(doc, one); return [["ca", r.a], ["cb", r.b]].map(([id, p]) => <circle key={id as string} data-h={id as string} data-testid={`conn-${id}`} cx={(p as Pt).x} cy={(p as Pt).y} r={px(7)} fill="#fff" stroke="#4262FF" strokeWidth={px(2)} style={{ cursor: "grab" }} />); })()}
+          {voting && Object.entries(voting.votes).filter(([id, n]) => n > 0 && doc.objects[id]).map(([id, n]) => { const b = boundsOf(doc, doc.objects[id]); return <g key={"vote" + id} transform={`translate(${b.x + b.w - px(14)} ${b.y + b.h - px(14)})`} style={{ pointerEvents: "none" }}><circle r={px(12)} fill="#4262FF" stroke="#fff" strokeWidth={px(2)} /><text textAnchor="middle" dominantBaseline="central" fontSize={px(12)} fontWeight={700} fill="#fff" fontFamily="var(--ids-font-sans)">{n}</text></g>; })}
+          {doc.order.filter(i => (doc.objects[i] as { private?: boolean }).private).map(i => { const b = boundsOf(doc, doc.objects[i]); return <g key={"priv" + i} style={{ pointerEvents: "none" }}><rect x={b.x} y={b.y} width={b.w} height={b.h} fill="url(#mi-hatch)" opacity={0.9} /><text x={b.x + b.w / 2} y={b.y + b.h / 2} textAnchor="middle" dominantBaseline="central" fontSize={px(13)} fill="#555A6A" fontFamily="var(--ids-font-sans)">Private</text></g>; })}
           {/* snapping guides, marquee, drafts */}
           {guides.map((gd, i) => gd.axis === "x" ? <line key={i} x1={gd.at} x2={gd.at} y1={gd.from - px(12)} y2={gd.to + px(12)} stroke="#E0457B" strokeWidth={px(1)} strokeDasharray={`${px(5)} ${px(4)}`} /> : <line key={i} y1={gd.at} y2={gd.at} x1={gd.from - px(12)} x2={gd.to + px(12)} stroke="#E0457B" strokeWidth={px(1)} strokeDasharray={`${px(5)} ${px(4)}`} />)}
           {marq && <rect x={marq.x} y={marq.y} width={marq.w} height={marq.h} fill="rgba(66,98,255,.08)" stroke="#4262FF" strokeWidth={px(1)} />}
@@ -511,6 +528,11 @@ export function Editor({ initial, store, who, signOutAction }: { initial: Board;
     {frames && <FramesPanel doc={doc} onClose={() => setFrames(false)} onJump={jumpTo} onCreate={createFrame} onRename={id => startEdit(id)} onPresent={() => { const f = doc.order.find(i => doc.objects[i].type === "frame"); if (f) jumpTo(f); fullscreen(); }} />}
     {ctx && <ContextMenu x={ctx.x} y={ctx.y} canvas={size} onClose={() => setCtx(null)} target={ctx.id ? doc.objects[ctx.id] : null} a={{ copy: () => copy(false), copyLink: () => copyLink(ctx.id ?? undefined), copyImage: () => void copyImage(), dup, del, comment: () => flash("Comments aren't in MiroIsDead yet"), copyStyle, pasteStyle, canPasteStyle: !!styleClip.current, clear: clearContent, front: () => commitDoc(bringToFront(doc, sel)), back: () => commitDoc(sendToBack(doc, sel)), forward, backward, link: () => flash("Links on objects aren't in MiroIsDead yet"), lock: toggleLock, locked: !!(ctx.id && (doc.objects[ctx.id] as { locked?: boolean }).locked), frame: frameSel, template: saveTemplate, csv: exportCsv, paste: () => void paste(), canPaste: clip.current.length > 0, selectAll: () => setSel(doc.order.slice()), fit: fitAll, grid: () => setGrid(g => !g), gridOn: grid }} />}
     {tool === "sticky" && <StickyPicker top={compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 250 + (banner ? 56 : 0))} value={last.current.stickyColor} onPick={c => { last.current.stickyColor = c; if (sel.length) patchSel({ color: c } as Partial<Obj>); setTool(t => t); }} />}
+    <Reactions items={reacts} />
+    {timerOpen && <TimerPanel timer={timer} setTimer={setTimer} onClose={() => setTimerOpen(false)} />}
+    {votingOpen && <VotingPanel doc={doc} voting={voting} setVoting={v => { setVoting(v); if (v?.running) setSel([]); }} onClose={() => setVotingOpen(false)} onJump={jumpTo} />}
+    {noteOpen && <NotePanel value={note} onChange={setNote} onClose={() => setNoteOpen(false)} />}
+    {priv && <div className="mm-privbar" data-ui>{X.privateMode} Private mode: new stickies are hidden from others until revealed <button onClick={() => { commitDoc(updateObjects(doc, doc.order.filter(i => (doc.objects[i] as { private?: boolean }).private), { private: false } as Partial<Obj>)); setPriv(false); flash("Stickies revealed"); }}>Reveal all</button></div>}
     {tools && <ToolsPanel top={compact ? (banner ? 120 : 64) : Math.max(banner ? 120 : 64, size.h / 2 - 304 + (banner ? 56 : 0))} onClose={() => setTools(false)} tools={toolEntries} />}
     {status !== "saved" && <div className="mb-save" data-ui>{statusText}</div>}
     {share && <ShareModal tab={share} setTab={setShare} onClose={() => setShare("")} who={who} onCopy={() => { navigator.clipboard?.writeText(location.href).then(() => flash("Link copied"), () => flash("Couldn't copy")); }} onExportSvg={() => { download(`${title || "board"}.svg`, "image/svg+xml", boardToSvg(doc)); }} onExportJson={() => download(`${title || "board"}.miroisdead.json`, "application/json", serialize(boardRef.current))} />}

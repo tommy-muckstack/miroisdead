@@ -33,10 +33,10 @@ export class FirestoreRepo implements BoardRepo {
   async get(uid: string, id: string) {
     const d = await (await this.col(uid)).doc(id).get(); if (!d.exists) return null;
     const x = d.data()!, p = JSON.parse(x.payload);
-    return { id, title: x.title, createdAt: x.createdAt, updatedAt: x.updatedAt, ...(x.emoji ? { emoji: x.emoji } : {}), doc: sanitizeDoc(p.doc), view: p.view };
+    return { id, title: x.title, createdAt: x.createdAt, updatedAt: x.updatedAt, ...(x.emoji ? { emoji: x.emoji } : {}), ...(p.note ? { note: String(p.note).slice(0, 20000) } : {}), doc: sanitizeDoc(p.doc), view: p.view };
   }
   async put(uid: string, b: Board) {
-    await (await this.col(uid)).doc(b.id).set({ title: b.title, createdAt: b.createdAt, updatedAt: b.updatedAt, objectCount: b.doc.order.length, emoji: b.emoji ?? "", payload: JSON.stringify({ doc: b.doc, view: b.view }) });
+    await (await this.col(uid)).doc(b.id).set({ title: b.title, createdAt: b.createdAt, updatedAt: b.updatedAt, objectCount: b.doc.order.length, emoji: b.emoji ?? "", payload: JSON.stringify({ doc: b.doc, view: b.view, ...(b.note ? { note: b.note } : {}) }) });
   }
   async del(uid: string, id: string) { await (await this.col(uid)).doc(id).delete(); }
 }
