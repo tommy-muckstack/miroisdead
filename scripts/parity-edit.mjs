@@ -1,0 +1,10 @@
+import { chromium } from "@playwright/test";
+const OUT = process.env.OUT, BASE = "http://localhost:3000/miroisdead";
+const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1512, height: 675 } });
+p.on("pageerror", e => console.log("pageerror:", e.message));
+const shot = (n) => p.screenshot({ path: `${OUT}/${n}.png` });
+await p.goto(`${BASE}/login`); await p.getByText("Sign in with the demo account instead").click(); await p.waitForURL("**/app"); await p.waitForSelector("[data-testid=board-card]");
+await p.getByTestId("new-retro").click(); await p.waitForSelector("[data-testid=board-editor]"); await p.keyboard.press("Shift+1"); await p.waitForTimeout(400);
+await p.keyboard.press("Meta+k"); await p.waitForTimeout(300); await p.keyboard.type("pres"); await p.waitForTimeout(200); await shot("board-palette");
+await p.keyboard.press("Escape"); await p.getByLabel("Present", { exact: true }).click(); await p.waitForTimeout(600); await shot("board-present");
+console.log("done"); await b.close();

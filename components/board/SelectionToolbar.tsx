@@ -9,7 +9,7 @@ import { X } from "@/components/mxi";
 type Props = {
   doc: Doc; ids: Id[]; screenBox: Box; canvas: { w: number; h: number };
   patch: (p: Partial<Obj> | ((o: Obj) => Partial<Obj>), remember?: Record<string, unknown>) => void;
-  onDelete: () => void; onDuplicate: () => void; onFront: () => void; onBack: () => void; onFrame: () => void; onAlign: (a: Align) => void; onDistribute: (axis: "h" | "v") => void;
+  onDelete: () => void; onDuplicate: () => void; onFront: () => void; onBack: () => void; onFrame: () => void; onAlign: (a: Align) => void; onDistribute: (axis: "h" | "v") => void; onGroup?: () => void;
 };
 const Swatches = ({ colors, value, onPick, label }: { colors: readonly string[]; value?: string; onPick: (c: string) => void; label: string }) =>
   <div className="mi-swatches" role="group" aria-label={label}>{colors.map(c => <button key={c} type="button" className={"mi-sw" + (value?.toLowerCase() === c.toLowerCase() ? " on" : "")} style={{ background: c }} aria-label={`${label} ${c}`} onClick={() => onPick(c)} />)}</div>;
@@ -21,7 +21,7 @@ const SIZES = ["auto", 14, 20, 28] as const;
 const Sep = () => <span className="mi-sep" />;
 const SHAPES: { k: ShapeKind; label: string; i: React.ReactNode }[] = [{ k: "rect", label: "Rectangle", i: I.rect }, { k: "round", label: "Rounded", i: I.rect }, { k: "ellipse", label: "Ellipse", i: I.ellipse }, { k: "diamond", label: "Diamond", i: I.diamond }, { k: "triangle", label: "Triangle", i: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d="M12 4l9 16H3z" /></svg> }];
 
-export function SelectionToolbar({ doc, ids, screenBox, canvas, patch, onDelete, onDuplicate, onFront, onBack, onFrame, onAlign, onDistribute }: Props) {
+export function SelectionToolbar({ doc, ids, screenBox, canvas, patch, onDelete, onDuplicate, onFront, onBack, onFrame, onAlign, onDistribute, onGroup }: Props) {
   const [pal, setPal] = React.useState(false), [more, setMore] = React.useState(false);
   const objs = ids.map(i => doc.objects[i]).filter(Boolean);
   if (!objs.length) return null;
@@ -70,6 +70,7 @@ export function SelectionToolbar({ doc, ids, screenBox, canvas, patch, onDelete,
       <Btn title="Distribute horizontally" onClick={() => onDistribute("h")}><b style={{ fontSize: 11 }}>⇹</b></Btn>
       <Btn title="Distribute vertically" onClick={() => onDistribute("v")}><b style={{ fontSize: 11 }}>⇳</b></Btn>
       <Sep /><Btn title="Frame selection (F)" onClick={onFrame}>{I.frame}</Btn>
+      {onGroup && <Btn title={objs.some(o => o.group) ? "Ungroup (⌘⇧G)" : "Group (⌘G)"} on={objs.every(o => o.group) && objs.length > 1} onClick={onGroup}>{X.group}</Btn>}
     </>}
     {types.size !== 1 || one?.type !== "sticky" ? <Sep /> : null}
     <span className="mi-menuwrap"><button type="button" className={"mi-tb" + (more ? " on" : "")} aria-label="More options" aria-expanded={more} onClick={() => setMore(m => !m)}>{X.kebab}</button>

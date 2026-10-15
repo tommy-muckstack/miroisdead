@@ -47,11 +47,14 @@ Last full pass: 2026-10-15. Scope per the owner: the logged-out surface is the h
 | Board | Help menu + Shortcuts panel (blue header, icon column, Tools/General/Navigation/Text) | match | — | PR #3 |
 | Board | Facilitation popover (6 reactions, Timer, Voting, Private mode, Note) | match | — | Paid in Miro, free here: floating reactions, countdown timer with chip in the header + chime, dot-voting sessions with per-person budget and results, private-mode stickies (hatched until revealed), shared board note. PR #4 |
 | Board | Frames panel (bottom bar) with empty state, list, create, present | match | S3 | PR #3 |
-| Board | Keyboard map (S shapes, L line, C comment, ⌥1/⌥2, G grid, ⌘G group, ⌘⇧L lock, fn↑/↓ order, ⌘K palette) | differs | S1 | PR shortcuts |
+| Board | Keyboard map (S shapes, L line, C comment, ⌥1/⌥2/⌥3, G grid, ⌘G/⌘⇧G group, ⌘⇧L lock, fn↑/↓ order, ⌘K palette, ⌘⇧C copy as image) | match | — | PR #3, #5, #8 |
 | Board | Comments (C tool, pins with count/initials, thread popover with reply/resolve/delete, comments panel Open/Resolved, ⇧C hides, context-menu Add comment) | match | S3 | Comments are excluded from exports like Miro. PR #5 |
 | Board | Keyboard: L = connection line, C = comment (Miro's map) | match | — | PR #5 |
 | Share | Public viewer (`/b/{id}`): view-only or guest editing, embed mode, start on first frame | match | S3 | Guests see a "View only / Editing as a guest" bar; the rail/AI bar hide in view-only. PR #6 |
-| Board | Collaborator cursors, real-time sync, presentation mode, images/upload | missing | S1 | Follow-up PRs (presentation next; multiplayer needs a sync channel). |
+| Board | Presentation mode (Present button / Frames panel: full screen, frame-by-frame with arrows/space, bottom bar, Esc exits) | match | S3 | PR #8 |
+| Board | Grouping (⌘G / ⌘⇧G, toolbar button, click selects the group, click again drills into a member) | match | — | PR #8 |
+| Board | ⌘K command palette (create, view, edit, board, facilitation, help commands) | match | S3 | PR #8 |
+| Board | Rotation handle, images/file upload, tables/docs/slides formats, stickers, collaborator cursors, real-time sync | missing | S1 | Follow-ups; multiplayer needs a sync channel (Firestore listeners would add reads; see cost note). |
 | Share | Invite tab (email field, link row with Can edit/view, Copy team invite link, Board access, Anyone with the link) | match | — | "Anyone with the link" really works: No access / Can view / Can edit persisted on the board; public URL `/b/{id}` with a read-only viewer or guest editing. Emails aren't sent (no mail service); the link is copied for you to send. PR #6 |
 | Share | Embed tab (private notice, start view Board/First frame, View only, preview, Embed code, Copy code / Copy link) | match | — | iframe embeds the public viewer (`?embed=1`). PR #6 |
 | Share | Publish tab (community template / custom template cards) | match | S3 | Custom templates are free (saved locally); community publishing opens a GitHub issue. PR #6 |

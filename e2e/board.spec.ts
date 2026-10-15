@@ -215,3 +215,18 @@ test("comments: C places a pin, thread takes a reply, panel lists it, shift+C hi
   await page.keyboard.press("Escape"); await page.mouse.click(700, 500);
   await expect(page.locator("svg g[data-obj]")).toHaveCount(1); await page.keyboard.press("Shift+C"); await expect(page.locator("svg g[data-obj]")).toHaveCount(0);
 });
+
+test("grouping: ⌘G groups, click selects the whole group, ⌘⇧G ungroups; ⌘K palette runs a command", async ({ page }) => {
+  await newBoard(page);
+  await page.keyboard.press("n"); await click(page, -200, 0); await page.keyboard.type("a"); await page.keyboard.press("Escape");
+  await page.keyboard.press("n"); await click(page, 200, 0); await page.keyboard.type("b"); await page.keyboard.press("Escape");
+  await page.keyboard.press(`${MOD}+a`); await page.keyboard.press(`${MOD}+g`); await click(page, 0, 250); await page.waitForTimeout(100);
+  await click(page, -200, 0); await expect(page.getByTestId("selection-count")).toContainText("2 selected");
+  await page.keyboard.press(`${MOD}+Shift+g`); await click(page, 0, 250); await click(page, -200, 0); await expect(page.getByTestId("selection-count")).toHaveCount(0);
+  await page.keyboard.press(`${MOD}+k`); await page.getByPlaceholder(/Type what you want/).fill("minimap"); await page.keyboard.press("Enter"); await expect(page.getByTestId("minimap")).toBeVisible();
+});
+test("presenting walks the frames with arrow keys and Escape exits", async ({ page }) => {
+  await newBoard(page, "retro");
+  await page.getByLabel("Present", { exact: true }).click(); await expect(page.getByTestId("present-bar")).toContainText("1 / 3");
+  await page.keyboard.press("ArrowRight"); await expect(page.getByTestId("present-bar")).toContainText("2 / 3"); await page.keyboard.press("Escape"); await expect(page.getByTestId("present-bar")).toHaveCount(0);
+});

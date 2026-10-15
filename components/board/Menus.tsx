@@ -159,3 +159,28 @@ export function EmojiPicker({ onPick, onClose }: { onPick: (e: string) => void; 
   return <Pop className="mm-emoji" onClose={onClose} role="dialog" testid="emoji-picker">{E.map(e => <button key={e} type="button" onClick={() => { onPick(e); onClose(); }}>{e}</button>)}<button type="button" className="none" onClick={() => { onPick(""); onClose(); }}>Remove</button></Pop>;
 }
 export type { View };
+
+// ---------- ⌘K command palette ----------
+export type Command = { id: string; label: string; kbd?: string; group: string; run: () => void; icon?: React.ReactNode };
+export function CommandPalette({ commands, onClose }: { commands: Command[]; onClose: () => void }) {
+  const [q, setQ] = useState(""), [i, setI] = useState(0);
+  const filt = (v: string) => commands.filter(c => (c.label + " " + c.group).toLowerCase().includes(v.toLowerCase())).slice(0, 12);
+  const list = filt(q);
+  useEffect(() => { setI(0); }, [q]);
+  const run = (c: Command) => { onClose(); c.run(); };
+  return <div className="mi-scrim mm-scrim mm-kscrim" onPointerDown={onClose} data-ui role="dialog" aria-label="Command palette">
+    <div className="mm-k" onPointerDown={e => e.stopPropagation()} data-testid="command-palette">
+      <label className="mm-search">{X.search}<input autoFocus placeholder="Type what you want to create or do… (e.g. sticky note)" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { e.stopPropagation(); if (e.key === "ArrowDown") { e.preventDefault(); setI(n => Math.min(list.length - 1, n + 1)); } if (e.key === "ArrowUp") { e.preventDefault(); setI(n => Math.max(0, n - 1)); } if (e.key === "Enter") { const cur = filt(e.currentTarget.value); const pick = cur[Math.min(i, cur.length - 1)]; if (pick) run(pick); } if (e.key === "Escape") onClose(); }} /></label>
+      <ol>{list.map((c, n) => <li key={c.id}><button className={n === i ? "on" : ""} onMouseEnter={() => setI(n)} onClick={() => run(c)}><span className="ic">{c.icon}</span><span className="lb">{c.label}</span><small>{c.group}</small>{c.kbd && <kbd>{c.kbd}</kbd>}</button></li>)}{list.length === 0 && <li className="none">Nothing matches “{q}”</li>}</ol>
+    </div>
+  </div>;
+}
+
+// ---------- presentation mode bar ----------
+export function PresentBar({ index, total, onPrev, onNext, onExit, title }: { index: number; total: number; onPrev: () => void; onNext: () => void; onExit: () => void; title: string }) {
+  return <div className="mm-present" data-ui data-testid="present-bar">
+    <span className="t">{title}</span>
+    <button onClick={onPrev} disabled={index <= 0} aria-label="Previous frame">{X.chevR}</button><b>{total ? `${index + 1} / ${total}` : "Fit"}</b><button onClick={onNext} disabled={index >= total - 1} aria-label="Next frame">{X.chevR}</button>
+    <button className="x" onClick={onExit}>Exit</button>
+  </div>;
+}
