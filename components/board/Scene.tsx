@@ -1,5 +1,5 @@
 import React from "react";
-import type { ConnectorObj, Doc, FrameObj, Id, Obj, PenObj, ShapeObj, StickyObj, TextObj } from "@/lib/canvas/types";
+import type { CommentObj, ConnectorObj, Doc, FrameObj, Id, Obj, PenObj, ShapeObj, StickyObj, TextObj } from "@/lib/canvas/types";
 import { LINE_HEIGHT, fitFontSize, wrapText } from "@/lib/canvas/text";
 import { routeConnector } from "@/lib/canvas/connectors";
 import { renderOrder } from "@/lib/canvas/doc";
@@ -79,19 +79,30 @@ export function ConnectorView({ doc, o, hideLabel }: { doc: Doc; o: ConnectorObj
   </g>;
 }
 
+const initialsOf = (n: string) => (n.split("@")[0].slice(0, 2) || "me").toUpperCase();
+/** Comment pin bubble; anchored at (x, y + h) so the tail points at the spot that was clicked. */
+export function CommentPinView({ c, selected }: { c: CommentObj; selected?: boolean }) {
+  const n = c.thread.length, who = c.thread[0]?.by ?? "?";
+  return <g data-obj={c.id} transform={`translate(${c.x} ${c.y + c.h})`} style={{ cursor: "pointer" }} opacity={c.resolved ? 0.5 : 1}>
+    <path d="M0 0 L0 -20 A16 16 0 0 1 16 -36 H24 A16 16 0 0 1 40 -20 A16 16 0 0 1 24 -4 H6 Z" fill={selected ? "#4262FF" : "#fff"} stroke={selected ? "#4262FF" : "#1C1C1E"} strokeWidth={1.5} strokeLinejoin="round" />
+    <circle cx="20" cy="-20" r="10" fill={c.resolved ? "#8E8E93" : selected ? "#fff" : "#4262FF"} />
+    <text x="20" y="-20" textAnchor="middle" dominantBaseline="central" fontSize="9" fontWeight={700} fill={selected && !c.resolved ? "#4262FF" : "#fff"} fontFamily={FONT} style={{ userSelect: "none", pointerEvents: "none" }}>{n > 1 ? n : initialsOf(who)}</text>
+  </g>;
+}
 export function Defs() {
   return <defs><filter id="mi-shadow" x="-10%" y="-10%" width="120%" height="125%"><feGaussianBlur in="SourceAlpha" stdDeviation="2.5" /><feOffset dy="2" result="b" /><feFlood floodColor="#1C1C1E" floodOpacity="0.18" /><feComposite in2="b" operator="in" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter><pattern id="mi-hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#F2F2F4" /><line x1="0" y1="0" x2="0" y2="10" stroke="#D9DBE3" strokeWidth="4" /></pattern></defs>;
 }
 /** Renders every object of a doc as SVG children. Shared by the editor, board thumbnails and SVG export. */
-export function Scene({ doc, editing }: { doc: Doc; editing?: Id | null }) {
-  const order = renderOrder(doc), boxes = order.filter(i => doc.objects[i].type !== "connector"), conns = order.filter(i => doc.objects[i].type === "connector");
+export function Scene({ doc, editing, comments = "none", selected }: { doc: Doc; editing?: Id | null; comments?: "none" | "show"; selected?: Id[] }) {
+  const order = renderOrder(doc), boxes = order.filter(i => doc.objects[i].type !== "connector" && doc.objects[i].type !== "comment"), conns = order.filter(i => doc.objects[i].type === "connector"), pins = comments === "show" ? order.filter(i => doc.objects[i].type === "comment") : [];
   const view = (o: Obj) => {
     const hide = editing === o.id;
     switch (o.type) {
       case "sticky": return <StickyView key={o.id} o={o} hide={hide} />; case "shape": return <ShapeView key={o.id} o={o} hide={hide} />;
       case "text": return <TextView key={o.id} o={o} hide={hide} />; case "frame": return <FrameView key={o.id} o={o} hide={hide} />;
       case "pen": return <PenView key={o.id} o={o} />; case "connector": return <ConnectorView key={o.id} doc={doc} o={o} hideLabel={hide} />;
+      case "comment": return <CommentPinView key={o.id} c={o} selected={selected?.includes(o.id)} />;
     }
   };
-  return <>{boxes.map(i => view(doc.objects[i]))}{conns.map(i => view(doc.objects[i]))}</>;
+  return <>{boxes.map(i => view(doc.objects[i]))}{conns.map(i => view(doc.objects[i]))}{pins.map(i => view(doc.objects[i]))}</>;
 }
