@@ -3,17 +3,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { BP } from "@/lib/basepath";
 const TABS = [
-  { id: "research", label: "Research", img: "research.png", h: "Cluster what you learned", p: "Dump notes onto stickies, drag them into frames and let the themes show up on their own." },
-  { id: "roadmap", label: "Roadmap & Planning", img: "roadmap.png", h: "Plan in lanes", p: "Now, next and later frames, with connectors that show what has to land first." },
-  { id: "diagrams", label: "Diagrams", img: "diagrams.png", h: "Flows that keep up with you", p: "Shapes snap to guides and rounded connectors reroute while you drag." },
-  { id: "workshops", label: "Workshops", img: "workshops.png", h: "A retro in under a minute", p: "Start from a template, chain stickies with Tab, export the board when you're done." },
+  { id: "research", label: "Research", img: "research.png", h: "Turn research into shared direction", cta: "Explore research", ps: ["Paste outputs from any research tool or AI assistant onto one canvas", "Review and surface what matters, together", "Flow insights back out to roadmaps, specs, or your next AI prompt"] },
+  { id: "roadmap", label: "Roadmap & Planning", img: "roadmap.png", h: "Plan together, and keep it in sync", cta: "Explore roadmaps", ps: ["Bring backlog, priorities and notes onto the canvas as stickies and frames", "Sequence the work and weigh tradeoffs together, from roadmaps to trackers", "Everything autosaves, so plan and delivery never drift apart"] },
+  { id: "diagrams", label: "Diagrams", img: "diagrams.png", h: "Map your processes. Make them visible to everyone", cta: "Explore diagrams", ps: ["Describe your workflow to your AI agent and bring it in as a process map", "Swim lanes, decision points, and sequence flows on one canvas", "Spot where things break down and agree on what to fix"] },
+  { id: "workshops", label: "Workshops", img: "workshops.png", h: "Run a workshop the whole team leans into", cta: "Explore workshops", ps: ["Start from a ready-to-run board and pre-fill it with context", "Run the session and build shared understanding, together", "Export next steps as SVG or a board file, wherever you track work"] },
 ];
 export function HeroTabs() {
   const [i, setI] = useState(0); const t = TABS[i];
   return <div className="mk-tabs">
     <div className="mk-pill" role="tablist" aria-label="Use cases">{TABS.map((x, n) => <button key={x.id} role="tab" aria-selected={n === i} aria-controls="mi-tabpanel" className={n === i ? "on" : ""} onClick={() => setI(n)}>{x.label}</button>)}</div>
     <div className="mk-split" id="mi-tabpanel" role="tabpanel" data-testid="tabpanel">
-      <div><h2>{t.h}</h2><ul><li>{t.p}</li><li>Everything saves as you work, with no board limit.</li><li>Export to SVG or a re-importable file.</li></ul><Link className="mk-dark" href="/signup">Explore {t.label.toLowerCase()}</Link></div>
+      <div><h2>{t.h}</h2><ul>{t.ps.map(p => <li key={p}>{p}</li>)}</ul><Link className="mk-dark" href="/signup">{t.cta}</Link></div>
       <img className="mi-shot" src={`${BP}/home/${t.img}`} alt={`A MiroIsDead board for ${t.label.toLowerCase()}`} width={1440} height={900} />
     </div>
   </div>;

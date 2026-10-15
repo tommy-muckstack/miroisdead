@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BP } from "@/lib/basepath";
+import { Cursor } from "@/components/MiMk";
 import "./mihome2.css";
 
 const FOOT: [string, string[]][] = [
@@ -9,20 +10,34 @@ const FOOT: [string, string[]][] = [
   ["Solutions", ["AI Platform", "Product Acceleration", "Business Acceleration", "Platform and Capabilities"]],
   ["Tools", ["Agile Tools", "Graphs", "Online Sticky Notes", "Customer Journey Mapping", "Wireframe", "Kanban Board", "Image Color Picker", "AI Prototype Generator", "AI Wireframe Generator", "AI Diagram Generator", "AI Flowchart Generator", "AI Design Generator", "AI Mind Map Generator", "AI Dashboard Generator", "Gradient Generator", "Online Whiteboard", "Diagram Online", "Flowchart Online"]],
   ["Resources", ["Customer Stories", "Academy", "Help Center", "Blog", "Status", "Community", "Events", "Solution Partners", "Security"]],
-  ["Company", ["About Us", "Careers", "In the News"]],
+  ["Company", ["About Us", "Careers 🚀", "In the News"]],
   ["Plans & Pricing", ["Pricing", "Business", "Enterprise", "Consultants", "Education", "Startups", "NPOs"]],
 ];
 const GH = "https://github.com/tommy-muckstack/miroisdead";
-const SLIDES: [string, string, string][] = [["AI", "Accelerate your team with collaborative AI workflows", ""], ["Intelligent Canvas", "Empower teamwork on one infinite, multiplayer canvas", "Discover, define & deliver on one canvas"], ["Formats", "Work move forward with structured plans and Docs, Tables, Slides", "Move work forward with FORMATS you know"], ["Blueprints", "Automate key processes and your workflows so they are scalable, repeatable and efficient", "Build WORKFLOWS once, use them again and again"], ["Enterprise Security & Scale", "Secure and scalable collaboration on an enterprise-grade platform you can trust", "Your data is SECURED. Period."], ["Integrations", "Connect with 250+ apps so teams stay aligned and productive in one scalable, secure workspace", "Connect to 250+ of your top tools"]];
+const LOGOS = ["SONY", "PayPal", "UBISOFT", "workday.", "salesforce", "asos", "servicenow", "Contentful", "PEPSICO", "macy's", "Whirlpool", "Hanes"];
+export function MiLogos() {
+  return <section className="mh-logos" aria-label="Customer logos"><div className="mh-logos-in"><div className="mh-logos-track">{[...LOGOS, ...LOGOS].map((l, i) => <span key={l + i}>{l}</span>)}</div></div></section>;
+}
+const SLIDES: [string, string][] = [["AI", "Accelerate your team with collaborative AI workflows"], ["Intelligent Canvas", "Empower teamwork on one, infinite, multiplayer canvas"], ["Formats", "Move quickly from ideas to structured plans and work with Docs, Tables, Slides, Diagrams and more"], ["Blueprints", "Automate key processes and ensure your workflows are scalable, repeatable, and efficient"], ["Enterprise Security & Scale", "Secure and scalable collaboration on an enterprise-grade platform you can trust"], ["Integrations", "Connects with 250+ apps so teams stay aligned and productive in one scalable, secure workspace."]];
 export function MiNeedle() {
   const cards = [["3.6x", "faster time to market", "linear-gradient(200deg,#3b3a45,#15151a 70%)"], ["50%", "shorter planning process", "linear-gradient(200deg,#8d98b3,#d9dde7 40%,#6d7894)"], ["2x", "faster time to market", "linear-gradient(200deg,#2f4a3c,#10201a 70%)"]];
   return <section className="mh-needle" id="resources">
-    <h2>The only thing more important<br />than moving fast is <b>moving the needle</b></h2>
+    <Cursor name="Aida" color="#b7302f" bg="#ffd0cf" x={210} y={200} flip />
+    <h2>The only thing more important<br />than moving fast is moving the needle</h2>
     <p className="mh-sub">See how over 250,000 companies are getting great done</p>
+    <span className="mk-cur mh-aicur" aria-hidden><svg className="mk-cur-a flip" width="14" height="14" viewBox="0 0 24 24" fill="#8a3ffc" stroke="#fff" strokeWidth="1.5"><path d="M5.5 3.5l14 6.8-5.8 2-2 5.9z" /></svg><em>✦</em> Board AI</span>
     <div className="mh-cards">{cards.map(([a, b, bg], i) => <div key={a + i} className="mh-card" style={{ background: bg }}><b>{a}</b><span>{b}</span><i className="mh-co">{["acme", "northwind", "globex"][i]}</i></div>)}</div>
     <div className="mh-stats"><div><b>100M+</b><span>people collaborating</span></div><div><b>250+</b><span>apps and integrations</span></div><div><b>6,000+</b><span>templates</span></div></div>
   </section>;
 }
+const Art = ({ i }: { i: number }) => {
+  if (i === 0) return <div className="mh-ai"><h3>Bring <em>TEAM</em> <span className="mh-avs"><i /><i /><i /></span> &amp; artificial intelligence together</h3><div className="mh-aibar">AI CANVAS</div><div className="mh-ai3"><u>SIDEKICKS<small>chat-based AI agents to collaborate with on the canvas</small></u><u>FLOWS<small>streamline processes with visual AI workflows</small></u><u>KNOWLEDGE<small>bring in enterprise knowledge to make better decisions</small></u></div><div className="mh-aitrust"><b>AI TRUST</b> Security <i>|</i> Governance <i>|</i> Privacy</div></div>;
+  if (i === 1) return <div className="mh-ai mh-inf"><svg viewBox="0 0 640 300" className="mh-infsvg" aria-hidden><defs><linearGradient id="mhg" x1="0" x2="1"><stop offset="0" stopColor="#ffb13b" /><stop offset=".35" stopColor="#ff6fa6" /><stop offset=".65" stopColor="#4fd1c5" /><stop offset="1" stopColor="#6b5cff" /></linearGradient></defs><path d="M60 150 C 60 60, 230 60, 320 150 S 580 240, 580 150 S 410 60, 320 150 S 60 240, 60 150 Z" fill="none" stroke="url(#mhg)" strokeWidth="46" strokeLinecap="round" /></svg><h3 className="mh-ital">DISCOVER, DEFINE &amp; DELIVER</h3><p>as one team<br />on one canvas</p></div>;
+  if (i === 2) return <div className="mh-ai"><h3>Move work forward with <em className="mh-ital">FORMATS</em> you know</h3><div className="mh-fmts">{[["Prototype", "#7d5cff"], ["Slides", "#e8402f"], ["Doc", "#2d8fe0"], ["Table", "#1f9d46"]].map(([n, c]) => <div key={n} style={{ color: c }}><span style={{ borderColor: c }} /><b>{n}</b></div>)}</div></div>;
+  if (i === 3) return <div className="mh-ai"><h3>Build <em className="mh-ital">WORKFLOWS</em> once, use them again and again</h3><div className="mh-wf"><span className="t1">Spaces</span><div className="pg" /><div className="pg p2" /><span className="t2">Blueprint</span></div></div>;
+  if (i === 4) return <div className="mh-ai mh-sec"><h3><i>Your data is<br /><b>SECURED</b>.<br />Period.</i></h3><div className="mh-stack"><span className="s1" /><span className="s2" /><span className="s3" /></div></div>;
+  return <div className="mh-ai"><h3>Connect to <em className="mh-ital">250+</em><br />of your top tools</h3><div className="mh-tiles">{["#1c1c1e", "#2684ff", "#f06a6a", "#0b66e4", "#ff5c5c", "#7f52ff", "#ff7a00", "#f24e1e", "#8b5cf6", "#5059c9", "#2d8cff", "#7b61ff", "#e01e5a", "#1d4ed8"].map((c, n) => <span key={n}><i style={{ background: c }} /></span>)}</div></div>;
+};
 export function MiExperience() {
   const pin = useRef<HTMLElement>(null), track = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -31,33 +46,39 @@ export function MiExperience() {
   }, []);
   return <section className="mh-pin" id="product" ref={pin}><div className="mh-sticky"><div className="mh-exp">
     <h2>Experience<br />the Innovation<br />Workspace</h2>
-    <div className="mh-clip"><div className="mh-track" ref={track}>
-      {SLIDES.map((sl, i) => <div className="mh-slide" key={sl[0]}>
-        <div className={"mh-slide-art mh-sa" + (i % 6)}>{i === 0 ? <div className="mh-ai"><h3>Bring <em>TEAM</em> &amp; artificial intelligence together</h3><div className="mh-ai3"><u>SIDEKICKS<br /><small>Chat-based agents that collaborate with you on the canvas</small></u><u>FLOWS<br /><small>Streamline processes with visual AI workflows</small></u><u>KNOWLEDGE<br /><small>Bring in existing knowledge to better decisions</small></u></div></div> : <div className="mh-ai"><h3>{sl[2]}</h3><div className={"mh-ring r" + (i % 3)} /></div>}</div>
-        <h4>{sl[0]}</h4><p>{sl[1]}</p><Link href="/signup" className="mk-dark mh-btn">Learn more</Link></div>)}
-    </div></div></div></div></section>;
+    <div className="mh-clipwrap"><div className="mh-check" aria-hidden><span>check this out</span><svg width="30" height="22" viewBox="0 0 30 22" fill="none" stroke="#1c1c1e" strokeWidth="1.6" strokeLinecap="round"><path d="M2 4c8 2 16 8 22 14M18 18l6 1 1-6" /></svg></div>
+      <div className="mh-slidespill" aria-hidden><span className="mh-sp-ic" /><b>Slides</b><i>▶</i><i>⤢</i><i>⋮</i></div>
+      <div className="mh-clip"><div className="mh-track" ref={track}>
+        {SLIDES.map((sl, i) => <div className="mh-slide" key={sl[0]}>
+          <div className={"mh-slide-art mh-sa" + i}><Art i={i} />{(i === 2 || i === 4) && <Cursor name="Bea" color="#0e8f8f" bg="#c6f3ee" x={i === 2 ? 240 : 310} y={i === 2 ? 20 : 40} />}</div>
+          <h4>{sl[0]}</h4><p>{sl[1]}</p><Link href="/signup" className="mk-dark mh-btn">Learn more</Link></div>)}
+      </div></div></div></div></div></section>;
 }
 export function MiFlow() {
   return <section className="mh-mob mh-flow"><h2>Flow from idea<br />to outcome in seconds</h2><div className="mh-flowart" aria-hidden><i /><i /><i /><b /></div></section>;
 }
 export function MiPlatform() {
-  return <section className="mh-mob mh-plat"><h2>The AI platform<br />for teamwork</h2><p>Move beyond individual AI productivity to team and cross-team collaboration with AI</p><Link href="/signup" className="mh-plat-btn">Explore the solution</Link><div className="mh-platart" aria-hidden><span>▶</span></div></section>;
+  return <section className="mh-plat" id="solutions"><Cursor name="Bea" color="#0e8f8f" bg="#c6f3ee" x={1185} y={70} />
+    <h2>The AI platform<br />for teamwork</h2><p>Move beyond individual AI productivity to team and cross-team collaboration with AI</p><Link href="/signup" className="mh-plat-btn">Explore the solution</Link>
+    <div className="mh-platart" aria-hidden><div className="mh-pgrid">{Array.from({ length: 9 }, (_, i) => <div key={i} className={"pc c" + (i % 3)} />)}</div><span className="mh-play">▶</span></div></section>;
 }
 export function MiHelp() {
-  const items: [string, string, string, string][] = [["Pricing", "Select a plan", "#d6f5e2", "#0a7a3d"], ["Templates", "Get started fast", "#d3f0f5", "#0a6c7a"], ["Solution Partners", "Explore the network", "#ffe9b8", "#8a5a00"], ["Community", "Connect with Miro users", "#d9f5df", "#136b2a"]];
+  const items: [string, string, string, string][] = [["Pricing", "Select a plan", "#e3f8ea", "#0aae3a"], ["Templates", "Get started fast", "#dff3f3", "#187574"], ["Solution Partners", "Explore the network", "#fdf3d2", "#b8961f"], ["Community", "Connect with users", "#e0f4e5", "#067429"], ["Blog", "Dive in to ways of working", "#fde9dc", "#db8641"], ["Academy", "Get started with the canvas", "#e8e6ff", "#655be6"]];
+  const [page, setPage] = useState(0);
   return <section className="mh-help"><div className="mh-help-in"><h2>Need help getting started?</h2>
-    <div className="mh-hc">{items.map(([tag, t, bg, fg], i) => <Link key={t} href={i === 0 ? "/pricing" : "/signup"} className="mh-hcard"><span className="mh-tag" style={{ background: bg, color: fg }}>{tag}</span><span className="mh-arr">↗</span><b>{t}</b><div className={"mh-hart a" + i} /></Link>)}</div>
-    <div className="mh-dots"><span>‹</span><span>›</span></div></div></section>;
+    <div className="mh-hcwrap"><div className="mh-hc" style={{ transform: `translateX(${-page * 606}px)` }}>{items.map(([tag, t, bg, fg], i) => <Link key={t} href={i === 0 ? "/pricing" : "/signup"} className="mh-hcard"><span className="mh-tag" style={{ background: bg, color: fg, borderColor: fg }}>{tag}</span><span className="mh-arr">↗</span><h3>{t}</h3><div className={"mh-hart a" + i} /></Link>)}</div></div>
+    <div className="mh-dots"><button aria-label="Previous" disabled={page === 0} onClick={() => setPage(0)}>‹</button><button aria-label="Next" disabled={page === 1} onClick={() => setPage(1)}>›</button></div></div></section>;
 }
+const SOC = [["X", "M4 4l16 16M20 4L4 20"], ["Facebook", "M14 8h3V4h-3a4 4 0 00-4 4v3H7v4h3v9h4v-9h3l1-4h-4V9a1 1 0 011-1z"], ["LinkedIn", "M4 9h4v12H4zM6 3a2 2 0 110 4 2 2 0 010-4zM10 9h4v2c1-1.5 2.5-2 4-2 3 0 4 2 4 5v7h-4v-6c0-1.5-.5-2.5-2-2.5S14 13.5 14 15v6h-4z"], ["Instagram", "M7 3h10a4 4 0 014 4v10a4 4 0 01-4 4H7a4 4 0 01-4-4V7a4 4 0 014-4zM12 8.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zM17.5 6.5h.01"], ["YouTube", "M22 8s-.2-1.6-.8-2.3c-.8-.8-1.6-.8-2-.9C16.4 4.6 12 4.6 12 4.6s-4.4 0-7.2.2c-.4.1-1.2.1-2 .9C2.2 6.4 2 8 2 8s-.2 1.9-.2 3.8v1.8c0 1.9.2 3.8.2 3.8s.2 1.6.8 2.3c.8.8 1.8.8 2.3.9 1.6.2 6.9.2 6.9.2s4.4 0 7.2-.2c.4-.1 1.2-.1 2-.9.6-.7.8-2.3.8-2.3s.2-1.9.2-3.8v-1.8C22.2 9.9 22 8 22 8zM10 15V9l5.5 3z"], ["Reddit", "M20 12a2 2 0 00-3.4-1.4A9 9 0 0012.6 9.4l.9-4 2.8.6a1.5 1.5 0 100 .3L13 5.5l-1.1 4.9a9 9 0 00-4.5 1.2A2 2 0 104.9 14.5c0 .3-.1.5-.1.8 0 2.8 3.2 5 7.2 5s7.2-2.2 7.2-5v-.8A2 2 0 0020 12zM9 13a1 1 0 110 2 1 1 0 010-2zm6 0a1 1 0 110 2 1 1 0 010-2zm-6.3 4.2a.5.5 0 01.7-.7c.7.7 2 .8 2.6.8s1.9-.1 2.6-.8a.5.5 0 01.7.7c-.9.9-2.5 1-3.3 1s-2.4-.1-3.3-1z"]];
 export function MiFooter() {
   const [open, setOpen] = useState<string | null>(null);
   return <footer className="mh-foot"><div className="mh-foot-in">
-    <div className="mh-fcols">{FOOT.map(([t, ls]) => <div key={t} className={open === t ? "open" : ""}><h5 onClick={() => setOpen(open === t ? null : t)}>{t}<i /></h5>{ls.map(l => <a key={l} href={l === "Pricing" ? BP + "/pricing" : "#"}>{l}</a>)}{t === "Plans & Pricing" && <a href={BP + "/signup"} className="mh-fcs">Contact sales →</a>}</div>)}</div>
-    <div className="mh-badges"><span>ISO 42001 READY</span><span>ISO 27001 CERTIFIED</span><span>SOC 2 COMPLIANT</span><span>GDPR COMPLIANT</span><b>Capterra ★★★★★</b><b>G2 ★★★★★</b><b>Trustradius ★★★★★</b></div>
+    <div className="mh-fcols">{FOOT.map(([t, ls]) => <div key={t} className={open === t ? "open" : ""}><h5 onClick={() => setOpen(open === t ? null : t)}>{t}<i /></h5>{ls.map(l => <a key={l} href={l === "Pricing" ? BP + "/pricing" : "#"}>{l}</a>)}{t === "Plans & Pricing" && <a href={BP + "/signup"} className="mh-fcs">Contact sales <span>→</span></a>}</div>)}</div>
+    <div className="mh-badges">{[["ISO 42001", "READY"], ["ISO 27001", "CERTIFIED"], ["SOC 2", "COMPLIANT"], ["GDPR", "COMPLIANT"]].map(([a, b]) => <span key={a} className="mh-badge"><i>{a.split(" ")[0]}<small>{a.split(" ")[1]}</small></i><em>{a}<br />{b}</em></span>)}<b>◢ Capterra <u>★★★★½</u></b><b>G2 <u>★★★★½</u></b><b>TR <u>★★★★★</u></b></div>
     <p className="mh-rev">20,000+ reviews from Capterra, G2 and Trustradius</p>
     <div className="mh-rule" />
-    <div className="mh-fmid"><div className="mh-soc"><i>X</i><i>f</i><i>in</i><i>◎</i><i>▶</i><i>r</i><span>English ◍</span></div><div className="mh-store"><span>App Store</span><span>Google Play</span></div></div>
-    <div className="mh-legal"><b className="mh-flogo" /> MiroIsDead © 2026 <a href="#">Terms of Service</a><a href="#">Privacy Policy</a><a href="#">Manage Cookies</a><a href={GH}>Source (Apache-2.0)</a></div>
+    <div className="mh-fmid"><div className="mh-soc">{SOC.map(([n, d]) => <a key={n} href="#" aria-label={n}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d={d} /></svg></a>)}<span className="mh-lang"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></svg>English <i>⌄</i></span></div><div className="mh-store"><span><small>Download on the</small>App Store</span><span><small>GET IT ON</small>Google Play</span></div></div>
+    <div className="mh-legal"><b className="mh-flogo" /> MiroIsDead © 2026 <a href="#">Terms of Service</a><a href="#">Privacy Policy</a><a href="#">Manage Cookies</a><a href="#">Do Not Sell or Share My Personal Information</a><a href={GH}>Source (Apache-2.0)</a></div>
     <p className="mh-disc">MiroIsDead is an independent open-source project. It is not affiliated with, endorsed by or sponsored by RealtimeBoard, Inc. (Miro). Miro is a trademark of its owner.</p>
   </div></footer>;
 }
