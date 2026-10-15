@@ -80,3 +80,10 @@ describe("anyone-with-the-link access", () => {
     expect((await getPublicBoard(repo, "nope-0000")).status).toBe(404);
   });
 });
+
+describe("analytics taxonomy", () => {
+  it("keeps every event snake_case under a family prefix and keyed by its own name", async () => {
+    const { EVENTS, EVENT_PREFIXES } = await import("@/lib/analytics/taxonomy");
+    for (const [k, v] of Object.entries(EVENTS)) { expect(k).toBe(v); expect(v).toMatch(/^[a-z][a-z0-9_]*$/); expect(EVENT_PREFIXES.some(p => v.startsWith(p))).toBe(true); }
+  });
+});

@@ -8,6 +8,7 @@ import { GOOGLE_G_SVG } from "@/vendor/isdead-design/src/google";
 import { Mark } from "@/components/board/icons";
 import { X } from "@/components/mxi";
 import "./miauth.css";
+import { track, EVENTS } from "@/lib/analytics";
 type Props = { config: FirebaseClientConfig | null; demo: boolean; to: string; mode: "signin" | "signup" };
 const Bld = () => <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1c1c1e" strokeWidth="1.4" aria-hidden><rect x="3.5" y="2.5" width="10" height="14" /><path d="M13.5 8.5h3v8h-3M6 5.5h1.5M9.5 5.500H11M6 8.500h1.500M9.5 8.500H11M6 11.500h1.500M9.5 11.500H11" /></svg>;
 export function MiAuth({ config, demo, to, mode }: Props) {
@@ -15,13 +16,14 @@ export function MiAuth({ config, demo, to, mode }: Props) {
   const [step, setStep] = useState(0), [email, setEmail] = useState(""), [pw, setPw] = useState(""), [rem, setRem] = useState(true), [reset, setReset] = useState(false);
   const [busy, setBusy] = useState(false), [err, setErr] = useState(""), [note, setNote] = useState("");
   const session = `${BP}/api/session`; const done = () => { window.location.assign(to); };
-  const run = async (f: () => Promise<void>) => { setBusy(true); setErr(""); setNote(""); try { await f(); } catch (e) { setErr(authErrorMessage(e)); } finally { setBusy(false); } };
+  const authMode = su ? "signup" : "signin";
+  const run = async (f: () => Promise<void>, method?: string) => { setBusy(true); setErr(""); setNote(""); if (method) track(EVENTS.auth_started, { method, mode: authMode }); try { await f(); if (method) track(EVENTS.auth_completed, { method, mode: authMode }); } catch (e) { if (method) track(EVENTS.auth_failed, { method, mode: authMode, reason: String((e as { code?: string })?.code ?? "error") }); setErr(authErrorMessage(e)); } finally { setBusy(false); } };
   const submit = (e: React.FormEvent) => { e.preventDefault(); if (!config) { setErr("Sign-in isn't configured on this deployment yet."); return; }
     if (reset) return run(async () => { await resetPassword(config, email); setNote("If that email has an account, a reset link is on its way."); setReset(false); });
     if (step === 0) { if (email) setStep(1); return; }
-    run(async () => { if (su) await signUpWithEmail(config, session, email, pw); else await signInWithEmail(config, session, email, pw); done(); }); };
-  const demoLogin = () => run(async () => { const r = await fetch(`${BP}/api/session/demo`, { method: "POST" }); if (!r.ok) throw new Error("Demo sign-in failed"); done(); });
-  const google = () => config ? run(async () => { await signInWithGoogle(config, session); done(); }) : setErr("Sign-in isn't configured on this deployment yet.");
+    run(async () => { if (su) await signUpWithEmail(config, session, email, pw); else await signInWithEmail(config, session, email, pw); done(); }, "email"); };
+  const demoLogin = () => run(async () => { const r = await fetch(`${BP}/api/session/demo`, { method: "POST" }); if (!r.ok) throw new Error("Demo sign-in failed"); done(); }, "demo");
+  const google = () => config ? run(async () => { await signInWithGoogle(config, session); done(); }, "google") : setErr("Sign-in isn't configured on this deployment yet.");
   const G = <span dangerouslySetInnerHTML={{ __html: GOOGLE_G_SVG }} style={{ display: "inline-flex" }} />;
   const form = <form onSubmit={submit} noValidate={false}>
     <label className="ma-l" htmlFor="ma-email">{su ? "Enter your work email" : "Email"}</label>
