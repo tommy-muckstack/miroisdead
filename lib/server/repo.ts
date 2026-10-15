@@ -31,7 +31,7 @@ export class FirestoreRepo implements BoardRepo {
   private col = async (uid: string) => (await this.db).collection("users").doc(uid).collection("miroisdead_boards");
   async list(uid: string) {
     const snap = await (await this.col(uid)).orderBy("updatedAt", "desc").limit(500).get();
-    return snap.docs.map((d: { id: string; data: () => any }) => { const x = d.data(); return { id: d.id, title: x.title, createdAt: x.createdAt, updatedAt: x.updatedAt, objectCount: x.objectCount ?? 0, ...(x.emoji ? { emoji: x.emoji } : {}) }; });
+    return snap.docs.map((d: { id: string; data: () => any }) => { const x = d.data(); return { id: d.id, title: x.title, createdAt: x.createdAt, updatedAt: x.updatedAt, objectCount: x.objectCount ?? 0, ...(x.access && x.access !== "none" ? { access: x.access } : {}), ...(x.emoji ? { emoji: x.emoji } : {}) }; });
   }
   async get(uid: string, id: string) {
     const d = await (await this.col(uid)).doc(id).get(); if (!d.exists) return null;

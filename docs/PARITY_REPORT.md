@@ -71,7 +71,18 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 - "Contact sales" → "View source"; "No password required" → password sign-in copy; reCAPTCHA / region sign-in / enterprise SSO are not applicable.
 - Paid Miro features are built as free equivalents; Upgrade / Free-plan chrome and the notification banner were removed on the owner's request (2026-10-15), and sign-in is Google + email only.
 
-## Analytics
+## QA findings (hands-on pass, 2026-10-15)
+41 findings from the external QA pass; each is closed here as fixed (PR) or a justified exception.
+
+| # | Finding | Status | Where |
+|---|---|---|---|
+| 1 | Board list › Rename does nothing visible | fixed: "Rename board" modal (Board name, Save/Cancel) | PR #19 |
+| 2 | Board list › options menu renders under the next row | fixed: the row with an open menu is lifted above its siblings (`.mx-acts` is transformed, so the popup's z-index was trapped) | PR #19 |
+| 3 | Board list stale after Duplicate/Delete | fixed: optimistic list update + `cache: "no-store"` on the list fetch | PR #19 |
+| 4 | Native `confirm()` on Delete | fixed: styled "Delete board?" modal (no Free-plan/upgrade copy on purpose, see exceptions) | PR #19 |
+| 5 | Missing menu items | fixed: Open in new tab, Rename, Duplicate, Board details, Share, Copy board link, Make board private/public, starred, Move to Team/Space, Download board backup, Delete | PR #19 |
+| 6 | Hover actions, Today/Yesterday, truncated owner | fixed: Last opened says Today / Yesterday / date; the owner column keeps clear of the hover buttons | PR #19 |
+
 PostHog project 666931 (IsDead family) with the taxonomy in `docs/ANALYTICS.md`; PR #16.
 
 ## Open items needing a human decision
