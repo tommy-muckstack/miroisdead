@@ -1,5 +1,5 @@
 import { chromium } from "@playwright/test";
-const OUT = "/Users/tommykeeley/MuckStack-Projects/Web-Android/miroisdead-parity/qa", BASE = "http://localhost:3111/miroisdead";
+const OUT = process.env.OUT ?? new URL("../../miroisdead-parity/qa/", import.meta.url).pathname, BASE = "http://localhost:3111/miroisdead";
 const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
 await ctx.addInitScript(() => { Object.defineProperty(navigator, "platform", { get: () => "Linux x86_64" }); Object.defineProperty(navigator, "userAgentData", { get: () => ({ platform: "Linux" }) }); });
 const p = await ctx.newPage(); p.on("pageerror", e => console.log("pageerror:", e.message));
