@@ -90,6 +90,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const [thread, setThread] = useState<Id | null>(null);
   const [palette, setPalette] = useState(false);
   const [, setTick] = useState(0);
+  const [online, setOnline] = useState(true);
   const [present, setPresent] = useState<{ i: number } | null>(null);
   const [commentsPanel, setCommentsPanel] = useState(false);
   const [hideComments, setHideComments] = useState(false);
@@ -139,6 +140,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     try { await store.save({ ...boardRef.current, updatedAt: Date.now() }); setStatus("saved"); }
     catch { setStatus(store.kind === "cloud" ? "device" : "error"); }
   }, [store]);
+  useEffect(() => { setOnline(navigator.onLine); const on = () => { setOnline(true); void saveNow(); }; const off = () => setOnline(false); window.addEventListener("online", on); window.addEventListener("offline", off); return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); }; }, [saveNow]);
   useEffect(() => { if (first.current) { first.current = false; return; } if (readOnly) return; setStatus("saving"); const t = setTimeout(saveNow, 600); return () => clearTimeout(t); }, [doc, title, view, emoji, note, access, saveNow, readOnly]);
   useEffect(() => { if (!startFrame) return; const d = R.current.doc; const f = d.order.find(i => d.objects[i].type === "frame"); if (f) setView(fitView(boundsOf(d, d.objects[f]), R.current.size, 40)); }, [startFrame]);
   useEffect(() => { const f = () => { void store.save({ ...boardRef.current, updatedAt: Date.now() }).catch(() => {}); }; window.addEventListener("pagehide", f); const v = () => document.visibilityState === "hidden" && f(); document.addEventListener("visibilitychange", v); return () => { window.removeEventListener("pagehide", f); document.removeEventListener("visibilitychange", v); }; }, [store]);
@@ -456,6 +458,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   ];
   return <div className={"mi-app" + (present ? " presenting" : "")} data-testid="board-editor">
     {banner && !present && <div className="mx-banner" data-ui role="status"><span className="mx-banner-i">{X.info}</span><span>Never miss an important update.</span><a href="#notifications" onClick={e => { e.preventDefault(); setBanner(false); }}>Turn on real-time notifications</a><button aria-label="Dismiss" className="mx-banner-x" onClick={() => setBanner(false)}>{X.close}</button></div>}
+    {!online && <div className="mb-ro mb-offline" data-ui role="status">{X.info} You’re offline. Changes are saved on this device and sync when you’re back.</div>}
     {(readOnly || guest) && <div className="mb-ro" data-ui>{X.globe} {readOnly ? "View only" : "Editing as a guest"} · {title || "Untitled"}{guest && <a href={`${BP}/signup`}>Sign up to keep a copy</a>}</div>}
     {!embed && !present && <header className="mb-tl" data-ui style={{ top: banner ? 66 : 10 }}>
       <Link href="/app" className="mb-i" aria-label="Back to boards" title="Back to boards">{X.panel}</Link>

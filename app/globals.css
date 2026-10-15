@@ -68,3 +68,12 @@ kbd{font-family:var(--ids-font-sans);font-size:12px;font-weight:600;background:v
 .mi-sheet-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:24px;margin-top:16px}.mi-sheet h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ids-color-text-muted);margin:0 0 8px}.mi-keyrow{display:flex;gap:10px;align-items:baseline;padding:4px 0;font-size:14px}.mi-keyrow kbd{min-width:62px;text-align:center;flex:none}
 @media (max-width:760px){.mi-who,.mi-status{display:none}.mi-hint{display:none}.mi-rail{top:auto;bottom:70px;transform:none;flex-direction:row;left:8px;right:8px;overflow-x:auto}.mi-minimap{display:none}}
 @media (prefers-reduced-motion:no-preference){.mi-floattb,.mi-menu{animation:mi-pop .12s ease-out}@keyframes mi-pop{from{opacity:0;transform:translateY(4px)}}}
+
+/* --- 404 / error states --- */
+.mi-404{min-height:100vh;background:#f2f2f2;display:flex;flex-direction:column;align-items:center;padding:40px 16px;font-family:var(--ids-font-sans)}
+.mi-404-logo{display:inline-flex;gap:10px;align-items:center;font-family:var(--ids-font-display);font-weight:600;font-size:26px;letter-spacing:-.03em;color:#1c1c1e;text-decoration:none;margin-bottom:60px}
+.mi-404-card{background:#fff;border-radius:24px;padding:48px 40px;max-width:520px;width:100%;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+.mi-404-art{display:flex;justify-content:center;gap:10px;margin-bottom:28px}.mi-404-art i{width:56px;height:56px;border-radius:8px;background:#fff9b1;box-shadow:0 2px 6px rgba(0,0,0,.12);transform:rotate(-6deg)}.mi-404-art i:nth-child(2){background:#b9e6ff;transform:rotate(4deg)}.mi-404-art i:nth-child(3){background:#ffd8a8;transform:rotate(-3deg)}.mi-404-art.err i{background:#ffbfbf}
+.mi-404 h1{font-family:var(--ids-font-display);font-weight:400;font-size:32px;line-height:38px;margin:0 0 12px;color:#1c1c1e}.mi-404 p{font-size:16px;line-height:24px;color:#555;margin:0 0 24px}.mi-404-code{font:12px ui-monospace,Menlo,monospace;color:#8c8b85}
+.mi-404-acts{display:flex;gap:12px;justify-content:center}.mi-404-acts .mx-dark,.mi-404-acts .mx-light{text-decoration:none;display:inline-flex;align-items:center;height:44px;padding:0 20px}
+.mi-404 .mx-dark{border:0;border-radius:8px;background:#2a2923;color:#fff;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit}.mi-404 .mx-light{border:1px solid #ddd;border-radius:8px;background:#fff;color:#1c1c1e;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit}

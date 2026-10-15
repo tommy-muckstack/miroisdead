@@ -34,7 +34,7 @@ Without Firebase env (`.env.example`) the login page shows only the demo account
 Research in `/workspace/whiteboard-research` (Brainz canvas spec, Miro UX notes) was reused rather than redone: the single-key tool map, quick-create dots and Tab chains, shrink-to-fit sticky text, contextual toolbar, filter/align/distribute, frames and minimap came from the Miro notes; the board envelope, debounced autosave (180–600 ms) and the plain-JSON scene description for agents came from the Brainz spec. The engine itself is a fresh React/SVG implementation (Brainz's BlockSuite was not reused, for testability and stack parity).
 
 ## Not built yet
-Real-time multiplayer and cursors, comments, presentation mode, images/file uploads, sticky-note grouping/clustering, Mermaid import, mobile touch gestures beyond pinch/pan.
+Real-time multiplayer and cursors, images/file uploads, rotation, Docs/Tables/Slides formats, stickers, Mermaid import, mobile touch gestures beyond pinch/pan. Parity status per screen: `docs/PARITY_REPORT.md`.
 
 ## License
 Apache-2.0. Not affiliated with, endorsed by or sponsored by RealtimeBoard, Inc. (Miro).
