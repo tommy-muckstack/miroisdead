@@ -106,7 +106,7 @@ test("quick-create dot makes a connected clone in edit mode; recolour from the t
   await page.getByTestId("dot-e").click();
   await expect(page.getByTestId("text-editor")).toBeFocused(); await page.keyboard.type("child"); await page.keyboard.press("Escape");
   await expect(objs(page)).toHaveCount(3); // sticky, sticky, connector
-  await click(page, -100, 0); await page.getByRole("button", { name: /Sticky colour #FFB8C6/ }).click();
+  await click(page, -100, 0); await page.getByRole("button", { name: "Colour" }).click(); await page.getByRole("button", { name: /Sticky colour #FFB8C6/ }).click();
   await expect(page.locator("svg rect[fill='#FFB8C6']")).toHaveCount(1);
 });
 
@@ -178,7 +178,7 @@ test("export menu offers SVG and the agent scene JSON", async ({ page }) => {
 });
 
 test("sign out returns to the marketing page and protects the app", async ({ page }) => {
-  await demo(page); await page.getByRole("button", { name: "Sign out" }).click(); await page.waitForURL(/\/miroisdead\/?$/);
+  await demo(page); await page.getByLabel("Account").click(); await page.getByRole("menuitem", { name: /Log out/ }).click(); await page.waitForURL(/\/miroisdead\/?$/);
   await page.goto("/miroisdead/app"); await expect(page).toHaveURL(/login/);
 });
 

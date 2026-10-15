@@ -4,6 +4,7 @@ import type { Doc, Id, Obj, ShapeKind, Box, ConnectorStyle } from "@/lib/canvas/
 import { INK_COLORS, SHAPE_FILLS, STICKY_COLORS } from "@/lib/canvas/types";
 import type { Align } from "@/lib/canvas/doc";
 import { I } from "./icons";
+import { X } from "@/components/mxi";
 
 type Props = {
   doc: Doc; ids: Id[]; screenBox: Box; canvas: { w: number; h: number };
@@ -14,20 +15,29 @@ const Swatches = ({ colors, value, onPick, label }: { colors: readonly string[];
   <div className="mi-swatches" role="group" aria-label={label}>{colors.map(c => <button key={c} type="button" className={"mi-sw" + (value?.toLowerCase() === c.toLowerCase() ? " on" : "")} style={{ background: c }} aria-label={`${label} ${c}`} onClick={() => onPick(c)} />)}</div>;
 const Btn = ({ children, title, on, onClick }: { children: React.ReactNode; title: string; on?: boolean; onClick: () => void }) =>
   <button type="button" className={"mi-tb" + (on ? " on" : "")} title={title} aria-label={title} aria-pressed={on} onClick={onClick}>{children}</button>;
+const types0 = (objs: Obj[]) => objs.length === 1 && objs[0].type === "sticky";
+const Dec = ({ title, children }: { title: string; children: React.ReactNode }) => <span className="mi-tb dec" title={title} aria-hidden="true">{children}</span>;
+const SIZES = ["auto", 14, 20, 28] as const;
 const Sep = () => <span className="mi-sep" />;
 const SHAPES: { k: ShapeKind; label: string; i: React.ReactNode }[] = [{ k: "rect", label: "Rectangle", i: I.rect }, { k: "round", label: "Rounded", i: I.rect }, { k: "ellipse", label: "Ellipse", i: I.ellipse }, { k: "diamond", label: "Diamond", i: I.diamond }, { k: "triangle", label: "Triangle", i: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d="M12 4l9 16H3z" /></svg> }];
 
 export function SelectionToolbar({ doc, ids, screenBox, canvas, patch, onDelete, onDuplicate, onFront, onBack, onFrame, onAlign, onDistribute }: Props) {
+  const [pal, setPal] = React.useState(false), [more, setMore] = React.useState(false);
   const objs = ids.map(i => doc.objects[i]).filter(Boolean);
   if (!objs.length) return null;
   const types = new Set(objs.map(o => o.type)), one = objs.length === 1 ? objs[0] : null;
-  const W = 340, left = Math.min(Math.max(8, screenBox.x + screenBox.w / 2 - W / 2), canvas.w - W - 8);
+  const W = types0(objs) ? 560 : 340, left = Math.min(Math.max(8, screenBox.x + screenBox.w / 2 - W / 2), canvas.w - W - 8);
   const above = screenBox.y - 62, top = above < 8 ? Math.min(canvas.h - 60, screenBox.y + screenBox.h + 14) : above;
   const stop = (e: React.SyntheticEvent) => e.stopPropagation();
   return <div className="mi-floattb" style={{ left, top }} data-testid="selection-toolbar" onPointerDown={stop} onDoubleClick={stop}>
     {types.size === 1 && one?.type === "sticky" && <>
-      <Swatches colors={STICKY_COLORS} value={one.color} label="Sticky colour" onPick={c => patch({ color: c }, { stickyColor: c })} />
-      <Sep />{(["auto", 14, 20, 28] as const).map(s => <Btn key={s} title={s === "auto" ? "Auto text size" : `Text size ${s}`} on={one.fontSize === s} onClick={() => patch({ fontSize: s })}><b style={{ fontSize: s === "auto" ? 12 : s === 14 ? 11 : s === 20 ? 14 : 17 }}>{s === "auto" ? "Auto" : "A"}</b></Btn>)}
+      <Dec title="Sticky note">{X.sticky}</Dec><Sep />
+      <Dec title="Font">{X.fontA}</Dec>
+      <span className="mb-size" aria-label="Text size"><span className="mb-sizev">{one.fontSize === "auto" ? "Auto" : one.fontSize}</span><span className="mb-step"><button type="button" aria-label="Larger text" onClick={() => patch({ fontSize: SIZES[Math.min(SIZES.length - 1, Math.max(0, SIZES.indexOf(one.fontSize as typeof SIZES[number])) + 1)] })}>{X.chevUp}</button><button type="button" aria-label="Smaller text" onClick={() => patch({ fontSize: SIZES[Math.max(0, SIZES.indexOf(one.fontSize as typeof SIZES[number]) - 1)] })}>{X.chev}</button></span></span><Sep />
+      <Dec title="Underline"><u style={{ fontWeight: 700, fontSize: 15 }}>B</u></Dec><Dec title="Align">{X.align}</Dec><Dec title="Link">{X.link}</Dec><Dec title="Size"><span style={{ fontSize: 12 }}>S</span></Dec>
+      <span className="mi-menuwrap"><button type="button" className="mi-tb" aria-label="Colour" aria-expanded={pal} onClick={() => setPal(p => !p)}><span className="mb-dot" style={{ background: one.color }} /></button>
+        {pal && <div className="mb-pal">{STICKY_COLORS.map(c => <button key={c} type="button" className={"mi-sw" + (one.color?.toLowerCase() === c.toLowerCase() ? " on" : "")} style={{ background: c }} aria-label={`Sticky colour ${c}`} onClick={() => { patch({ color: c }, { stickyColor: c }); setPal(false); }} />)}</div>}</span><Sep />
+      <Dec title="Assign">{X.assign}</Dec><Dec title="Tag">{X.tag}</Dec><Dec title="React">{X.react}</Dec><Sep /><Dec title="Comment">{X.comment2}</Dec><Sep /><Dec title="Lock">{X.lock}</Dec><Sep /><Dec title="Translate">{X.translate}</Dec><Sep />
     </>}
     {types.size === 1 && one?.type === "shape" && <>
       {SHAPES.map(s => <Btn key={s.k} title={s.label} on={one.shape === s.k} onClick={() => patch({ shape: s.k }, { shape: s.k })}>{s.i}</Btn>)}<Sep />
@@ -61,8 +71,8 @@ export function SelectionToolbar({ doc, ids, screenBox, canvas, patch, onDelete,
       <Btn title="Distribute vertically" onClick={() => onDistribute("v")}><b style={{ fontSize: 11 }}>⇳</b></Btn>
       <Sep /><Btn title="Frame selection (F)" onClick={onFrame}>{I.frame}</Btn>
     </>}
-    <Sep />
-    <Btn title="Bring to front (⌘])" onClick={onFront}>{I.front}</Btn><Btn title="Send to back (⌘[)" onClick={onBack}>{I.back2}</Btn>
-    <Btn title="Duplicate (⌘D)" onClick={onDuplicate}>{I.copy}</Btn><Btn title="Delete (⌫)" onClick={onDelete}>{I.trash}</Btn>
+    {types.size !== 1 || one?.type !== "sticky" ? <Sep /> : null}
+    <span className="mi-menuwrap"><button type="button" className={"mi-tb" + (more ? " on" : "")} aria-label="More options" aria-expanded={more} onClick={() => setMore(m => !m)}>{X.kebab}</button>
+      {more && <div className="mb-more" role="menu"><button type="button" onClick={() => { onFront(); setMore(false); }}>{I.front} Bring to front</button><button type="button" onClick={() => { onBack(); setMore(false); }}>{I.back2} Send to back</button><button type="button" onClick={() => { onDuplicate(); setMore(false); }}>{I.copy} Duplicate</button><button type="button" className="danger" onClick={() => { onDelete(); setMore(false); }}>{I.trash} Delete</button></div>}</span>
   </div>;
 }
