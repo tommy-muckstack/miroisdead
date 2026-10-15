@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { BP } from "@/lib/basepath";
 const TABS = [
   { id: "research", label: "Research", img: "research.png", h: "Cluster what you learned", p: "Dump notes onto stickies, drag them into frames and let the themes show up on their own." },
@@ -9,11 +10,11 @@ const TABS = [
 ];
 export function HeroTabs() {
   const [i, setI] = useState(0); const t = TABS[i];
-  return <div>
-    <div className="mi-tabs" role="tablist" aria-label="Use cases">{TABS.map((x, n) => <button key={x.id} role="tab" aria-selected={n === i} aria-controls="mi-tabpanel" className="mi-tab" onClick={() => setI(n)}>{x.label}</button>)}</div>
-    <div className="mi-tabpanel" id="mi-tabpanel" role="tabpanel" data-testid="tabpanel">
+  return <div className="mk-tabs">
+    <div className="mk-pill" role="tablist" aria-label="Use cases">{TABS.map((x, n) => <button key={x.id} role="tab" aria-selected={n === i} aria-controls="mi-tabpanel" className={n === i ? "on" : ""} onClick={() => setI(n)}>{x.label}</button>)}</div>
+    <div className="mk-split" id="mi-tabpanel" role="tabpanel" data-testid="tabpanel">
+      <div><h2>{t.h}</h2><ul><li>{t.p}</li><li>Everything saves as you work, with no board limit.</li><li>Export to SVG or a re-importable file.</li></ul><Link className="mk-dark" href="/signup">Explore {t.label.toLowerCase()}</Link></div>
       <img className="mi-shot" src={`${BP}/home/${t.img}`} alt={`A MiroIsDead board for ${t.label.toLowerCase()}`} width={1440} height={900} />
-      <h3>{t.h}</h3><p className="ids-muted" style={{ margin: 0, fontSize: 18 }}>{t.p}</p>
     </div>
   </div>;
 }

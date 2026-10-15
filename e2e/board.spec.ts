@@ -20,7 +20,7 @@ test("demo login, dashboard seeded, board opens", async ({ page }) => {
 });
 
 test("login page is unauthenticated-only and app redirects to login", async ({ page, context }) => {
-  await context.clearCookies(); await page.goto("/miroisdead/app"); await expect(page).toHaveURL(/\/miroisdead\/login/);
+  await context.clearCookies(); await page.goto("/miroisdead/app"); await expect(page).toHaveURL(/\/miroisdead\/(login|signup)/);
 });
 
 test("sticky: N, click, type, Esc; autosaves and survives reload; tool reverts to select", async ({ page }) => {
@@ -185,7 +185,7 @@ test("sign out returns to the marketing page and protects the app", async ({ pag
 test.describe("marketing page", () => {
   test("hero tabs swap the screenshot and the price calculator compares to Miro", async ({ page }) => {
     await page.goto("/miroisdead");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("One endless canvas");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Human collaboration");
     await expect(page.getByTestId("tabpanel").locator("img")).toHaveAttribute("src", /research\.png$/);
     await page.getByRole("tab", { name: "Diagrams" }).click();
     await expect(page.getByTestId("tabpanel").locator("img")).toHaveAttribute("src", /diagrams\.png$/);
@@ -196,7 +196,7 @@ test.describe("marketing page", () => {
   });
   test("every homepage CTA leads to login and the images resolve", async ({ page, request }) => {
     await page.goto("/miroisdead");
-    await page.getByRole("link", { name: "Get started free" }).first().click(); await expect(page).toHaveURL(/\/miroisdead\/login/);
+    await page.getByRole("link", { name: "Get started free" }).first().click(); await expect(page).toHaveURL(/\/miroisdead\/(login|signup)/);
     for (const n of ["research", "roadmap", "diagrams", "workshops", "canvas", "quick-create", "connectors", "frames"]) expect((await request.get(`/miroisdead/home/${n}.png`)).status()).toBe(200);
   });
 });

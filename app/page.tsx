@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Hero, Section, Footer, Pill } from "@isdead/design";
-import { SiteNav } from "@/components/SiteNav";
+import { Section, Footer } from "@isdead/design";
+import { MiNav, HeroArt, HeroForm, JoinBar } from "@/components/MiMk";
 import { PriceCalc } from "@/components/PriceCalc";
 import { HeroTabs } from "@/components/HeroTabs";
 import { FEATURES, MIRO } from "@/lib/pricing";
@@ -17,22 +17,19 @@ const rows = [
   { id: "templates", k: "Frames and templates", h: "Start from a template, organize with frames", p: "Box up a cluster with F, move the frame and everything inside comes along. Five starter boards get a workshop going in seconds.", img: "frames.png" },
 ];
 export default function Home() {
-  return <>
-    <SiteNav />
-    <Hero eyebrow={<Pill>Free · Open source · Apache-2.0</Pill>}
-      title={<span className="mi-hero-title">One endless canvas<br />for every idea.</span>}
-      subtitle="Sticky notes, shapes, connectors, frames and freehand ink on an infinite board that saves as you work. Everything a per-seat whiteboard sells, for $0."
-      actions={<><Link className="ids-btn ids-btn--primary" href="/login">Get started free</Link><Link className="ids-btn ids-btn--outline" href="/login">Try the demo board</Link></>}>
-      <div style={{ maxWidth: 1100, margin: "48px auto 0" }}><HeroTabs /></div>
-    </Hero>
-    <Section id="resources" title="Built to get out of your way">
-      <div className="mi-stats">
-        <div className="mi-stat"><b>$0</b><span>per member per month, with no board limit</span></div>
-        <div className="mi-stat"><b>11</b><span>one-key tools, with the shortcut printed on each</span></div>
-        <div className="mi-stat"><b>10–600%</b><span>zoom range, with a minimap and fit-to-board</span></div>
-        <div className="mi-stat"><b>2 files</b><span>export as SVG or a .json you can re-import</span></div>
-      </div>
-    </Section>
+  return <div className="mk">
+    <MiNav />
+    <section className="mk-hero"><h1>Human collaboration<br />at the speed of AI</h1>
+      <p className="sub">The free, open-source canvas where your ideas, notes and diagrams come together.</p>
+      <HeroForm /><HeroArt /></section>
+    <section className="mk-tabsec" id="templates"><HeroTabs /></section>
+    <section className="mk-needle" id="resources"><h2>The only thing more important than moving fast is making it free</h2>
+      <p>Everything a per-seat whiteboard sells, with nothing to pay. See what that looks like.</p>
+      <div className="mk-big3">
+        <div style={{ background: "linear-gradient(160deg,#ffd7a8,#ff9f6b)" }}><b>$0</b><span>per member per month, with no board limit</span></div>
+        <div style={{ background: "linear-gradient(160deg,#c6d3ff,#7f97ff)" }}><b>11</b><span>one-key tools, with the shortcut printed on each</span></div>
+        <div style={{ background: "linear-gradient(160deg,#c7f3d9,#6fd4a0)" }}><b>600%</b><span>zoom range, with a minimap and fit-to-board</span></div></div>
+      <div className="mk-nums"><div><b>0</b><span>seats to buy</span></div><div><b>2</b><span>export formats</span></div><div><b>5</b><span>starter templates</span></div></div></section>
     <Section title="Think, organize, hand off" subtitle="Three things a whiteboard has to do well.">
       <div className="mi-trio">
         <div className="ids-card"><span className="mi-dot" style={{ background: "#FFE86D" }} /><h3>Capture</h3><p className="ids-muted">Stickies, text, shapes and a pen that stays on. New objects open for typing the moment you place them.</p></div>
@@ -79,5 +76,6 @@ export default function Home() {
       { title: "Open source", links: [{ href: GH, label: "GitHub" }, { href: GH + "/blob/main/LICENSE", label: "Apache-2.0 license" }] },
       { title: "More IsDead apps", links: [{ href: "/calendlyisdead", label: "CalendlyIsDead" }, { href: "/superhumanisdead", label: "SuperhumanIsDead" }, { href: "/wisprflowisdead", label: "WisprFlowIsDead" }] },
     ]} note="MiroIsDead is an independent open-source project. It is not affiliated with, endorsed by or sponsored by RealtimeBoard, Inc. (Miro). Miro is a trademark of its owner." />
-  </>;
+    <JoinBar />
+  </div>;
 }
