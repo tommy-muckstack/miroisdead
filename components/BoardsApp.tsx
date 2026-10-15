@@ -18,7 +18,7 @@ import { X } from "@/components/mxi";
 import "./midash.css";
 import { track, identify, resetIdentity, EVENTS } from "@/lib/analytics";
 
-export type Who = { kind: "demo" | "firebase"; uid: string; name: string };
+export type Who = { kind: "demo" | "firebase" | "guest"; uid: string; name: string };
 export function makeStore(who: Who): BoardStore { const local = new LocalBoardStore(who.uid); return who.kind === "firebase" ? new CloudBoardStore(BP, local) : local; }
 /** Miro shows a date for older boards and a relative time for today's. */
 const when = (t: number) => { const s = Math.max(1, Math.round((Date.now() - t) / 1000)); if (s < 60) return "just now"; if (s < 3600) return `${Math.round(s / 60)} min ago`; if (s < 86400) return `${Math.round(s / 3600)} h ago`; return new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
@@ -102,7 +102,11 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
   useEffect(() => {
     (async () => {
       let list = await store.list().catch(() => []);
-      if (who.kind === "demo" && list.length === 0) { await store.save(boardFromTemplate("welcome")); list = await store.list(); }
+      if (who.kind === "firebase") { // carry a guest's on-device boards into the account, once
+        let from: string | null = null; try { from = localStorage.getItem("miroisdead:migrate-from"); } catch {}
+        if (from && from !== who.uid) { const old = new LocalBoardStore(from); for (const m of await old.list()) { const b = await old.load(m.id); if (b) { await store.save(b); await old.remove(m.id); } }
+          try { localStorage.removeItem("miroisdead:migrate-from"); } catch {} list = await store.list(); } }
+      if (who.kind !== "firebase" && list.length === 0) { await store.save(boardFromTemplate("welcome")); list = await store.list(); }
       setBoards(list);
     })();
   }, [store, who.kind]);
@@ -140,6 +144,7 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
       <main className="mx-main">
         <header className="mx-bar">
           <Link href="/" className="mx-logo"><Mark size={28} />MiroIsDead</Link><span className="mx-grow" />
+          {who.kind === "guest" && <Link href="/login" className="mx-pill mx-save" title="Boards stay in this browser until you sign in">Sign in to save &amp; sync</Link>}
           <button className="mx-pill" onClick={() => setErr("Invite people by sharing a board: open it and use Share ▸ Anyone with the link.")}>{X.invite} Invite members</button>
           <button className="mx-ic" aria-label="What's new" onClick={() => window.open("https://github.com/tommy-muckstack/miroisdead/commits/main", "_blank")}>{X.gift}</button>
           <button className="mx-ic" aria-label="Notifications" onClick={() => setPrefs(p => ({ ...p, banner: true }))}>{X.bell}</button>

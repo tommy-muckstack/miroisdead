@@ -6,7 +6,7 @@
 // - Event names are snake_case with a domain prefix: `site_*` (marketing website), `auth_*` (sign in / up),
 //   `app_*` (dashboard / workspace), `board_*` (the editor; other sub-apps use their own product noun, e.g. `form_*`).
 // - Property names are snake_case; never put raw user content (sticky text, emails, board titles) in properties.
-// - Identify signed-in users by their Firebase uid (shared across the family) with `account_type` = "firebase" | "demo".
+// - Identify signed-in users by their Firebase uid (shared across the family) with `account_type` = "firebase" | "demo" | "guest" (guests stay anonymous, never identified).
 export const APP = "miroisdead" as const;
 export const APP_FAMILY = "yourappisdead" as const;
 export type Surface = "hub" | "site" | "app"; // "hub" is sent by yourappisdead.com itself

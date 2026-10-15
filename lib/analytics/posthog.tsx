@@ -33,8 +33,8 @@ const surfaceOf = (path: string): Surface => (path.startsWith(`${BP}/app`) || pa
 export function track(event: EventName, props: Record<string, string | number | boolean | null | undefined> = {}) {
   void client().then(p => p?.capture(event, { surface: surfaceOf(location.pathname), ...props }));
 }
-export function identify(uid: string, props: { account_type: "firebase" | "demo"; app?: string }) {
-  void client().then(p => { if (!p) return; if (props.account_type === "firebase") p.identify(uid, { account_type: props.account_type }); else p.register({ account_type: "demo" }); });
+export function identify(uid: string, props: { account_type: "firebase" | "demo" | "guest"; app?: string }) {
+  void client().then(p => { if (!p) return; if (props.account_type === "firebase") p.identify(uid, { account_type: props.account_type }); else p.register({ account_type: props.account_type }); });
 }
 export function resetIdentity() { void client().then(p => p?.reset()); }
 /** Mount once in the root layout: boots the client and sends a page view per route change. */

@@ -91,3 +91,5 @@
 .mx-tm-search{display:flex;align-items:center;gap:8px;color:#8c8b85}
 .mx-side .mx-light{height:32px;padding:0 12px;font-size:13px}.mx-side a.mx-dark{height:32px;padding:0 12px;font-size:13px;text-decoration:none}
 .mi-err{cursor:pointer}
+
+.mx-pill.mx-save{color:#fff;background:#4262ff;border-color:#4262ff;text-decoration:none}.mx-pill.mx-save:hover{background:#2f4ad9}
