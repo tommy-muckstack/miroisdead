@@ -37,6 +37,12 @@ export function MiExperience() {
         <h4>{sl[0]}</h4><p>{sl[1]}</p><Link href="/signup" className="mk-dark mh-btn">Learn more</Link></div>)}
     </div></div></div></div></section>;
 }
+export function MiFlow() {
+  return <section className="mh-mob mh-flow"><h2>Flow from idea<br />to outcome in seconds</h2><div className="mh-flowart" aria-hidden><i /><i /><i /><b /></div></section>;
+}
+export function MiPlatform() {
+  return <section className="mh-mob mh-plat"><h2>The AI platform<br />for teamwork</h2><p>Move beyond individual AI productivity to team and cross-team collaboration with AI</p><Link href="/signup" className="mh-plat-btn">Explore the solution</Link><div className="mh-platart" aria-hidden><span>▶</span></div></section>;
+}
 export function MiHelp() {
   const items: [string, string, string, string][] = [["Pricing", "Select a plan", "#d6f5e2", "#0a7a3d"], ["Templates", "Get started fast", "#d3f0f5", "#0a6c7a"], ["Solution Partners", "Explore the network", "#ffe9b8", "#8a5a00"], ["Community", "Connect with Miro users", "#d9f5df", "#136b2a"]];
   return <section className="mh-help"><div className="mh-help-in"><h2>Need help getting started?</h2>
