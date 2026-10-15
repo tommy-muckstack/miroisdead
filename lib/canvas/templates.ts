@@ -1,3 +1,4 @@
+import { kbd } from "@/lib/keys";
 // Starter boards. Ids are fixed so connectors can reference stickies and shapes.
 import type { Board, Doc, Obj } from "./types";
 import { addObjects, connector, frame, makeDoc, pen, shape, sticky, textObj } from "./doc";
@@ -36,7 +37,7 @@ export function templateDoc(id: TemplateId): Doc {
       S("w-4", 150, -170, "Space + drag (or H) pans. Scroll or pinch to zoom", C.lilac),
       Sh("w-a", -480, 60, "Idea", "round", "#E5E2FF"), Sh("w-b", -200, 60, "Decide?", "diamond", "#FFE86D", { w: 170, h: 130 }), Sh("w-c", 120, 20, "Ship it", "ellipse", "#C3F4D6"), Sh("w-d", 120, 160, "Rethink", "rect", "#FFC9A3"),
       connector({ id: "w-a", side: "e" }, { id: "w-b", side: "w" }, { id: "w-k1" }), connector({ id: "w-b", side: "e" }, { id: "w-c", side: "w" }, { id: "w-k2", label: "yes" }), connector({ id: "w-b", side: "e" }, { id: "w-d", side: "w" }, { id: "w-k3", label: "no" }),
-      textObj(330, 30, { id: "w-keys", text: "V select · H hand · N sticky\nR rect · O ellipse · D diamond\nT text · P pen · C connector\nF frame · E eraser\n⌘Z undo · ⌘D duplicate\n⇧1 fit all · ? all shortcuts", fontSize: 15, w: 250, h: 150 }),
+      textObj(330, 30, { id: "w-keys", text: kbd("V select · H hand · N sticky\nR rect · O ellipse · D diamond\nT text · P pen · C connector\nF frame · E eraser\n⌘Z undo · ⌘D duplicate\n⇧1 fit all · ? all shortcuts"), fontSize: 15, w: 250, h: 150 }),
     ]);
     case "brainstorm": return makeDoc([
       textObj(-590, -300, { id: "b-q", text: "How might we make Monday standups useful?", fontSize: 32, bold: true, w: 1000, h: 48 }),

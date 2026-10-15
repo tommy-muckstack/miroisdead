@@ -1,0 +1,13 @@
+import { chromium } from "@playwright/test";
+const OUT = process.env.OUT ?? new URL("../../miroisdead-parity/qa/", import.meta.url).pathname, BASE = "http://localhost:3111/miroisdead";
+const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
+await ctx.addInitScript(() => { Object.defineProperty(navigator, "platform", { get: () => "Linux x86_64" }); Object.defineProperty(navigator, "userAgentData", { get: () => ({ platform: "Linux" }) }); });
+const p = await ctx.newPage(); p.on("pageerror", e => console.log("pageerror:", e.message));
+await p.goto(`${BASE}/login`); await p.getByText("Sign in with the demo account instead").click(); await p.waitForURL("**/app"); await p.waitForSelector("[data-testid=board-card]");
+await p.getByTestId("new-welcome").click(); await p.waitForSelector("[data-testid=board-editor]"); await p.waitForTimeout(500);
+console.log("welcome text:", (await p.locator("svg text").filter({ hasText: /undo/ }).first().textContent()));
+await p.keyboard.press("?"); await p.waitForTimeout(200); const sheet = await p.locator(".mi-sheet-grid, .mm-sc-body").first().textContent(); console.log("sheet has Ctrl:", /Ctrl/.test(sheet), "has ⌘:", /⌘/.test(sheet), "fit:", /Shift\s?\+?\s?1/.test(sheet));
+await p.screenshot({ path: `${OUT}/19-shortcuts-linux-after.png` }); await p.keyboard.press("Escape");
+await p.getByLabel("Main menu").click(); await p.waitForTimeout(150); const mm = await p.locator(".mi-menu, .mm-menu").first().textContent().catch(() => ""); console.log("main menu has ⌘:", /⌘/.test(mm || ""), "Ctrl:", /Ctrl/.test(mm || "")); await p.keyboard.press("Escape");
+console.log("undo title:", await p.getByLabel("Undo").getAttribute("title"));
+await b.close();

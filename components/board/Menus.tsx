@@ -1,5 +1,6 @@
 "use client";
 // Board chrome menus and panels, matched to Miro's board UI (export, main menu, zoom, help, shortcuts, context menu, frames, sticky picker, tools panel).
+import { kbd, useMac } from "@/lib/keys";
 import React, { useEffect, useRef, useState } from "react";
 import type { Doc, FrameObj, Id, Obj, View } from "@/lib/canvas/types";
 import { STICKY_COLORS } from "@/lib/canvas/types";
@@ -18,9 +19,11 @@ export function Pop({ children, className, style, onClose, role = "menu", testid
   }, [onClose]);
   return <div ref={ref} className={"mm-pop " + (className ?? "")} style={style} role={role} data-ui data-testid={testid} onPointerDown={e => e.stopPropagation()}>{children}</div>;
 }
-export const Item = ({ icon, label, kbd, onClick, sub, disabled, info, right, on }: { icon?: React.ReactNode; label: string; kbd?: string; onClick?: () => void; sub?: boolean; disabled?: boolean; info?: boolean; right?: React.ReactNode; on?: boolean }) =>
-  <button type="button" role="menuitem" className={"mm-item" + (on ? " on" : "")} disabled={disabled} onClick={onClick}><span className="ic">{icon}</span><span className="lb">{label}</span>{info && <span className="inf">{X.info}</span>}{right}{kbd && <kbd>{kbd}</kbd>}{sub && <span className="sub">{X.chevR}</span>}</button>;
+export const Item = ({ icon, label, kbd: kb, onClick, sub, disabled, info, right, on }: { icon?: React.ReactNode; label: string; kbd?: string; onClick?: () => void; sub?: boolean; disabled?: boolean; info?: boolean; right?: React.ReactNode; on?: boolean }) =>
+  <button type="button" role="menuitem" className={"mm-item" + (on ? " on" : "")} disabled={disabled} onClick={onClick}><span className="ic">{icon}</span><span className="lb">{label}</span>{info && <span className="inf">{X.info}</span>}{right}{kb && <kbd>{kbd(kb, useMacCtx())}</kbd>}{sub && <span className="sub">{X.chevR}</span>}</button>;
 export const Hr = () => <hr className="mm-hr" />;
+// Item is rendered inside menus that are only mounted after hydration, so reading the platform directly is safe here.
+const useMacCtx = () => (typeof navigator === "undefined" ? true : /mac|iphone|ipad|ipod/i.test((navigator as { userAgentData?: { platform?: string } }).userAgentData?.platform ?? navigator.platform ?? ""));
 
 // ---------- export ----------
 export type ExportActions = { pdf: () => void; image: () => void; template: () => void; csv: () => void; backup: () => void; embed: () => void; drive: () => void };
@@ -66,8 +69,8 @@ export function ZoomMenu({ onClose, zoom, setZoom, a }: { onClose: () => void; z
     <Item icon={X.grid2} label="Grid" right={<Toggle on={a.grid} />} onClick={a.toggleGrid} />
     <Item icon={X.dims} label="Object dimensions" right={<Toggle on={a.dims} />} onClick={a.toggleDims} />
     <Hr />
-    <Item icon={X.dims} label="Fit to screen" kbd="⌥ 1" onClick={go(a.fit)} />
-    {a.hasSel && <Item icon={X.fit} label="Zoom to selection" kbd="⌥ 2" onClick={go(a.fitSel)} />}
+    <Item icon={X.dims} label="Fit to screen" kbd="⇧ 1" onClick={go(a.fit)} />
+    {a.hasSel && <Item icon={X.fit} label="Zoom to selection" kbd="⇧ 2" onClick={go(a.fitSel)} />}
     {[50, 70, 100, 400, 1200, 2000].map(p => <Item key={p} icon={X.zoomIn} label={`${p}%`} kbd={p === 100 ? "⌘ 0" : p === 2000 ? "⌥ 3" : undefined} on={Math.round(zoom * 100) === p} onClick={go(() => setZoom(p / 100))} />)}
   </Pop>;
 }
@@ -84,14 +87,15 @@ export function HelpMenu({ onClose, a }: { onClose: () => void; a: { feedback: (
 const SC: { title: string; note?: string; rows: [React.ReactNode | null, string, string][] }[] = [
   { title: "Tools", note: "Use 1 – 9 number keys to switch quickly between the tools on the toolbar.", rows: [[X.select, "V / H", "Select tool / Hand"], [X.text, "T", "Text"], [X.sticky, "N", "Sticky note"], [X.shapes, "S", "Shapes"], [X.rect, "R", "Rectangle"], [X.oval, "O", "Oval"], [X.rhombus, "D", "Rhombus"], [X.arrow, "L", "Connection line, arrow"], [X.pen, "P", "Pen"], [X.eraser, "E", "Eraser"], [X.comment, "C", "Comment"], [X.undo, "⌘ + Z", "Undo"], [X.redo, "⌘ + shift + Z", "Redo"], [X.frame, "F", "Frames"], [X.map, "M", "Minimap"], [X.grid2, "G", "Toggle grid"]] },
   { title: "General", rows: [[null, "⌘ + C  ⌘ + V", "Copy / Paste"], [null, "⌘ + X", "Cut"], [null, "⌘ + D", "Duplicate"], [null, "⌥ + drag", "Duplicate"], [null, "shift + drag", "Multi-select"], [null, "⌘ + click", "Select multiple objects"], [null, "⌘ + A", "Select all"], [null, "enter", "Edit selected object"], [null, "esc", "Deselect, quit edit, switch to cursor"], [null, "backspace", "Delete"], [null, "⌘ + G", "Group"], [null, "⌘ + shift + G", "Ungroup"], [null, "⌘ + shift + L", "Lock / Unlock"], [null, "fn + ↑", "Send to front"], [null, "fn + ↓", "Send to back"], [null, "⌘ + ]  ⌘ + [", "Bring forward / send backward"], [null, "⌘ + K", "Open command palette"], [null, "tab", "Add a connected object to the right"], [null, "shift + tab", "Add a connected object below"]] },
-  { title: "Navigation", rows: [[null, "← → ↑ ↓", "Move objects / Canvas"], [null, "⌘ + +", "Zoom in"], [null, "⌘ – –", "Zoom out"], [null, "⌘ + 0", "Zoom to 100%"], [null, "⌥ + 1", "Zoom to fit"], [null, "⌥ + 2", "Zoom to selected object"], [null, "⌥ + 3", "Zoom to 2000%"], [null, "space + drag", "Move canvas"], [null, "⌘ + scroll", "Zoom"], [null, "G", "Toggle grid"]] },
+  { title: "Navigation", rows: [[null, "← → ↑ ↓", "Move objects / Canvas"], [null, "⌘ + +", "Zoom in"], [null, "⌘ – –", "Zoom out"], [null, "⌘ + 0", "Zoom to 100%"], [null, "⇧ + 1", "Zoom to fit"], [null, "⇧ + 2", "Zoom to selected object"], [null, "⌥ + 3", "Zoom to 2000%"], [null, "space + drag", "Move canvas"], [null, "⌘ + scroll", "Zoom"], [null, "G", "Toggle grid"]] },
   { title: "Text", rows: [[null, "⌘ + B", "Bold"], [null, "⌘ + enter", "Finish editing"], [null, "esc", "Finish editing"]] },
 ];
 export function ShortcutsPanel({ onClose }: { onClose: () => void }) {
+  const mac = useMac();
   return <div className="mi-scrim mm-scrim" onPointerDown={onClose} role="dialog" aria-modal="true" aria-label="Shortcuts" data-ui>
     <div className="mm-sc" onPointerDown={e => e.stopPropagation()} data-testid="shortcut-sheet">
       <header><h2>Shortcuts</h2><button className="mm-x" onClick={onClose} aria-label="Close">{X.close}</button></header>
-      <div className="mm-sc-body">{SC.map(g => <section key={g.title}><h3>{g.title}</h3>{g.note && <p>{g.note}</p>}<table><tbody>{g.rows.map(([ic, k, d]) => <tr key={k + d}><td className="ic">{ic}</td><td className="k">{k}</td><td>{d}</td></tr>)}</tbody></table></section>)}</div>
+      <div className="mm-sc-body">{SC.map(g => <section key={g.title}><h3>{g.title}</h3>{g.note && <p>{g.note}</p>}<table><tbody>{g.rows.map(([ic, k, d]) => <tr key={k + d}><td className="ic">{ic}</td><td className="k">{kbd(k, mac)}</td><td>{d}</td></tr>)}</tbody></table></section>)}</div>
     </div>
   </div>;
 }
@@ -110,7 +114,7 @@ export function ContextMenu({ x, y, canvas, onClose, target, a }: { x: number; y
       <Item label="Link to" kbd="⌥ + ⌘ + K" onClick={go(a.link)} /><Item label={a.locked ? "Unlock" : "Lock"} kbd="⌘ + shift + L" onClick={go(a.lock)} /><Item label="Create frame" onClick={go(a.frame)} /><Hr />
       <Item label="Save as template" info onClick={go(a.template)} /><Item label="Export to CSV (Excel)" onClick={go(a.csv)} />
     </> : <>
-      <Item label="Paste" kbd="⌘ + V" disabled={!a.canPaste} onClick={go(a.paste)} /><Item label="Select all" kbd="⌘ + A" onClick={go(a.selectAll)} /><Hr /><Item label="Zoom to fit" kbd="⌥ + 1" onClick={go(a.fit)} /><Item label={a.gridOn ? "Hide grid" : "Show grid"} kbd="G" onClick={go(a.grid)} />
+      <Item label="Paste" kbd="⌘ + V" disabled={!a.canPaste} onClick={go(a.paste)} /><Item label="Select all" kbd="⌘ + A" onClick={go(a.selectAll)} /><Hr /><Item label="Zoom to fit" kbd="⇧ + 1" onClick={go(a.fit)} /><Item label={a.gridOn ? "Hide grid" : "Show grid"} kbd="G" onClick={go(a.grid)} />
     </>}
   </Pop>;
 }
@@ -162,6 +166,7 @@ export type { View };
 // ---------- ⌘K command palette ----------
 export type Command = { id: string; label: string; kbd?: string; group: string; run: () => void; icon?: React.ReactNode };
 export function CommandPalette({ commands, onClose }: { commands: Command[]; onClose: () => void }) {
+  const mac = useMac();
   const [q, setQ] = useState(""), [i, setI] = useState(0);
   const filt = (v: string) => commands.filter(c => (c.label + " " + c.group).toLowerCase().includes(v.toLowerCase())).slice(0, 12);
   const list = filt(q);
@@ -170,7 +175,7 @@ export function CommandPalette({ commands, onClose }: { commands: Command[]; onC
   return <div className="mi-scrim mm-scrim mm-kscrim" onPointerDown={onClose} data-ui role="dialog" aria-label="Command palette">
     <div className="mm-k" onPointerDown={e => e.stopPropagation()} data-testid="command-palette">
       <label className="mm-search">{X.search}<input autoFocus placeholder="Type what you want to create or do… (e.g. sticky note)" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { e.stopPropagation(); if (e.key === "ArrowDown") { e.preventDefault(); setI(n => Math.min(list.length - 1, n + 1)); } if (e.key === "ArrowUp") { e.preventDefault(); setI(n => Math.max(0, n - 1)); } if (e.key === "Enter") { const cur = filt(e.currentTarget.value); const pick = cur[Math.min(i, cur.length - 1)]; if (pick) run(pick); } if (e.key === "Escape") onClose(); }} /></label>
-      <ol>{list.map((c, n) => <li key={c.id}><button className={n === i ? "on" : ""} onMouseEnter={() => setI(n)} onClick={() => run(c)}><span className="ic">{c.icon}</span><span className="lb">{c.label}</span><small>{c.group}</small>{c.kbd && <kbd>{c.kbd}</kbd>}</button></li>)}{list.length === 0 && <li className="none">Nothing matches “{q}”</li>}</ol>
+      <ol>{list.map((c, n) => <li key={c.id}><button className={n === i ? "on" : ""} onMouseEnter={() => setI(n)} onClick={() => run(c)}><span className="ic">{c.icon}</span><span className="lb">{c.label}</span><small>{c.group}</small>{c.kbd && <kbd>{kbd(c.kbd, mac)}</kbd>}</button></li>)}{list.length === 0 && <li className="none">Nothing matches “{q}”</li>}</ol>
     </div>
   </div>;
 }
