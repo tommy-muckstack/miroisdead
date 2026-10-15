@@ -52,7 +52,7 @@ function NameDialog({ title, label, initial, cta, onClose, onSave }: { title: st
     </form>
   </Dialog>;
 }
-const GREETINGS = ["Let’s build", "Together again", "Welcome back", "Good to see you", "Ready when you are"];
+const GREETING = "We’ve got this"; // Miro: one stable line
 /** Per-user dashboard preferences (stars, spaces, dismissed banners) on this device. */
 type Prefs = { starred: string[]; spaces: { id: string; name: string; emoji?: string }[]; spaceOf: Record<string, string>; banner?: boolean; promo?: boolean; workspace?: string };
 const prefsKey = (uid: string) => `miroisdead:v1:${uid}:dash`;
@@ -82,7 +82,9 @@ function CustomTplArt({ t }: { t: CustomTemplate }) { const [svg, setSvg] = useS
 function TemplatesModal({ onClose, onPick, onPickCustom }: { onClose: () => void; onPick: (t: TemplateId) => void; onPickCustom: (t: CustomTemplate) => void }) {
   const [q, setQ] = useState(""), [custom, setCustom] = useState<CustomTemplate[]>([]), [side, setSide] = useState<"all" | "ai" | "verse" | "team">("all");
   useEffect(() => { setCustom(listCustomTemplates()); }, []);
-  const list = TEMPLATES.filter(t => t.id !== "blank" && (t.name + " " + t.blurb).toLowerCase().includes(q.toLowerCase()));
+  useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } }; window.addEventListener("keydown", k, true); return () => window.removeEventListener("keydown", k, true); }, [onClose]);
+  const list = TEMPLATES.filter(t => t.id !== "blank" && (t.name + " " + t.blurb + " " + t.tags.join(" ")).toLowerCase().includes(q.toLowerCase()));
+  const product = TEMPLATES.filter(t => t.tags.includes("product"));
   const cust = custom.filter(t => t.name.toLowerCase().includes(q.toLowerCase()));
   const cats = ["Meetings & workshops", "Ideation & brainstorming", "Research & design", "Agile workflows", "Strategy & planning", "Diagramming & mapping", "Presentations & slides", "Wireframing & prototyping", "Image creation"];
   return <div className="mx-scrim" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -91,7 +93,7 @@ function TemplatesModal({ onClose, onPick, onPickCustom }: { onClose: () => void
       <aside>
         <a className={side === "all" ? "on" : ""} onClick={() => setSide("all")}>{X.tplS} All templates</a>
         <a className={side === "ai" ? "on" : ""} onClick={() => setSide("ai")}>{X.sparkle2} AI Accelerated <em>New</em></a>
-        <a className={side === "verse" ? "on" : ""} onClick={() => setSide("verse")}>{X.verse} Community templates</a>
+        <a className={side === "verse" ? "on" : ""} onClick={() => setSide("verse")}>{X.verse} MiroIsDeadverse</a>
         <a className={side === "team" ? "on" : ""} onClick={() => setSide("team")}>{X.tplS} Your templates {X.info}</a>
         <h4>Use cases</h4>
         {cats.map(c => <a key={c} className="sm" onClick={() => { setSide("all"); setQ(c.split(" ")[0]); }}>{c}</a>)}
@@ -99,10 +101,11 @@ function TemplatesModal({ onClose, onPick, onPickCustom }: { onClose: () => void
       </aside>
       <section>
         <div className="mx-tm-top"><label className="mx-tm-search">{X.search}<input placeholder="Search templates by name, category or company" value={q} onChange={e => setQ(e.target.value)} /></label><label className="mx-tm-check"><input type="checkbox" defaultChecked /> Show when creating a board</label></div>
-        <h2>{side === "team" ? "Your templates" : side === "ai" ? "AI Accelerated" : side === "verse" ? "Community templates" : "All templates"}</h2>
-        {side !== "team" && <div className="mx-tm-promo"><div><b>{side === "ai" ? "Templates with AI built in" : "Templates built to be forked"}</b><p>{side === "ai" ? "Copy the scene JSON of any board and hand it to your own AI agent. No setup, no credits." : "Every template is a plain board. Pick one, then change anything, or send the scene JSON to your own AI agent."}</p><button className="mx-dark" onClick={() => onPick("blank")}>Start with a blank board</button></div></div>}
+        <h2>{side === "team" ? "Your templates" : side === "ai" ? "AI Accelerated" : side === "verse" ? "MiroIsDeadverse" : "All templates"}</h2>
+        {side !== "team" && <div className="mx-tm-promo"><div><b>{side === "verse" ? "Templates from the community" : "Templates with AI built in"}</b><p>{side === "verse" ? "Boards shared by other MiroIsDead users. Publish your own from Share ▸ Publish." : "Every template is a plain board you can hand to your own AI agent: copy the scene JSON from Share ▸ AI. No setup, no credits."}</p><button className="mx-dark" onClick={() => onPick("blank")}>Start with a blank board</button></div></div>}
         {side !== "team" && <><div className="mx-tm-tabs"><span className="on">For you</span><span>View all</span></div>
-          <div className="mx-tm-grid">{list.map(t => <button key={t.id} className="mx-tm-card" onClick={() => onPick(t.id)} data-testid={`tm-${t.id}`}><span className="art"><TplArt id={t.id} /></span><span className="by"><i />MiroIsDead</span><b>{t.name}</b></button>)}</div></>}
+          <div className="mx-tm-grid">{list.map(t => <button key={t.id} className="mx-tm-card" onClick={() => onPick(t.id)} data-testid={`tm-${t.id}`}><span className="art"><TplArt id={t.id} /></span><span className="by"><i />MiroIsDead</span><b>{t.name}</b></button>)}</div>
+          {!q && side === "all" && <><h3 className="mx-tm-h3">Product team templates</h3><div className="mx-tm-grid">{product.map(t => <button key={"p-" + t.id} className="mx-tm-card" onClick={() => onPick(t.id)}><span className="art"><TplArt id={t.id} /></span><span className="by"><i />MiroIsDead</span><b>{t.name}</b></button>)}</div></>}</>}
         {(side === "team" || cust.length > 0) && <><h3 className="mx-tm-h3">Your templates</h3>
           {cust.length === 0 ? <p className="ids-muted">Save any board as a template from Export ▸ “Save board as template”.</p> : <div className="mx-tm-grid">{cust.map(t => <div key={t.id} className="mx-tm-card custom"><button onClick={() => onPickCustom(t)} data-testid={`tm-custom-${t.id}`}><span className="art"><CustomTplArt t={t} /></span><span className="by"><i />You · {when(t.savedAt)}</span><b>{t.name}</b></button><button className="mx-tm-del" aria-label="Delete template" onClick={() => { removeCustomTemplate(t.id); setCustom(listCustomTemplates()); }}>{X.trash2}</button></div>)}</div>}</>}
       </section>
@@ -125,8 +128,6 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
   const [view, setView] = useState<"list" | "grid">("list");
   const [nav, setNav] = useState<Nav>("home");
   const [q, setQ] = useState("");
-  const [greeting, setGreeting] = useState(GREETINGS[0]);
-  useEffect(() => { setGreeting(GREETINGS[Math.floor(Math.random() * GREETINGS.length)]); }, []); // picked after mount so SSR markup matches
   const refresh = () => store.list().then(setBoards, () => setBoards([]));
   useEffect(() => { setPrefsState(loadPrefs(who.uid)); identify(who.uid, { account_type: who.kind }); }, [who.uid, who.kind]);
   useEffect(() => {
@@ -164,7 +165,7 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
   const workspace = prefs.workspace ?? `${user.split(" ")[0]}’s team`;
   const spaceName = (id?: string) => prefs.spaces.find(s => s.id === id)?.name ?? "";
   const shown = (boards ?? []).filter(m => (q ? m.title.toLowerCase().includes(q.toLowerCase()) : true)).filter(m => nav === "home" || nav === "browse" ? true : nav === "starred" ? prefs.starred.includes(m.id) : prefs.spaceOf[m.id] === nav.space);
-  const title = nav === "home" ? `${greeting}, ${user}` : nav === "starred" ? "Starred" : nav === "browse" ? "Browse" : spaceName(nav.space);
+  const title = nav === "home" ? `${GREETING}, ${user}` : nav === "starred" ? "Starred" : nav === "browse" ? "Browse" : spaceName(nav.space);
   const curSpace = typeof nav === "object" ? nav.space : undefined;
 
   return <div className="mx-dash">
@@ -184,7 +185,7 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
           {who.kind === "guest" && <Link href="/login" className="mx-pill mx-save" title="Boards stay in this browser until you sign in">Sign in to save &amp; sync</Link>}
           <button className="mx-pill" onClick={() => setErr("Invite people by sharing a board: open it and use Share ▸ Anyone with the link.")}>{X.invite} Invite members</button>
           <button className="mx-ic" aria-label="What's new" onClick={() => window.open("https://github.com/tommy-muckstack/miroisdead/commits/main", "_blank")}>{X.gift}</button>
-          <button className="mx-ic" aria-label="Notifications" onClick={() => setPrefs(p => ({ ...p, banner: true }))}>{X.bell}</button>
+          <button className="mx-ic" aria-label="Feed" title="Feed" onClick={() => setPrefs(p => ({ ...p, banner: true }))}>{X.bell}</button>
           <span data-menu className="mx-menuwrap"><button className="mx-av" aria-label="Account" aria-expanded={menu === "profile"} onClick={() => setMenu(m => m === "profile" ? "" : "profile")}>{initials[0]}</button>
             {menu === "profile" && <div className="mx-pop mx-prof" role="menu"><div className="mx-prof-h"><span className="mx-av sm">{initials[0]}</span><b>{user}</b></div>
               <a role="menuitem">{X.user} Profile</a><a role="menuitem" href="https://github.com/tommy-muckstack/miroisdead#readme" target="_blank" rel="noreferrer">{X.ai} Connect your AI tools</a><a role="menuitem">{X.gear} Admin Console</a><hr />
@@ -201,12 +202,13 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
                 {menu === "create" && <div className="mx-pop mx-cr" role="menu">
                   <a role="menuitem" onClick={() => create("blank", curSpace)}>{X.board} Board</a><a role="menuitem" onClick={() => { setMenu(""); setTm(true); }}>{X.fmt} Format <span className="r">{X.chevR}</span></a><a role="menuitem" onClick={() => { setMenu(""); newSpace(); }}>{X.space} Space <span className="r">{X.info}</span></a>
                   <label role="menuitem" className="a">{X.imp} Import <span className="r">{X.chevR}</span><input type="file" accept="application/json,.json" hidden onChange={e => onImport(e.target.files?.[0])} /></label><hr />
-                  <a role="menuitem" onClick={() => { setMenu(""); setTm(true); }}>{X.tplS} Explore templates</a><a role="menuitem" onClick={() => { setMenu(""); setTm(true); }}>{X.verse} Explore community templates</a>
+                  <a role="menuitem" onClick={() => { setMenu(""); setTm(true); }}>{X.tplS} Explore templates</a><a role="menuitem" onClick={() => { setMenu(""); setTm(true); }}>{X.verse} Explore MiroIsDeadverse</a>
                 </div>}
               </span></div>
             <span data-menu className="mx-menuwrap"><p className="mx-tpl-for" onClick={() => setMenu(m => m === "tplfor" ? "" : "tplfor")}>Templates for Product management {X.chev}</p>
               {menu === "tplfor" && <div className="mx-pop mx-cr" role="menu">{["Product management", "Design & UX", "Engineering", "Marketing", "Operations"].map(t => <a key={t} role="menuitem" onClick={() => setMenu("")}>{t}</a>)}</div>}</span>
             <div className="mx-tpls">{TEMPLATES.map(t => <TplCard key={t.id} id={t.id} name={t.name} onPick={() => create(t.id, curSpace)} testid={`new-${t.id}`} />)}
+              <a className="mx-tpl mx-tpl-verse" onClick={() => setTm(true)}><span className="mx-tpl-art blank">{X.verse}</span><span className="mx-tpl-name">From MiroIsDeadverse →</span></a>
               <label className="mx-tpl"><span className="mx-tpl-art blank">{X.imp}</span><span className="mx-tpl-name">Import a board file</span><input type="file" accept="application/json,.json" hidden onChange={e => onImport(e.target.files?.[0])} /></label></div></section>}
           <section aria-label="Your boards">
             <div className="mx-row"><h2>{nav === "home" ? "Jump back to recents" : nav === "starred" ? "Starred boards" : nav === "browse" ? "All boards" : "Boards in this space"}</h2><span className="mx-toggle"><button className={view === "grid" ? "on" : ""} aria-label="Grid view" onClick={() => setView("grid")}>{X.grid}</button><button className={view === "list" ? "on" : ""} aria-label="List view" onClick={() => setView("list")}>{X.list}</button></span></div>
@@ -214,7 +216,7 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
               <div className={"mx-list " + view} data-testid="boards">
                 {view === "list" && <div className="mx-th"><span>Name</span><span>Online users</span><span>Space</span><span>Last opened</span><span>Owner</span></div>}
                 {shown.map(m => <article key={m.id} className="mx-rowb" data-testid="board-card">
-                  <Link href={`/app/board/${m.id}`} className="mx-name" onClick={() => track(EVENTS.app_board_opened, { source: nav === "home" ? "recents" : nav === "starred" ? "starred" : nav === "browse" ? "browse" : "space" })}><span className="mx-bic">{m.emoji ? <span className="mx-emoji">{m.emoji}</span> : <Thumb store={store} id={m.id} />}</span><span><b>{m.title}</b><small>Modified by {user}</small></span></Link>
+                  <Link href={`/app/board/${m.id}`} className="mx-name" onClick={() => track(EVENTS.app_board_opened, { source: nav === "home" ? "recents" : nav === "starred" ? "starred" : nav === "browse" ? "browse" : "space" })}><span className="mx-bic">{m.emoji ? <span className="mx-emoji">{m.emoji}</span> : view === "grid" ? <Thumb store={store} id={m.id} /> : <span className="mx-bicon" aria-hidden="true">{X.board}</span>}</span><span><b>{m.title}</b><small>Modified by {user}</small></span></Link>
                   <span className="mx-c">{""}</span><span className="mx-c">{spaceName(prefs.spaceOf[m.id])}</span><span className="mx-c">{when(m.updatedAt)}</span><span className="mx-c mx-own" title={who.name}>{user}</span>
                   <div className="mx-acts" data-menu>
                     <button className={"mx-ic sm" + (prefs.starred.includes(m.id) ? " starred" : "")} aria-label={prefs.starred.includes(m.id) ? "Unstar" : "Star"} aria-pressed={prefs.starred.includes(m.id)} onClick={() => star(m.id)}>{X.star}</button>

@@ -81,6 +81,15 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 | 3 | Board list stale after Duplicate/Delete | fixed: optimistic list update + `cache: "no-store"` on the list fetch | PR #19 |
 | 4 | Native `confirm()` on Delete | fixed: styled "Delete board?" modal (no Free-plan/upgrade copy on purpose, see exceptions) | PR #19 |
 | 5 | Missing menu items | fixed: Open in new tab, Rename, Duplicate, Board details, Share, Copy board link, Make board private/public, starred, Move to Team/Space, Download board backup, Delete | PR #19 |
+| 29 | Templates modal: Escape leaves the scrim | fixed: a capture-phase Escape closes the modal and scrim together; "Blank board" is clickable right after | PR #26 |
+| 30 | Templates modal content | fixed: "Templates with AI built in" hero, MiroIsDeadverse nav item, a "Product team templates" section, full-width search, and 6 new real templates drawn from scratch (Kanban, Mind map, SWOT, Goal setting (OKR), User story map, Weekly planner) | PR #26 |
+| 31 | + Create menu last item | fixed: "Explore MiroIsDeadverse" with icon, wider menu, no overflow | PR #26 |
+| 32 | Dashboard header | partial: the bell is "Feed"; exception for Free-plan pill / Upgrade / "$500" referral (owner: no plan or upgrade chrome, everything is free) | PR #26 |
+| 33 | Greeting | fixed: one stable "We've got this, <name>" line, clamped size, never wraps (ellipsis) | PR #26 |
+| 34 | Long team names | fixed: one line with ellipsis | PR #26 |
+| 35 | Templates strip | fixed: 12 templates + "From MiroIsDeadverse →" link (opens the modal); strip scrolls horizontally | PR #26 |
+| 36 | Recents thumbnails | fixed: list view shows a Miro-style board icon; grid view keeps the live thumbnail | PR #26 |
+| 37 | Profile menu | exception: no Upgrade item (owner rule); "MiroIsDead Marketplace" is the Miro-equivalent label under the "say MiroIsDead wherever Miro says Miro" rule | — |
 | 6 | Hover actions, Today/Yesterday, truncated owner | fixed: Last opened says Today / Yesterday / date; the owner column keeps clear of the hover buttons | PR #19 |
 
 PostHog project 666931 (IsDead family) with the taxonomy in `docs/ANALYTICS.md`; PR #16.
