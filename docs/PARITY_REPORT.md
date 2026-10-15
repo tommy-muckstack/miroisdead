@@ -3,6 +3,7 @@
 Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner: the logged-out surface is the home page and sign-in; the logged-in app must replicate Miro's functionality, with every paid feature available for free (nothing gated).
 
 ## Method
+- Reference captures of the signed-in Miro dashboard/board/share dialog are kept outside the repo (they show a real account); only logged-out Miro pages (home, login, sign-up) are committed under `docs/parity/orig-*`.
 - Original captured with Playwright (`scripts/parity-capture.mjs`, `scripts/parity-segments.mjs`) at 1440×900 and 390×844: full-page shots, viewport segments and a computed-style dump (font, size, weight, colour, radius, shadow, rects) for every heading, paragraph, button, input and link.
 - Logged-in Miro surfaces captured in a signed-in Chrome session at 1512×675 (dashboard, Create/profile menus, templates modal, board chrome, tool panels, context toolbar, context menu, share modal tabs, export/zoom/help/facilitation menus, frames panel, sticky colour picker, shortcuts panel).
 - Clone captured the same way (`scripts/parity-app.mjs` for the app). Paired shots live in `docs/parity/`; the working set with every segment is kept outside the repo.
