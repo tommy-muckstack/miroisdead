@@ -12,10 +12,13 @@ export interface TextObj extends Box { id: Id; type: "text"; text: string; fontS
 /** points are relative to (x, y), which is the stroke's bounding-box origin. */
 export interface PenObj extends Box { id: Id; type: "pen"; points: Pt[]; stroke: string; width: number; locked?: boolean }
 export interface FrameObj extends Box { id: Id; type: "frame"; name: string; locked?: boolean }
+export interface CommentMsg { by: string; text: string; at: number }
+/** Comment pin: x,y is the pin anchor (bottom-left of the bubble); w/h are the hit box. */
+export interface CommentObj extends Box { id: Id; type: "comment"; thread: CommentMsg[]; resolved?: boolean; locked?: boolean }
 export type End = { id: Id; side?: Side } | { x: number; y: number };
 export interface ConnectorObj { id: Id; type: "connector"; from: End; to: End; style: ConnectorStyle; startArrow: boolean; endArrow: boolean; dashed: boolean; stroke: string; label: string; locked?: boolean }
 
-export type BoxObj = StickyObj | ShapeObj | TextObj | PenObj | FrameObj;
+export type BoxObj = StickyObj | ShapeObj | TextObj | PenObj | FrameObj | CommentObj;
 export type Obj = BoxObj | ConnectorObj;
 export type ObjType = Obj["type"];
 

@@ -48,7 +48,9 @@ Last full pass: 2026-10-15. Scope per the owner: the logged-out surface is the h
 | Board | Facilitation popover (6 reactions, Timer, Voting, Private mode, Note) | match | — | Paid in Miro, free here: floating reactions, countdown timer with chip in the header + chime, dot-voting sessions with per-person budget and results, private-mode stickies (hatched until revealed), shared board note. PR #4 |
 | Board | Frames panel (bottom bar) with empty state, list, create, present | match | S3 | PR #3 |
 | Board | Keyboard map (S shapes, L line, C comment, ⌥1/⌥2, G grid, ⌘G group, ⌘⇧L lock, fn↑/↓ order, ⌘K palette) | differs | S1 | PR shortcuts |
-| Board | Comments, reactions, cursors, real-time sync, presentation mode, images/upload | missing | S1 | Not built yet (see README). Tracked for follow-up PRs. |
+| Board | Comments (C tool, pins with count/initials, thread popover with reply/resolve/delete, comments panel Open/Resolved, ⇧C hides, context-menu Add comment) | match | S3 | Comments are excluded from exports like Miro. PR #5 |
+| Board | Keyboard: L = connection line, C = comment (Miro's map) | match | — | PR #5 |
+| Board | Collaborator cursors, real-time sync, presentation mode, images/upload | missing | S1 | Follow-up PRs (presentation next; multiplayer needs a sync channel). |
 | Share | Invite tab | match | S3 | Placeholder copy. PR share |
 | Share | Embed tab (private notice, start view, preview, copy code/link) | differs | S2 | PR share |
 | Share | Publish tab (Miroverse / custom template cards) | differs | S2 | PR share |

@@ -32,6 +32,7 @@ export function sanitizeDoc(raw: any): Doc {
       case "shape": o = { ...base, type: "shape", shape: SHAPES.includes(r.shape) ? r.shape : "rect", text: str(r.text), fill: color(r.fill, "#FFFFFF"), stroke: color(r.stroke, "#1C1C1E"), filled: bool(r.filled, true), dashed: bool(r.dashed), fontSize: Math.min(96, Math.max(8, num(r.fontSize, 16))) }; break;
       case "text": o = { ...base, type: "text", text: str(r.text), fontSize: Math.min(160, Math.max(8, num(r.fontSize, 20))), color: color(r.color, "#1C1C1E"), bold: bool(r.bold) }; break;
       case "frame": o = { ...base, type: "frame", name: str(r.name, "Frame", 200) }; break;
+      case "comment": o = { ...base, w: 40, h: 36, type: "comment", thread: (Array.isArray(r.thread) ? r.thread : []).slice(0, 500).map((m: any) => ({ by: str(m?.by, "someone", 120), text: str(m?.text, "", 5000), at: num(m?.at, Date.now()) })), resolved: bool(r.resolved) }; break;
       case "pen": o = { ...base, type: "pen", points: (Array.isArray(r.points) ? r.points : []).slice(0, 5000).map((p: any) => ({ x: num(p?.x), y: num(p?.y) })), stroke: color(r.stroke, "#1C1C1E"), width: Math.min(40, Math.max(1, num(r.width, 3))) }; break;
       case "connector": o = { id: base.id, type: "connector", from: cleanEnd(r.from), to: cleanEnd(r.to), style: STYLES.includes(r.style) ? r.style : "elbow", startArrow: bool(r.startArrow), endArrow: bool(r.endArrow, true), dashed: bool(r.dashed), stroke: color(r.stroke, "#1C1C1E"), label: str(r.label, "", 500) }; break;
     }

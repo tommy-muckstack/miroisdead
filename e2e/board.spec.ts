@@ -60,7 +60,7 @@ test("connectors bind to shapes and reroute live when a shape moves", async ({ p
   await newBoard(page);
   await page.keyboard.press("r"); await drag(page, -400, -60, -240, 50); await page.keyboard.press("Escape");
   await page.keyboard.press("r"); await drag(page, 200, -60, 360, 50); await page.keyboard.press("Escape");
-  await page.keyboard.press("c"); await drag(page, -320, 0, 280, 0); // from shape A centre to shape B centre
+  await page.keyboard.press("l"); await drag(page, -320, 0, 280, 0); // from shape A centre to shape B centre
   await expect(objs(page)).toHaveCount(3);
   const conn = page.locator("svg g[data-obj]").last().locator("path").first();
   const before = await conn.getAttribute("d");
@@ -131,7 +131,7 @@ test("shortcut sheet, minimap toggle and command keys", async ({ page }) => {
   await page.keyboard.press("?"); await expect(page.getByTestId("shortcut-sheet")).toContainText("Shortcuts"); await page.keyboard.press("Escape");
   await expect(page.getByTestId("shortcut-sheet")).toHaveCount(0);
   await page.keyboard.press("m"); await expect(page.getByTestId("minimap")).toBeVisible(); await page.keyboard.press("m"); await expect(page.getByTestId("minimap")).toHaveCount(0);
-  for (const [k, t] of [["h", "hand"], ["t", "text"], ["f", "frame"], ["e", "eraser"], ["c", "connector"], ["v", "select"]]) { await page.keyboard.press(k); await expect(page.getByTestId("canvas")).toHaveAttribute("data-active-tool", t); }
+  for (const [k, t] of [["h", "hand"], ["t", "text"], ["f", "frame"], ["e", "eraser"], ["l", "connector"], ["c", "comment"], ["v", "select"]]) { await page.keyboard.press(k); await expect(page.getByTestId("canvas")).toHaveAttribute("data-active-tool", t); }
 });
 
 test("duplicate, copy/paste, delete and alt-drag duplicate", async ({ page }) => {
@@ -200,4 +200,16 @@ test.describe("marketing page", () => {
     await page.getByRole("link", { name: "Get started free" }).first().click(); await expect(page).toHaveURL(/\/miroisdead\/(login|signup)/);
     for (const n of ["research", "roadmap", "diagrams", "workshops", "canvas", "quick-create", "connectors", "frames"]) expect((await request.get(`/miroisdead/home/${n}.png`)).status()).toBe(200);
   });
+});
+
+test("comments: C places a pin, thread takes a reply, panel lists it, shift+C hides pins", async ({ page }) => {
+  await newBoard(page);
+  await page.keyboard.press("c"); await click(page, 40, 40);
+  await expect(page.getByTestId("comment-thread")).toBeVisible();
+  await page.getByPlaceholder("Add a comment…").fill("Looks good"); await page.keyboard.press("Enter");
+  await expect(page.getByTestId("comment-thread")).toContainText("Looks good");
+  await page.keyboard.press("Escape"); await expect(page.getByTestId("comment-thread")).toHaveCount(0);
+  await page.getByLabel("Comments", { exact: true }).click(); await expect(page.getByTestId("comments-panel")).toContainText("Looks good");
+  await page.keyboard.press("Escape"); await page.mouse.click(700, 500);
+  await expect(page.locator("svg g[data-obj]")).toHaveCount(1); await page.keyboard.press("Shift+C"); await expect(page.locator("svg g[data-obj]")).toHaveCount(0);
 });

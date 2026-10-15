@@ -24,7 +24,7 @@ export function boardToCsv(doc: Doc): string {
   const frames = doc.order.map(i => doc.objects[i]).filter(o => o.type === "frame") as { x: number; y: number; w: number; h: number; name: string }[];
   const rows = [["Type", "Text", "Colour", "X", "Y", "Width", "Height", "Frame"]];
   for (const id of doc.order) {
-    const o = doc.objects[id]; if (o.type === "connector" || o.type === "pen") continue;
+    const o = doc.objects[id]; if (o.type === "connector" || o.type === "pen" || o.type === "comment") continue;
     const text = o.type === "frame" ? o.name : o.text; const colour = o.type === "sticky" ? o.color : o.type === "shape" ? o.fill : o.type === "text" ? o.color : "";
     const inFrame = frames.find(f => o.type !== "frame" && o.x + o.w / 2 >= f.x && o.x + o.w / 2 <= f.x + f.w && o.y + o.h / 2 >= f.y && o.y + o.h / 2 <= f.y + f.h)?.name ?? "";
     rows.push([o.type === "sticky" ? "Sticky note" : o.type === "shape" ? "Shape" : o.type === "text" ? "Text" : "Frame", text, colour, String(Math.round(o.x)), String(Math.round(o.y)), String(Math.round(o.w)), String(Math.round(o.h)), inFrame]);
