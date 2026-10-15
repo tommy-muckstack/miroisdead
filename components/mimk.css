@@ -73,3 +73,11 @@
 .mk-cookie h2{font-size:18px;font-weight:600;margin:0 0 8px;color:#1c1c1e}.mk-cookie p{font-size:18px;line-height:25px;margin:0;max-width:820px;color:#1c1c1e;font-family:var(--ids-font-sans)}
 .mk-cookie-b{display:flex;gap:16px;align-items:center;flex-shrink:0}.mk-cookie-b button{height:42px;padding:0 14px;border:1px solid #d6d6db;border-radius:8px;background:#fff;font:inherit;font-size:18px;color:#1c1c1e;cursor:pointer}.mk-cookie-b button.plain{border:0}
 @media (max-width:900px){.mk-cookie{flex-direction:column;align-items:stretch;padding:24px 24px 24px;gap:14px}.mk-cookie p{font-size:14px;line-height:19px}.mk-cookie-b{flex-direction:column-reverse;gap:10px}.mk-cookie-b button{height:40px;font-size:17px}.mk-cur{display:none}.mk-hero p.sub{max-width:320px}.mk-form{width:calc(100% - 80px)}.mk-art{top:0;height:577px;position:relative}.mk-ct{top:-26px}}
+
+/* --- mega-menus (miro.com nav hover panels) --- */
+.mk-mega{display:flex;gap:6px;flex:1;align-items:center}.mk-mega>a{display:inline-flex;align-items:center;padding:8px 14px;font-size:16px;font-weight:500;color:#1c1c1e;text-decoration:none;border-radius:8px}.mk-mega>a:hover{background:#f2f2f4}
+.mk-mi{position:relative}.mk-mi>button{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font:inherit;font-size:16px;font-weight:500;color:#1c1c1e;background:none;border:0;border-radius:8px;cursor:pointer;font-family:var(--ids-font-display),sans-serif}.mk-mi.open>button,.mk-mi>button:hover{background:#f2f2f4}.mk-mi.open>button svg{transform:rotate(180deg)}
+.mk-panel{position:fixed;left:0;right:0;top:72px;z-index:45;background:#fff;box-shadow:0 12px 24px rgba(28,28,30,.12);border-top:1px solid #ececef;animation:mk-drop .15s ease-out}@keyframes mk-drop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.mk-panel-in{max-width:1200px;margin:0 auto;padding:32px 40px 40px;display:grid;grid-template-columns:repeat(4,1fr);gap:32px}
+.mk-col h4{font-family:var(--ids-font-sans);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b6f7f;margin:0 0 12px}.mk-col a{display:block;padding:6px 0;font-family:var(--ids-font-sans);font-size:15px;color:#1c1c1e;text-decoration:none;border-radius:6px}.mk-col a:hover{color:#4262ff}
+@media (max-width:900px){.mk-mega{display:none}}

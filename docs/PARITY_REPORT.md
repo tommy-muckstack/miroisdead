@@ -23,7 +23,7 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 | Landing | Footer (18px headings, 14px links, badges, social, store badges, legal row) | match | — | PR landing |
 | Landing | Cookie banner | match | — | Real consent banner (choice stored locally); replaces the old join bar. PR landing |
 | Landing | Mobile 390 (burger nav, stacked hero, cookie sheet) | match | S3 | Hero heading wraps on 3 lines like Miro. |
-| Landing | Mega-menus on Product/Use Cases/Solutions/Resources | missing | S2 | Hover menus not built (logged-out scope is home + login per owner; open question). |
+| Landing | Mega-menus on Product / Use Cases / Solutions / Resources (hover panels with column groups) | match | S3 | Column groups mirror miro.com's; links go to the matching section, pricing or sign-up. PR #11 |
 | Pricing | Hero, toggle, 4 cards, Guard, compare matrix, trust, security, FAQ | match | S3 | Prior pass; PR #9 fixes the non-sticky nav, Business CTA order (Try for free / or buy now) and a wordmark typo. Out of the owner's logged-out scope otherwise. |
 | Auth | Sign-in card (providers row, SSO, email, Remember me, CTA) | match | — | 44px heading, 18px controls; helper copy kept truthful (password sign-in). PR #2 |
 | Auth | Sign-in extras (arrow link, grey "Trouble signing in?" box, fine print) | match | S3 | Arrow link = demo sign-in (when enabled); box requests a password reset; reCAPTCHA line replaced by "New to MiroIsDead?" (exception: no CAPTCHA, no support chat bubble). PR #2 |
@@ -70,7 +70,7 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 
 ## Open items needing a human decision
 1. **Multiplayer**: built as a session-only WebSocket relay on Vercel Functions (PR #10). Rooms live in function memory, so with heavy load collaborators can land on different instances; for guaranteed rooms at scale add a Redis pub/sub behind `app/api/live` (costs money, so not wired).
-2. **Mega-menus** on the marketing nav (Product / Use Cases / Solutions / Resources): Miro opens large hover panels; the owner scoped logged-out parity to the home page + sign-in, so they are left as plain anchors.
+2. **Mega-menus**: built in PR #11.
 3. **Logos, photos and store badges**: text stand-ins instead of third-party marks (trademark). Keep, or commission original illustrations.
 4. **Email invites**: no mail service; the Share dialog copies the link instead. Wire a provider only if you accept the cost.
 5. **Rotation handle, images/uploads, Docs/Tables/Slides formats, stickers, AI sidekick**: not built. Images/uploads need storage (Firebase Storage is in the shared project; costs apply above the free tier). The AI bar stays a bring-your-own-agent flow (copy scene JSON).
