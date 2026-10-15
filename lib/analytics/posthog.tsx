@@ -21,7 +21,7 @@ async function client(): Promise<PH | null> {
     p.init(KEY, {
       api_host: `${location.origin}${BP}/ingest`, ui_host: UI_HOST,
       capture_pageview: false, capture_pageleave: true, autocapture: false, disable_session_recording: true,
-      persistence: "localStorage+cookie", person_profiles: "identified_only", debug, opt_out_useragent_filter: debug,
+      persistence: "localStorage+cookie", person_profiles: "always", debug, opt_out_useragent_filter: debug,
     });
     p.register({ app: APP, app_family: APP_FAMILY, base_path: BP, env: process.env.NODE_ENV === "production" ? "production" : "development",
       // Shared-project taxonomy (yourappisdead/ANALYTICS.md): product/surface/platform are persisted super properties, so set them
