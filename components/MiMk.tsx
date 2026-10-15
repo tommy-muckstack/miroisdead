@@ -3,12 +3,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Mark } from "@/components/board/icons";
 import { BP } from "@/lib/basepath";
+import { MegaNav } from "@/components/MegaMenu";
 import "./mimk.css";
-const Chev = () => <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#1c1c1e" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M4 6l4 4 4-4" /></svg>;
 export function MiNav() {
   const [menu, setMenu] = useState(false);
   return <header className="mk-nav"><button className="mk-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><i /><i /><i /></button><Link href="/" className="mk-logo"><Mark size={40} />MiroIsDead</Link>
-    <nav aria-label="Main"><a href={BP + "/#product"}>Product <Chev /></a><a href={BP + "/#templates"}>Use Cases <Chev /></a><a href={BP + "/#solutions"}>Solutions <Chev /></a><a href={BP + "/#resources"}>Resources <Chev /></a><a href={BP + "/pricing"}>Pricing</a></nav>
+    <MegaNav />
     <div className="mk-act"><Link href="/login" className="mk-login">Login</Link><a className="mk-ghost" href="https://github.com/tommy-muckstack/miroisdead">View source</a><Link className="mk-cta" href="/signup">Get started free</Link></div>
     {menu && <div className="mk-mmenu"><a href={BP + "/#product"}>Product</a><a href={BP + "/#templates"}>Use Cases</a><a href={BP + "/#solutions"}>Solutions</a><a href={BP + "/#resources"}>Resources</a><a href={BP + "/pricing"}>Pricing</a><Link href="/login">Login</Link><Link className="mk-cta" href="/signup">Get started free</Link></div>}</header>;
 }
