@@ -5,7 +5,7 @@
 .mpr{position:relative;z-index:1;font-family:var(--ids-font-sans),"Noto Sans",system-ui,sans-serif;color:#1c1c1e}
 .mpr h1,.mpr h2,.mpr h3,.mpr-plan .n,.mpr-sel span{font-family:var(--ids-font-display),sans-serif}
 .mpr-h{height:195px;padding-top:96px;text-align:center}.mpr-h h1{margin:0;font-size:48px;line-height:52.8px;font-weight:500;letter-spacing:-.02em}
-.mpr-tog{display:flex;width:max-content;margin:0 0 17px 100px;background:#e4e4e8;border-radius:99px;padding:4px;gap:0}
+.mpr-tog{display:flex;width:max-content;margin:0 0 17px max(24px,calc(50% - 620px));background:#e4e4e8;border-radius:99px;padding:4px;gap:0}
 .mpr-tog button{border:0;background:transparent;border-radius:99px;height:30px;padding:0 12px;font:inherit;font-size:14px;color:#555a6a;cursor:pointer;min-width:74px}.mpr-tog button.on{background:#fff;color:#1c1c1e;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12);min-width:137px}
 .mpr-plans{display:grid;grid-template-columns:repeat(4,304px);gap:8px;width:1240px;margin:0 auto;align-items:start;position:relative;padding-top:0}
 .mpr-tog{position:relative}
@@ -45,9 +45,9 @@
 .mpr-g .row{display:grid;grid-template-columns:310px repeat(4,207.5px);height:48.2px;align-items:flex-start;font-size:14px;line-height:24px}
 .mpr-g .row.two{height:72px}.mpr-g .row .l{padding-top:0;padding-right:20px;text-decoration:underline dotted #9a9aa5;text-underline-offset:3px;text-decoration-thickness:1px}
 .mpr-g .row .v{text-align:center;color:#1c1c1e}.mpr-g .row .ck{color:#4262ff;font-weight:700}.mpr-g .row .pa{font-size:14px}
-.mpr-g .row:last-child{margin-bottom:8px}
+
 .mpr-mx .note{margin:0;padding-left:50px;font-size:12px;line-height:16.2px;color:#222428;height:25px}.mpr-mx .note:first-of-type{margin-top:8px}
-.mpr-trust{text-align:center;margin-top:78px}.mpr-trust h2{margin:0 auto;width:480px;font-size:40px;line-height:46px;font-weight:500;letter-spacing:-.02em}
+.mpr-trust{text-align:center;margin-top:78px}.mpr-trust h2{margin:0 auto;width:540px;font-size:40px;line-height:46px;font-weight:500;letter-spacing:-.02em}
 .mpr-trust .lg{display:flex;justify-content:space-between;align-items:center;margin-top:70px;height:60px;padding:0 20px;color:#3c3c42;font-weight:700;font-size:20px;overflow:hidden}.mpr-trust .lg span{opacity:.85}.mpr-trust .lg .f{opacity:.3;width:30px;overflow:hidden}
 .mpr-sec{text-align:center;margin-top:102px}.mpr-sec h2{margin:0;font-size:40px;line-height:50px;font-weight:500;letter-spacing:-.02em}
 .mpr-sec>p{width:430px;margin:13px auto 0;font-size:22px;line-height:29.7px;color:#555a6a}.mpr-sec>.mpr-btn{margin-top:46px;height:50px;font-size:16px;font-weight:600;font-family:var(--ids-font-display),sans-serif}

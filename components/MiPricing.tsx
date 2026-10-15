@@ -55,7 +55,6 @@ const FAQ: [string, string][] = [
   ["We need additional help on documentation (like an MSA or security questionnaire). Who can I reach out to?", "Contact our sales team and we will help with any security or legal documentation."],
 ];
 const SEC: [string, string, string][] = [["ISO/IEC 27001", "ISO/IEC Security Management", "bsi"], ["SOC 2 Type II", "SOC for Service Organizations", "AICPA SOC 2"], ["SOC 3", "SOC for Service Organizations", "SOC 3"], ["NIST", "National Institute of Standards and Technology", "NIST"], ["TISAX", "Trusted Information Security Assessment Exchange", "TISAX"], ["GDPR", "General Data Protection Regulation", "★"]];
-const TALL = new Set(["Product development workflows", "Security & information governance"]);
 const cell = (v: string) => v === "Included" ? <span className="ck">✓</span> : v === "Not included" ? null : v === "Paid add-on" ? <span className="pa">Paid add-on</span> : v;
 
 export function MiPricing() {
@@ -73,8 +72,8 @@ export function MiPricing() {
         {cmp && <div className="mpr-mx">
           <div className="mpr-sel"><span>Select plan</span>
             <div className="c"><b>Free</b><Link className="mpr-btn sm" href="/signup">Start for free</Link></div><div className="c"><b>Starter</b><Link className="mpr-btn sm" href="/signup">Buy this plan</Link></div><div className="c"><b>Business</b><Link className="mpr-btn pri sm" href="/signup">Try for free</Link></div><div className="c"><b>Enterprise ⓘ</b><a className="mpr-btn sm" href="https://yourappisdead.com">Contact sales</a></div></div>
-          {MATRIX.map(([g, rows]) => <div key={g} className="mpr-g"><div className={"gh" + (TALL.has(g) ? " tall" : "")}><b>{g}</b></div>
-            {rows.map(r => <div key={r[0]} className={"row" + (r[0].startsWith("Authentication via") ? " two" : "")}><span className="l">{r[0]}</span>{r.slice(1).map((v, i) => <span key={i} className="v">{cell(v)}</span>)}</div>)}</div>)}
+          {MATRIX.map(([g, hh, rows]) => <div key={g} className="mpr-g"><div className="gh" style={{ height: hh }}><b>{g}</b></div>
+            {rows.map(r => { const h = Number(r[5]); return <div key={String(r[0])} className="row" style={{ height: h < 50 ? 48.2 : h }}><span className="l">{r[0]}</span>{r.slice(1, 5).map((v, i) => <span key={i} className="v">{cell(String(v))}</span>)}</div>; })}</div>)}
           <p className="note">* Existing Enterprise customers on a different license may have varying feature availability. Contact your account team for details.</p>
           <p className="note">** Migration fees apply for existing customers moving from EU to the US, Australia, or Japan data residency.</p>
         </div>}
