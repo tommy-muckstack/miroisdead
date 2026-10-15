@@ -6,14 +6,14 @@ export type Side = "n" | "e" | "s" | "w";
 export type ShapeKind = "rect" | "round" | "ellipse" | "diamond" | "triangle";
 export type ConnectorStyle = "elbow" | "straight" | "curve";
 
-export interface StickyObj extends Box { id: Id; type: "sticky"; text: string; color: string; fontSize: number | "auto" }
-export interface ShapeObj extends Box { id: Id; type: "shape"; shape: ShapeKind; text: string; fill: string; stroke: string; filled: boolean; dashed: boolean; fontSize: number }
-export interface TextObj extends Box { id: Id; type: "text"; text: string; fontSize: number; color: string; bold: boolean }
+export interface StickyObj extends Box { id: Id; type: "sticky"; text: string; color: string; fontSize: number | "auto"; locked?: boolean }
+export interface ShapeObj extends Box { id: Id; type: "shape"; shape: ShapeKind; text: string; fill: string; stroke: string; filled: boolean; dashed: boolean; fontSize: number; locked?: boolean }
+export interface TextObj extends Box { id: Id; type: "text"; text: string; fontSize: number; color: string; bold: boolean; locked?: boolean }
 /** points are relative to (x, y), which is the stroke's bounding-box origin. */
-export interface PenObj extends Box { id: Id; type: "pen"; points: Pt[]; stroke: string; width: number }
-export interface FrameObj extends Box { id: Id; type: "frame"; name: string }
+export interface PenObj extends Box { id: Id; type: "pen"; points: Pt[]; stroke: string; width: number; locked?: boolean }
+export interface FrameObj extends Box { id: Id; type: "frame"; name: string; locked?: boolean }
 export type End = { id: Id; side?: Side } | { x: number; y: number };
-export interface ConnectorObj { id: Id; type: "connector"; from: End; to: End; style: ConnectorStyle; startArrow: boolean; endArrow: boolean; dashed: boolean; stroke: string; label: string }
+export interface ConnectorObj { id: Id; type: "connector"; from: End; to: End; style: ConnectorStyle; startArrow: boolean; endArrow: boolean; dashed: boolean; stroke: string; label: string; locked?: boolean }
 
 export type BoxObj = StickyObj | ShapeObj | TextObj | PenObj | FrameObj;
 export type Obj = BoxObj | ConnectorObj;
@@ -22,8 +22,8 @@ export type ObjType = Obj["type"];
 /** Objects by id plus z-order (first = back). Frames always render behind everything else. */
 export interface Doc { objects: Record<Id, Obj>; order: Id[] }
 export interface View { x: number; y: number; zoom: number } // x,y = world point at the screen centre
-export interface Board { id: string; title: string; createdAt: number; updatedAt: number; doc: Doc; view: View }
-export interface BoardMeta { id: string; title: string; createdAt: number; updatedAt: number; objectCount: number }
+export interface Board { id: string; title: string; createdAt: number; updatedAt: number; doc: Doc; view: View; emoji?: string }
+export interface BoardMeta { id: string; title: string; createdAt: number; updatedAt: number; objectCount: number; emoji?: string }
 
 export const STICKY_COLORS = ["#FFF8A7", "#FFC9A3", "#FFB8C6", "#D9D2FF", "#BCD4FF", "#B5EEEA", "#C3F4D6", "#E4E6EC"] as const;
 export const INK_COLORS = ["#1C1C1E", "#4262FF", "#D6334A", "#067429", "#E0801B", "#8A5CF6", "#555A6A", "#FFFFFF"] as const;

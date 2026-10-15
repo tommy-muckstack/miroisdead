@@ -33,18 +33,20 @@ Last full pass: 2026-10-15. Scope per the owner: the logged-out surface is the h
 | Dashboard | Create menu, profile menu, templates modal | match | — | Verified against signed-in capture. |
 | Dashboard | Starred / Browse / Spaces | missing | S2 | PR dashboard: star boards, Browse = all boards, Spaces as folders. |
 | Dashboard | Board limit banner / Upgrade | n/a | — | Everything is free; Upgrade chrome kept for look only. |
-| Board | Top-left pill (sidebar, logo, emoji, title, kebab, export, Upgrade/Free) | match | S3 | PR board-chrome |
-| Board | Top-right pill (facilitation, activity, call, avatar, present, Share) | match | S3 | PR board-chrome |
-| Board | Tool rail (AI, select, formats, templates, sticky, text, shapes, pen, frame, stickers, comment, +) | match | S3 | Miro collapses to a compact rail on short viewports and moves pinned tools into a searchable "+" panel. PR board-chrome |
+| Board | Top-left pill (sidebar, logo, emoji picker, title, main menu, export, Upgrade pill) | match | — | Emoji is stored on the board; Upgrade is look-only. PR #3 |
+| Board | Top-right pill (facilitation, activity, call, avatar, present, Share) | match | S3 | Facilitation popover lands in PR facilitation. |
+| Board | Tool rail (AI, select, formats, templates, sticky, text, shapes, pen, frame, stickers, comment, +) | match | — | Compact rail under 720px like Miro; "+" opens the searchable Tools/Marketplace panel with the pinned tools. PR #3 |
 | Board | Shapes & lines flyout | match | — | Prior pass. |
-| Board | Sticky colour picker (16 swatches when sticky tool is active) | missing | S2 | PR board-chrome |
+| Board | Main (kebab) menu: Board / Edit / View / Preferences / Accessibility submenus, Assign status, Send to display | match | S3 | PR #3 |
+| Board | Lock / unlock objects (toolbar, context menu, lock badge) | match | — | PR #3 |
+| Board | Sticky colour picker (16 swatches when sticky tool is active) | match | — | PR #3 |
 | Board | Context toolbar (sticky/shape/text/connector) | match | S3 | Prior pass; verified against shape capture. |
-| Board | Right-click context menu | missing | S2 | PR board-chrome |
-| Board | Export menu (PDF, image, template, CSV, backup, embed) | differs | S2 | PR board-chrome |
-| Board | Zoom menu (full screen, minimap, grid, fit, presets) | missing | S2 | PR board-chrome |
-| Board | Help menu + Shortcuts panel (Miro layout) | differs | S2 | PR board-chrome |
+| Board | Right-click context menu (object + canvas) | match | S3 | Copy/link/image, duplicate, delete, copy/paste style, clear, Arrange ▸, Link to (stub), Lock, Create frame, Save as template, CSV. PR #3 |
+| Board | Export menu (PDF, image, template, CSV, backup, embed, Drive) | match | S3 | PDF via print window, PNG via rasterised SVG, CSV of text objects, backup JSON, custom template (local), Embed opens Share ▸ Embed; Drive = backup download (exception: no Google API). PR #3 |
+| Board | Zoom menu (full screen, minimap, grid, object dimensions, fit, presets) | match | — | PR #3 |
+| Board | Help menu + Shortcuts panel (blue header, icon column, Tools/General/Navigation/Text) | match | — | PR #3 |
 | Board | Facilitation: reactions, timer, voting, private mode, note | missing | S1 | Paid in Miro; free here. PR facilitation |
-| Board | Frames panel (bottom-left) | missing | S2 | PR board-chrome |
+| Board | Frames panel (bottom bar) with empty state, list, create, present | match | S3 | PR #3 |
 | Board | Keyboard map (S shapes, L line, C comment, ⌥1/⌥2, G grid, ⌘G group, ⌘⇧L lock, fn↑/↓ order, ⌘K palette) | differs | S1 | PR shortcuts |
 | Board | Comments, reactions, cursors, real-time sync, presentation mode, images/upload | missing | S1 | Not built yet (see README). Tracked for follow-up PRs. |
 | Share | Invite tab | match | S3 | Placeholder copy. PR share |

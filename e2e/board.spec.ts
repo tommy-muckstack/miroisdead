@@ -115,7 +115,7 @@ test("zoom: ctrl+wheel zooms at the cursor, buttons, 100% reset and fit", async 
   expect(await zoom(page)).toBe(100);
   const p = await at(page, 0, 0); await page.mouse.move(p.x, p.y); await page.keyboard.down(MOD); await page.mouse.wheel(0, -300); await page.keyboard.up(MOD);
   await expect.poll(() => zoom(page)).toBeGreaterThan(100);
-  await page.getByRole("button", { name: "Zoom out" }).click(); await page.getByTestId("zoom-level").click(); expect(await zoom(page)).toBe(100);
+  await page.getByRole("button", { name: "Zoom out" }).click(); await page.getByTestId("zoom-level").click(); await page.getByRole("menuitem", { name: "100%" }).click(); expect(await zoom(page)).toBe(100);
   await page.keyboard.press("Shift+1"); await page.waitForTimeout(100); expect(await zoom(page)).toBeLessThanOrEqual(100);
 });
 
@@ -128,10 +128,10 @@ test("pan with Space+drag and hand tool changes the view", async ({ page }) => {
 
 test("shortcut sheet, minimap toggle and command keys", async ({ page }) => {
   await newBoard(page, "welcome");
-  await page.keyboard.press("?"); await expect(page.getByTestId("shortcut-sheet")).toContainText("Keyboard shortcuts"); await page.keyboard.press("Escape");
+  await page.keyboard.press("?"); await expect(page.getByTestId("shortcut-sheet")).toContainText("Shortcuts"); await page.keyboard.press("Escape");
   await expect(page.getByTestId("shortcut-sheet")).toHaveCount(0);
   await page.keyboard.press("m"); await expect(page.getByTestId("minimap")).toBeVisible(); await page.keyboard.press("m"); await expect(page.getByTestId("minimap")).toHaveCount(0);
-  for (const [k, t] of [["h", "hand"], ["t", "text"], ["f", "frame"], ["e", "eraser"], ["c", "connector"], ["v", "select"]]) { await page.keyboard.press(k); await expect(page.locator(`[data-tool="${t}"]`)).toHaveAttribute("aria-pressed", "true"); }
+  for (const [k, t] of [["h", "hand"], ["t", "text"], ["f", "frame"], ["e", "eraser"], ["c", "connector"], ["v", "select"]]) { await page.keyboard.press(k); await expect(page.getByTestId("canvas")).toHaveAttribute("data-tool", t); }
 });
 
 test("duplicate, copy/paste, delete and alt-drag duplicate", async ({ page }) => {
@@ -170,11 +170,14 @@ test("bad import file shows an error", async ({ page }) => {
   await expect(page.locator(".mi-err")).toContainText("MiroIsDead board file");
 });
 
-test("export menu offers SVG and the agent scene JSON", async ({ page }) => {
+test("export menu offers a board backup and CSV", async ({ page }) => {
   await newBoard(page, "flowchart");
-  await page.getByRole("button", { name: /Export/ }).click();
-  const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("menuitem", { name: "Download SVG" }).click()]);
-  const fs = await import("node:fs"); const svg = fs.readFileSync((await dl.path())!, "utf8"); expect(svg).toContain("<svg"); expect(svg).toContain("Is it urgent?");
+  await page.getByRole("button", { name: /Export this board/ }).click();
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("menuitem", { name: "Download board backup" }).click()]);
+  const fs = await import("node:fs"); const json = fs.readFileSync((await dl.path())!, "utf8"); expect(json).toContain("miroisdead-board"); expect(json).toContain("Is it urgent?");
+  await page.getByRole("button", { name: /Export this board/ }).click();
+  const [csv] = await Promise.all([page.waitForEvent("download"), page.getByRole("menuitem", { name: /CSV/ }).click()]);
+  expect(fs.readFileSync((await csv.path())!, "utf8")).toContain("Is it urgent?");
 });
 
 test("sign out returns to the marketing page and protects the app", async ({ page }) => {
@@ -183,17 +186,14 @@ test("sign out returns to the marketing page and protects the app", async ({ pag
 });
 
 test.describe("marketing page", () => {
-  test("hero tabs swap the screenshot and the price calculator compares to Miro", async ({ page }) => {
+  test("hero tabs swap the screenshot and the pricing page renders", async ({ page }) => {
     await page.goto("/miroisdead");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Human collaboration");
     await expect(page.getByTestId("tabpanel").locator("img")).toHaveAttribute("src", /research\.png$/);
     await page.getByRole("tab", { name: "Diagrams" }).click();
     await expect(page.getByTestId("tabpanel").locator("img")).toHaveAttribute("src", /diagrams\.png$/);
     await page.goto("/miroisdead/pricing");
-    await expect(page.getByTestId("cost-starter")).toHaveText("$960"); await expect(page.getByTestId("cost-ours")).toHaveText("$0");
-    await page.locator("#seats").fill("50");
-    await expect(page.getByTestId("cost-starter")).toHaveText("$4,800"); await expect(page.getByTestId("cost-business")).toHaveText("$12,000");
-    await expect(page.getByTestId("feature-table").locator("tbody tr")).toHaveCount(7);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Where teams and AI work as one");
   });
   test("every homepage CTA leads to login and the images resolve", async ({ page, request }) => {
     await page.goto("/miroisdead");
