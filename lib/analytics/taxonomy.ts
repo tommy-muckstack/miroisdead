@@ -29,6 +29,7 @@ export const EVENTS = {
   // ---- workspace / dashboard ----
   app_page_viewed: "app_page_viewed",              // path
   app_board_created: "app_board_created",          // template, source ("strip" | "create_menu" | "templates_modal" | "custom_template" | "import")
+  app_invite_shared: "app_invite_shared",          // method ("share_sheet" | "clipboard"), source ("header")
   app_board_opened: "app_board_opened",            // source ("recents" | "starred" | "space" | "new")
   app_board_renamed: "app_board_renamed",
   app_board_duplicated: "app_board_duplicated",
@@ -43,6 +44,7 @@ export const EVENTS = {
   board_exported: "board_exported",                // format ("pdf" | "png" | "csv" | "json" | "template" | "scene_json")
   board_share_access_changed: "board_share_access_changed", // access ("none" | "view" | "edit")
   board_share_opened: "board_share_opened",        // tab
+  board_link_shared: "board_link_shared",          // method ("share_sheet" | "clipboard"), via ("invite_form" | "copy_button" | "row_menu"), access
   board_comment_posted: "board_comment_posted",    // reply (bool)
   board_timer_started: "board_timer_started",      // minutes
   board_voting_started: "board_voting_started",    // votes_per_person

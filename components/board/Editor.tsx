@@ -79,7 +79,11 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const [banner, setBanner] = useState(false); // the "turn on notifications" banner is gone by owner request
   const [access, setAccess] = useState<BoardAccess>(initial.access ?? "none");
   const [fly, setFly] = useState<"" | "shapes" | "more">("");
+  const [firstRun, setFirstRun] = useState(false); // tool hints are onboarding only: shown until the first board has 8 objects, then never again
+  useEffect(() => { try { setFirstRun(localStorage.getItem("mi-onboarded") !== "1"); } catch { /* ignore */ } }, []);
+  useEffect(() => { if (!fly) return; const f = (e: PointerEvent) => { const t = e.target as Element; if (!t.closest(".mb-fly") && !t.closest("[aria-expanded]")) setFly(""); }; window.addEventListener("pointerdown", f, true); return () => window.removeEventListener("pointerdown", f, true); }, [fly]);
   const [share, setShare] = useState<"" | ShareTab>("");
+  useEffect(() => { if (location.hash === "#share" && !guest) { setShare("Invite"); history.replaceState(null, "", location.pathname + location.search); } }, [guest]); // dashboard row menu › Share
   const [prof, setProf] = useState(false);
   const [chips, setChips] = useState(true);
   const [main, setMain] = useState(false);
@@ -273,6 +277,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   // ---- pointer ----
   const onPointerDown = (e: React.PointerEvent) => {
     if ((e.target as Element).closest("[data-ui]")) return;
+    setFly("");
     box.current!.focus({ preventScroll: true });
     if (R.current.edit) { /* blur of the editor commits */ (document.activeElement as HTMLElement)?.blur?.(); }
     if (e.button === 2) return;
@@ -432,7 +437,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     if (mod && k === "z") { e.preventDefault(); e.shiftKey ? doRedo() : doUndo(); return; }
     if (mod && k === "y") { e.preventDefault(); doRedo(); return; }
     if (mod && k === "s") { e.preventDefault(); void saveNow(); flash("Saved"); return; }
-    if (mod && k === "a") { e.preventDefault(); setSel(d.order.slice()); return; }
+    if (mod && k === "a") { e.preventDefault(); setFly(""); setSel(d.order.slice()); return; }
     if (mod && k === "d") { e.preventDefault(); dup(); return; }
     if (mod && k === "g") { e.preventDefault(); e.shiftKey ? ungroupSel() : groupSel(); return; }
     if (mod && e.shiftKey && k === "l") { e.preventDefault(); toggleLock(); return; }
@@ -447,7 +452,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     if (mod && e.key === "-") { e.preventDefault(); zoomBy(0.8); return; }
     if (mod && e.key === "0") { e.preventDefault(); setView(v => zoomAt(v, R.current.size, { x: R.current.size.w / 2, y: R.current.size.h / 2 }, 1)); return; }
     if (mod) return;
-    if (e.key === "Escape") { if (g.current) { g.current = null; setDraft(null); setMarq(null); } else if (R.current.tool !== "select") setTool("select"); else setSel([]); setHelp(false); setMenu(false); setCtx(null); setTools(false); setThread(null); setPalette(false); if (present) exitPresent(); return; }
+    if (e.key === "Escape") { setFly(""); if (g.current) { g.current = null; setDraft(null); setMarq(null); } else if (R.current.tool !== "select") setTool("select"); else setSel([]); setHelp(false); setMenu(false); setCtx(null); setTools(false); setThread(null); setPalette(false); if (present) exitPresent(); return; }
     if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); del(); return; }
     if (e.key === "?") { setHelp(h => !h); return; }
     if (e.shiftKey && k === "c") { e.preventDefault(); setHideComments(h => !h); return; }
@@ -471,7 +476,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
     if (k === "f" && s.length > 1) { frameSel(); return; }
     if (k === "s" && !e.shiftKey && !e.altKey) { setFly(f => f === "shapes" ? "" : "shapes"); return; }
     if (present) { if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); presentGo(1); } else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); presentGo(-1); } return; }
-    if (KEY_TO_TOOL[k] && !e.shiftKey && !e.altKey) { setTool(KEY_TO_TOOL[k]); setEdit(null); }
+    if (KEY_TO_TOOL[k] && !e.shiftKey && !e.altKey) { setTool(KEY_TO_TOOL[k]); setEdit(null); setFly(""); }
   };
   useEffect(() => {
     const d = (e: KeyboardEvent) => keys.current(e);
@@ -493,7 +498,8 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const z = view.zoom, px = (n: number) => n / z;
   const one = selObjs.length === 1 ? selObjs[0] : null;
   const sBox = selBounds ? (() => { const a = worldToScreen(view, size, { x: selBounds.x, y: selBounds.y }); return { x: a.x, y: a.y, w: selBounds.w * z, h: selBounds.h * z }; })() : null;
-  const hint = edit ? "Esc to finish · Tab for the next sticky · ⇧Tab places it below" : tool !== "select" ? TOOLS.find(t => t.tool === tool)!.hint : one && (one.type === "sticky" || one.type === "shape") ? "Enter to edit · Tab adds a connected one · drag a blue dot to connect" : selObjs.length > 1 ? "Align and distribute from the toolbar · F frames the selection · ⌘D duplicates" : "Scroll to pan · ⌘ + scroll to zoom · N for a sticky · ? for all shortcuts";
+  useEffect(() => { if (firstRun && doc.order.length >= 8) { setFirstRun(false); try { localStorage.setItem("mi-onboarded", "1"); } catch { /* ignore */ } } }, [firstRun, doc.order.length]);
+  const hint = edit ? (doc.objects[edit.id]?.type === "sticky" ? "Esc to finish · Tab for the next sticky · ⇧Tab places it below" : "") : tool !== "select" ? TOOLS.find(t => t.tool === tool)!.hint : one && (one.type === "sticky" || one.type === "shape") ? "Enter to edit · Tab adds a connected one · drag a blue dot to connect" : selObjs.length > 1 ? "Align and distribute from the toolbar · F frames the selection · ⌘D duplicates" : "Scroll to pan · ⌘ + scroll to zoom · N for a sticky · ? for all shortcuts";
   const cursor = g.current?.k === "pan" || (space && true) ? "grab" : tool === "hand" ? "grab" : tool === "select" ? "default" : tool === "eraser" ? "cell" : "crosshair";
   const gridSize = 80 * z, bgPos = `${size.w / 2 - view.x * z}px ${size.h / 2 - view.y * z}px`;
   const statusText = status === "saving" ? "Saving…" : status === "saved" ? (store.kind === "cloud" ? "Saved to your account" : "Saved on this device") : status === "device" ? "Saved on this device · sync failed" : "Couldn't save";
@@ -568,8 +574,8 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
         {([["Line", X.line, "connector", "L", { style: "straight", arrow: false }], ["Arrow", X.arrow, "connector", "", { style: "straight", arrow: true }], ["Elbow arrow", X.elbow, "connector", "", { style: "elbow", arrow: true }], ["Block arrow", X.blockArrow, null, "", null]] as [string, React.ReactNode, Tool | null, string, { style: ConnectorStyle; arrow: boolean } | null][]).map(([label, ic, t, k, cfg]) =>
           <button key={label} role="menuitem" className={"mb-f" + (t === "connector" && tool === "connector" && cfg && last.current.line === label ? " on" : "")} data-tool={label === "Elbow arrow" ? "connector" : undefined} aria-pressed={label === "Elbow arrow" ? tool === "connector" : undefined} onClick={() => { if (!t || !cfg) { flash("Block arrows aren't in MiroIsDead yet"); return; } last.current.connectorStyle = cfg.style; last.current.arrow = cfg.arrow; last.current.line = label; setTool("connector"); setEdit(null); setFly(""); }}><span className="ic">{ic}</span>{label}<kbd>{k}</kbd></button>)}
         <hr />
-        {([["Rectangle", X.rect, "rect", "R", "rect"], ["Oval", X.oval, "ellipse", "O", "rect"], ["Rhombus", X.rhombus, "diamond", "D", "rect"], ["Triangle", X.triangle, "rect", "", "triangle"]] as [string, React.ReactNode, Tool, string, ShapeObj["shape"]][]).map(([label, ic, t, k, sh]) =>
-          <button key={label} role="menuitem" className={"mb-f" + (tool === t && (label === "Triangle" ? last.current.shape === "triangle" : t !== "rect" || last.current.shape !== "triangle") ? " on" : "")} data-tool={label === "Rectangle" ? "rect" : label === "Oval" ? "ellipse" : label === "Rhombus" ? "diamond" : undefined} aria-pressed={label === "Rectangle" ? tool === "rect" : label === "Oval" ? tool === "ellipse" : label === "Rhombus" ? tool === "diamond" : undefined} onClick={() => { last.current.shape = sh; setTool(t); setEdit(null); setFly(""); }}><span className="ic">{ic}</span>{label}<kbd>{k}</kbd></button>)}
+        {([["Rectangle", X.rect, "rect", "R", "rect"], ["Oval", X.oval, "ellipse", "O", "rect"], ["Rhombus", X.rhombus, "diamond", "", "rect"], ["Triangle", X.triangle, "rect", "", "triangle"]] as [string, React.ReactNode, Tool, string, ShapeObj["shape"]][]).map(([label, ic, t, k, sh]) =>
+          <button key={label} role="menuitem" className={"mb-f" + ((tool === t && (label === "Triangle" ? last.current.shape === "triangle" : t !== "rect" || last.current.shape !== "triangle")) || (label === "Rectangle" && !["rect", "ellipse", "diamond", "connector"].includes(tool)) ? " on" : "")} data-tool={label === "Rectangle" ? "rect" : label === "Oval" ? "ellipse" : label === "Rhombus" ? "diamond" : undefined} aria-pressed={label === "Rectangle" ? tool === "rect" : label === "Oval" ? tool === "ellipse" : label === "Rhombus" ? tool === "diamond" : undefined} onClick={() => { last.current.shape = sh; setTool(t); setEdit(null); setFly(""); }}><span className="ic">{ic}</span>{label}<kbd>{k}</kbd></button>)}
         <button role="menuitem" className="mb-f" onClick={() => { setFly(""); flash("Divider isn't in MiroIsDead yet"); }}><span className="ic">{X.divider}</span>Divider</button>
         <button role="menuitem" className="mb-f plain" onClick={() => { setFly(""); flash("More shapes are coming. Contributions welcome.") }}>More shapes</button>
         <hr />
@@ -586,7 +592,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
           {/* selection chrome */}
           {tool === "select" && selObjs.filter(o => o.type !== "comment").map(o => { const b = boundsOf(doc, o); const rt = o.type !== "connector" && o.rot ? `rotate(${o.rot} ${o.x + o.w / 2} ${o.y + o.h / 2})` : undefined; return o.type === "connector" ? <path key={o.id} d={routeConnector(doc, o).path} fill="none" stroke="#4262FF" strokeWidth={px(5)} opacity={0.25} /> : <rect key={o.id} transform={rt} x={b.x - px(2)} y={b.y - px(2)} width={b.w + px(4)} height={b.h + px(4)} fill="none" stroke="#4262FF" strokeWidth={px(1.5)} />; })}
           {tool === "select" && selObjs.length > 1 && selBounds && <rect x={selBounds.x - px(6)} y={selBounds.y - px(6)} width={selBounds.w + px(12)} height={selBounds.h + px(12)} fill="none" stroke="#4262FF" strokeWidth={px(1)} strokeDasharray={`${px(5)} ${px(4)}`} />}
-          {tool === "select" && one && isBox(one) && one.type !== "comment" && !edit && !(one as { locked?: boolean }).locked && <g transform={one.rot ? `rotate(${one.rot} ${one.x + one.w / 2} ${one.y + one.h / 2})` : undefined}>
+          {tool === "select" && one && isBox(one) && one.type !== "comment" && (!edit || (edit.id === one.id && one.type !== "text")) && !(one as { locked?: boolean }).locked && <g transform={one.rot ? `rotate(${one.rot} ${one.x + one.w / 2} ${one.y + one.h / 2})` : undefined}>
             {one.type !== "frame" && <g data-h="rot" data-testid="handle-rot" style={{ cursor: "grab" }} transform={`translate(${one.x - px(18)} ${one.y + one.h + px(18)})`}><circle r={px(10)} fill="#fff" stroke="#8E8E93" strokeWidth={px(1.5)} /><path d={`M${-px(4)} ${-px(1)}a${px(4.5)} ${px(4.5)} 0 1 1 ${px(1.5)} ${px(4)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /><path d={`M${-px(5.5)} ${-px(3.5)}l${px(1.5)} ${px(3)}l${px(3)} ${-px(1)}`} fill="none" stroke="#1C1C1E" strokeWidth={px(1.4)} /></g>}
             {HANDLES.map(h => { const p = handlePt(boxOf(one), h), edge = h.length === 1; return <circle key={h} data-h={h} data-testid={`handle-${h}`} cx={p.x} cy={p.y} r={px(edge ? 7 : 6.5)} fill={one.type === "sticky" && edge ? "transparent" : "#fff"} stroke={one.type === "sticky" && edge ? "transparent" : "#8E8E93"} strokeWidth={px(2)} style={{ cursor: CURSOR[h] }} />; })}
             {(one.type === "sticky" || one.type === "shape") && (["n", "e", "s", "w"] as Side[]).map(sd => { const a = anchorPoint(boxOf(one), sd), off = px(22); return <g key={sd} data-h={`dot:${sd}`} data-testid={`dot-${sd}`} style={{ cursor: "copy" }}><circle cx={a.x + DIR[sd].x * off} cy={a.y + DIR[sd].y * off} r={px(9)} fill="transparent" /><circle cx={a.x + DIR[sd].x * off} cy={a.y + DIR[sd].y * off} r={px(3.5)} fill="#4262FF" /></g>; })}
@@ -607,10 +613,10 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
       <PeerCursors peers={Object.values(peers)} toScreen={p => worldToScreen(view, size, p)} />
       {Object.values(peers).filter(p => p.sel?.length).map(p => p.sel!.filter(i => doc.objects[i]).map(i => { const b = boundsOf(doc, doc.objects[i]); const a = worldToScreen(view, size, { x: b.x, y: b.y }); return <div key={p.id + i} className="lv-sel" style={{ left: a.x - 2, top: a.y - 2, width: b.w * z + 4, height: b.h * z + 4, borderColor: p.color }} aria-hidden />; }))}
       {edit && doc.objects[edit.id] && <TextEditor key={edit.id} doc={doc} id={edit.id} view={view} size={size} onDone={finishEdit} />}
-      {sBox && !edit && !g.current && tool === "select" && one?.type !== "comment" && <SelectionToolbar doc={doc} ids={sel} screenBox={sBox} canvas={size} patch={patchSel} onDelete={del} onDuplicate={dup} onFront={() => commitDoc(bringToFront(doc, sel))} onBack={() => commitDoc(sendToBack(doc, sel))} onFrame={frameSel} onAlign={(a: Align) => commitDoc(align(doc, sel, a))} onDistribute={a => commitDoc(distribute(doc, sel, a))} onGroup={() => (selObjs.some(o => o.group) ? ungroupSel() : groupSel())} />}
+      {sBox && (!edit || (one && edit.id === one.id && one.type !== "text")) && !g.current && tool === "select" && one?.type !== "comment" && <SelectionToolbar doc={doc} ids={sel} screenBox={sBox} canvas={size} patch={patchSel} onDelete={del} onDuplicate={dup} onFront={() => commitDoc(bringToFront(doc, sel))} onBack={() => commitDoc(sendToBack(doc, sel))} onFrame={frameSel} onAlign={(a: Align) => commitDoc(align(doc, sel, a))} onDistribute={a => commitDoc(distribute(doc, sel, a))} onGroup={() => (selObjs.some(o => o.group) ? ungroupSel() : groupSel())} />}
     </div>
 
-    {(edit || tool !== "select" || sel.length > 0 || doc.order.length === 0) && <div className={"mi-hint" + (doc.order.length === 0 && chips && !edit ? " hi" : "")} data-ui data-testid={doc.order.length === 0 && !edit ? "empty-hint" : "hint"}>{hint}</div>}
+    {hint && (doc.order.length === 0 || (firstRun && (edit || tool !== "select"))) && <div className={"mi-hint" + (doc.order.length === 0 && chips && !edit ? " hi" : "")} data-ui data-testid={doc.order.length === 0 && !edit ? "empty-hint" : "hint"}>{hint}</div>}
     {chips && !readOnly && doc.order.length === 0 && !edit && <div className="mb-chips" data-ui>
       <button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c1" />Prep a workshop</button><button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c2" />Map a process</button><button onClick={() => flash("AI board starters aren't in MiroIsDead yet")}><i className="c3" />Build a roadmap</button>
       <button className="x" aria-label="Dismiss suggestions" onClick={() => setChips(false)}>{X.close}</button></div>}

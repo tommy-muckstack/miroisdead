@@ -8,7 +8,7 @@ export const TOOLS: { tool: Tool; key: string; label: string; hint: string }[] =
   { tool: "ellipse", key: "o", label: "Ellipse", hint: "Drag to draw · click for default size" },
   { tool: "diamond", key: "d", label: "Diamond", hint: "Drag to draw · good for decisions" },
   { tool: "text", key: "t", label: "Text", hint: "Click to add text · Esc or click away to finish" },
-  { tool: "pen", key: "p", label: "Pen", hint: "Draw freehand · strokes are smoothed · the pen stays on" },
+  { tool: "pen", key: "p", label: "Pen", hint: "Draw freehand · strokes are smoothed · Esc to stop" },
   { tool: "connector", key: "l", label: "Connection line", hint: "Drag from one object to another · drop on empty space for a loose end" },
   { tool: "comment", key: "c", label: "Comment", hint: "Click anywhere to start a comment thread · ⇧C hides comments" },
   { tool: "frame", key: "f", label: "Frame", hint: "Drag to draw a frame · with a selection, F wraps it" },

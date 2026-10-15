@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from "react";
 import type { BoardAccess, Doc } from "@/lib/canvas/types";
 import { X } from "@/components/mxi";
+import { shareLink, canUseShareSheet } from "@/lib/share";
+import { track, EVENTS } from "@/lib/analytics";
 import { boardToSvg } from "./exportSvg";
 import { Pop, Item } from "./Menus";
 
@@ -18,6 +20,13 @@ export function ShareModal({ tab, setTab, onClose, who, doc, title, boardId, acc
   const publicUrl = `${origin}${base}/b/${boardId}`;
   const link = access === "none" ? (typeof location !== "undefined" ? location.href : "") : publicUrl;
   const copy = (text: string, msg: string) => navigator.clipboard?.writeText(text).then(() => flash(msg), () => flash("Couldn't copy"));
+  // Hand the link to a person: OS share sheet where there is one (mobile, Safari, Edge), clipboard elsewhere.
+  const send = async (via: "invite_form" | "copy_button", to?: string) => {
+    const r = await shareLink({ title: `${title || "Untitled"} · MiroIsDead`, text: access === "none" ? `Join me on MiroIsDead: ${title || "Untitled"}` : `${to ? to + ", you're" : "You're"} invited to "${title || "Untitled"}" on MiroIsDead (${access === "edit" ? "can edit" : "can view"})`, url: link });
+    track(EVENTS.board_link_shared, { method: r === "shared" ? "share_sheet" : "clipboard", via, access, result: r });
+    if (r === "shared") flash("Shared"); else if (r === "copied") flash(access === "none" ? "Board link copied (only you can open it until link access is on)" : "Team invite link copied. Send it to them; no email leaves MiroIsDead."); else if (r === "failed") flash("Couldn't share or copy");
+    if (r !== "dismissed" && via === "invite_form") setInvite("");
+  };
   const embedSrc = `${publicUrl}?embed=1${start === "frame" ? "&frame=1" : ""}${viewOnly ? "" : "&edit=1"}`;
   const code = `<iframe width="768" height="432" src="${embedSrc}" frameborder="0" scrolling="no" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen></iframe>`;
   const [thumb, setThumb] = useState(""); useEffect(() => { setThumb(boardToSvg(doc, { maxW: 480, pad: 30, background: "#F2F2F2" })); }, [doc]);
@@ -27,11 +36,11 @@ export function ShareModal({ tab, setTab, onClose, who, doc, title, boardId, acc
     <div className="mb-share" role="dialog" aria-label="Share board" data-testid="share-modal">
       <div className="mb-tabs" role="tablist">{(["Invite", "Embed", "Publish", "AI"] as const).map(t => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{t}{t === "AI" && <span className="mb-aiic"><i className="a" /><i className="b" /><i className="c" /><em>+</em></span>}</button>)}</div>
       {tab === "Invite" && <>
-        <form className="mb-mail" onSubmit={e => { e.preventDefault(); const v = invite.trim(); if (!v) return; copy(link, `Invite link copied for ${v}. Send it to them; no email leaves MiroIsDead.`); setInvite(""); }}>{X.invite}<input autoFocus placeholder="Enter emails or invite from the team, Slack, Google or Microsoft" value={invite} onChange={e => setInvite(e.target.value)} aria-label="Invite by email" /></form>
+        <form className="mb-mail" onSubmit={e => { e.preventDefault(); const v = invite.trim(); if (!v) return; void send("invite_form", v); }}>{X.invite}<input autoFocus placeholder="Enter emails or invite from the team, Slack, Google or Microsoft" value={invite} onChange={e => setInvite(e.target.value)} aria-label="Invite by email" /></form>
         <div className="mb-linkrow">{X.link}<span className="url">{link}</span>
           <span className="mi-menuwrap"><button className="mb-can" aria-haspopup="menu" aria-expanded={linkMenu} onClick={() => setLinkMenu(m => !m)}>{access === "none" ? "Can edit" : ACCESS_LABEL[access]} {X.chev}</button>
             {linkMenu && <Pop className="mb-accpop" onClose={() => setLinkMenu(false)}><Item label="Can edit" on={access === "edit" || access === "none"} onClick={() => { setLinkMenu(false); if (access !== "none") pick("edit"); }} /><Item label="Can view" on={access === "view"} onClick={() => { setLinkMenu(false); if (access !== "none") pick("view"); }} /></Pop>}</span>
-          <button className="mb-copy" onClick={() => copy(link, access === "none" ? "Board link copied (only you can open it until link access is on)" : "Team invite link copied")}>Copy team invite link</button></div>
+          <button className="mb-copy" onClick={() => void send("copy_button")}>{canUseShareSheet() ? "Share team invite link" : "Copy team invite link"}</button></div>
         <div className="mb-acc">Board access</div>
         <div className="mb-who"><span className="mb-avs"><i>{(who[0] ?? "T").toUpperCase()}</i></span><b>{who.split("@")[0]}</b>&nbsp;owns this board {X.info}<a className="mb-manage" href="#" onClick={e => { e.preventDefault(); setTab("Invite"); flash("Access is managed with the link setting below"); }}>Manage access</a></div>
         <div className="mb-any">{X.globe}<span>Anyone with the link</span>

@@ -75,12 +75,31 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 Comment tool (C + click → thread, post), image upload, rotation handle (shape rotates), snapping guides (pink guide appears while dragging a sticky into alignment), pinch zoom (Ctrl+wheel = trackpad pinch → 165 % after one tick), and the "?" shortcuts panel all work. Miro's own logged-out landing/login/signup were compared in earlier passes (PR #1/#2) and their layout is unchanged.
 
 ## Analytics
+## QA findings (hands-on pass, 2026-10-15)
+41 findings from the external QA pass; each is closed here as fixed (PR) or a justified exception.
+| # | Finding | Status | Where |
+|---|---|---|---|
+| 1 | Board list › Rename does nothing visible | fixed: "Rename board" modal (Board name, Save/Cancel) | PR #19 |
+| 2 | Board list › options menu renders under the next row | fixed: the row with an open menu is lifted above its siblings (`.mx-acts` is transformed, so the popup's z-index was trapped) | PR #19 |
+| 3 | Board list stale after Duplicate/Delete | fixed: optimistic list update + `cache: "no-store"` on the list fetch | PR #19 |
+| 4 | Native `confirm()` on Delete | fixed: styled "Delete board?" modal (no Free-plan/upgrade copy on purpose, see exceptions) | PR #19 |
+| 5 | Missing menu items | fixed: Open in new tab, Rename, Duplicate, Board details, Share, Copy board link, Make board private/public, starred, Move to Team/Space, Download board backup, Delete | PR #19 |
+| 29 | Templates modal: Escape leaves the scrim | fixed: a capture-phase Escape closes the modal and scrim together; "Blank board" is clickable right after | PR #26 |
+| 30 | Templates modal content | fixed: "Templates with AI built in" hero, MiroIsDeadverse nav item, a "Product team templates" section, full-width search, and 6 new real templates drawn from scratch (Kanban, Mind map, SWOT, Goal setting (OKR), User story map, Weekly planner) | PR #26 |
+| 31 | + Create menu last item | fixed: "Explore MiroIsDeadverse" with icon, wider menu, no overflow | PR #26 |
+| 32 | Dashboard header | partial: the bell is "Feed"; exception for Free-plan pill / Upgrade / "$500" referral (owner: no plan or upgrade chrome, everything is free) | PR #26 |
+| 33 | Greeting | fixed: one stable "We've got this, <name>" line, clamped size, never wraps (ellipsis) | PR #26 |
+| 34 | Long team names | fixed: one line with ellipsis | PR #26 |
+| 35 | Templates strip | fixed: 12 templates + "From MiroIsDeadverse →" link (opens the modal); strip scrolls horizontally | PR #26 |
+| 36 | Recents thumbnails | fixed: list view shows a Miro-style board icon; grid view keeps the live thumbnail | PR #26 |
+| 37 | Profile menu | exception: no Upgrade item (owner rule); "MiroIsDead Marketplace" is the Miro-equivalent label under the "say MiroIsDead wherever Miro says Miro" rule | — |
+| 6 | Hover actions, Today/Yesterday, truncated owner | fixed: Last opened says Today / Yesterday / date; the owner column keeps clear of the hover buttons | PR #19 |
 PostHog project 666931 (IsDead family) with the taxonomy in `docs/ANALYTICS.md`; PR #16.
 
 ## Open items needing a human decision
 1. **Multiplayer**: the Vercel WebSocket relay turned out to put every connection on its own instance (Vercel's docs point to Redis for rooms, which costs), so live sync now runs as a WebRTC mesh with Firestore signalling (PR #14). One-time step: add the `miroisdead_live` block from `firestore.rules` to the shared `yourappisdead` ruleset (the repo file is MiroIsDead-only; deploying it alone would drop the other apps' rules). Guests who aren't signed in get tab-sync only; ~10% of networks without TURN can't connect peer-to-peer.
 2. **Mega-menus**: built in PR #11.
 3. **Logos, photos and store badges**: text stand-ins instead of third-party marks (trademark). Keep, or commission original illustrations.
-4. **Email invites**: no mail service; the Share dialog copies the link instead. Wire a provider only if you accept the cost.
+4. **Email invites**: no mail service. Invite members, the Share dialog's invite form / "Share team invite link" and the row menu's board link all hand the link to the OS share sheet (Web Share API: Mail, Messages, Slack… on mobile, Safari and Edge) and fall back to the clipboard elsewhere. Real sharing between users is the per-board link with Can view / Can edit access.
 5. **Rotation, images, stickers**: built in PR #12 with images stored inside the board document (no storage bill). Docs/Tables/Slides formats and GIF packs are not replicated; the AI bar stays a bring-your-own-agent flow (copy scene JSON).
 6. **Mobile (390) for the logged-in app**: Miro's mobile web is a reduced experience that hands off to its native apps; the clone's phone layout works but was not compared screen-by-screen.

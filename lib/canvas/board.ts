@@ -6,7 +6,7 @@ import { nid } from "./doc";
 export const FORMAT = "miroisdead-board";
 export const MAX_BOARD_BYTES = 900_000; // Firestore documents cap at 1 MiB; keep headroom
 export const newBoard = (title = "Untitled board", doc: Doc = emptyDoc(), view: View = DEFAULT_VIEW): Board => { const t = Date.now(); return { id: nid(), title, createdAt: t, updatedAt: t, doc, view }; };
-export const metaOf = (b: Board): BoardMeta => ({ id: b.id, title: b.title, createdAt: b.createdAt, updatedAt: b.updatedAt, objectCount: b.doc.order.length, ...(b.emoji ? { emoji: b.emoji } : {}) });
+export const metaOf = (b: Board): BoardMeta => ({ id: b.id, title: b.title, createdAt: b.createdAt, updatedAt: b.updatedAt, objectCount: b.doc.order.length, ...(b.emoji ? { emoji: b.emoji } : {}), ...(b.access && b.access !== "none" ? { access: b.access } : {}) });
 export const serialize = (b: Board): string => JSON.stringify({ format: FORMAT, version: 1, ...b });
 
 const num = (v: unknown, d = 0) => (typeof v === "number" && Number.isFinite(v) ? v : d);
