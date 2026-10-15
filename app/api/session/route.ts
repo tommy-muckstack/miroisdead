@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSessionFromIdToken, firebaseConfigured, SESSION_COOKIE, DEMO_COOKIE, cookieOptions } from "@/lib/isdead-auth/server";
+import { createSessionFromIdToken, firebaseConfigured, SESSION_COOKIE, DEMO_COOKIE, GUEST_COOKIE, cookieOptions } from "@/lib/isdead-auth/server";
 export const runtime = "nodejs";
 // POST { idToken } → verifies with firebase-admin and sets the shared isdead_session cookie (Path=/, so all IsDead apps see it).
 export async function POST(req: NextRequest) {
@@ -10,5 +10,6 @@ export async function POST(req: NextRequest) {
   const res = new NextResponse(null, { status: 204 });
   res.cookies.set(SESSION_COOKIE, s.cookie, cookieOptions());
   res.cookies.set(DEMO_COOKIE, "", { ...cookieOptions(0) });
+  res.cookies.set(GUEST_COOKIE, "", { ...cookieOptions(0) });
   return res;
 }
