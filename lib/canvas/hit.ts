@@ -1,6 +1,6 @@
 import type { Doc, Id, Obj, Pt, Box } from "./types";
 import { isBox } from "./types";
-import { boxOf, boxesIntersect, boxContains, distToPolyline, pointInBox } from "./geometry";
+import { boxOf, boxesIntersect, boxContains, distToPolyline, pointInBox, rotatePt, center } from "./geometry";
 import { boundsOf, hitConnector } from "./connectors";
 import { renderOrder } from "./doc";
 
@@ -16,6 +16,7 @@ export function hitTest(doc: Doc, p: Pt, tol: number, skip?: Set<Id>): Id | null
 export function hits(doc: Doc, o: Obj, p: Pt, tol: number): boolean {
   if (o.type === "connector") return hitConnector(doc, o, p, tol);
   const b = boxOf(o);
+  if (o.rot) p = rotatePt(p, center(b), -o.rot); // test in the object's own frame
   if (o.type === "frame") { // frames are grabbed by title tab or border, so their inside stays a canvas
     const inTitle = p.x >= b.x && p.x <= b.x + Math.min(b.w, 240) && p.y >= b.y - 26 && p.y <= b.y;
     const onBorder = pointInBox(p, b, tol) && !pointInBox(p, { x: b.x + tol, y: b.y + tol, w: b.w - tol * 2, h: b.h - tol * 2 });

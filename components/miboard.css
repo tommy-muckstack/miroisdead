@@ -168,3 +168,7 @@
 .lv-cursors{position:absolute;inset:0;pointer-events:none;z-index:28;overflow:hidden}.lv-cur{position:absolute;left:0;top:0;transition:transform .08s linear;display:flex;align-items:flex-start}.lv-cur span{margin:12px 0 0 -4px;padding:2px 8px;border-radius:10px;color:#fff;font-size:12px;font-weight:600;white-space:nowrap;font-family:var(--ids-font-sans)}
 .lv-avs{display:inline-flex;align-items:center;margin:0 4px}.lv-avs i{width:26px;height:26px;border-radius:50%;border:2px solid #fff;margin-left:-8px;display:inline-grid;place-items:center;color:#fff;font-style:normal;font-size:11px;font-weight:700}.lv-avs i:first-child{margin-left:0}.lv-avs b{margin-left:6px;font-size:13px;font-weight:600;color:#333}
 .lv-sel{position:absolute;border:2px solid;border-radius:4px;pointer-events:none;z-index:27;opacity:.8}
+
+/* --- stickers panel, rotation handle --- */
+.mm-stickers{width:420px}.mm-stickers section h4{margin:10px 0 6px;font-size:13px;color:#555}.mm-emojigrid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}.mm-emojigrid button{height:40px;border:0;background:none;border-radius:8px;font-size:24px;cursor:pointer}.mm-emojigrid button:hover{background:#f1f1f1}
+.mi-canvas.dropping{outline:3px dashed #4262ff;outline-offset:-3px}

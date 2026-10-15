@@ -10,7 +10,7 @@ export function describeScene(board: Board) {
   const frames = doc.order.map(i => doc.objects[i]).filter(o => o.type === "frame");
   const objects = renderOrder(doc).map((id, layer) => {
     const o = doc.objects[id], b = boundsOf(doc, o);
-    const text = o.type === "frame" ? o.name : o.type === "connector" ? o.label : "text" in o ? o.text : "";
+    const text = o.type === "frame" ? o.name : o.type === "connector" ? o.label : o.type === "image" ? (o.alt ?? "image") : o.type === "comment" ? (o.thread[0]?.text ?? "") : "text" in o ? o.text : "";
     const inside = isBox(o) && o.type !== "frame" ? frames.find(f => f.type === "frame" && pointInBox(center(boxOf(o)), boxOf(f)))?.id : undefined;
     return { id, kind: o.type, text, bounds: { x: Math.round(b.x), y: Math.round(b.y), width: Math.round(b.w), height: Math.round(b.h) }, layer, shape: o.type === "shape" ? o.shape : undefined, color: o.type === "sticky" ? o.color : undefined, frame: inside };
   });
