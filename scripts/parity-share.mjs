@@ -1,0 +1,11 @@
+import { chromium } from "@playwright/test";
+const OUT = process.env.OUT, BASE = "http://localhost:3000/miroisdead";
+const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1512, height: 675 } });
+p.on("pageerror", e => console.log("pageerror:", e.message));
+const shot = (n) => p.screenshot({ path: `${OUT}/${n}.png` });
+await p.goto(`${BASE}/login`); await p.getByText("Sign in with the demo account instead").click(); await p.waitForURL("**/app"); await p.waitForSelector("[data-testid=board-card]");
+await p.getByTestId("new-flowchart").click(); await p.waitForSelector("[data-testid=board-editor]"); await p.keyboard.press("Shift+1"); await p.waitForTimeout(400);
+await p.getByTestId("share").click(); await p.waitForTimeout(400); await shot("share-invite");
+await p.getByRole("tab", { name: "Embed" }).click(); await p.waitForTimeout(400); await shot("share-embed");
+await p.getByRole("tab", { name: "Publish" }).click(); await p.waitForTimeout(300); await shot("share-publish");
+console.log("done"); await b.close();

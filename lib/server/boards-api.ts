@@ -1,6 +1,6 @@
 // Request logic for /api/boards, kept free of Next types so it's unit-testable with a MemoryRepo.
 import type { Board } from "../canvas/types";
-import { MAX_BOARD_BYTES, sanitizeDoc } from "../canvas/board";
+import { ACCESS, MAX_BOARD_BYTES, sanitizeDoc } from "../canvas/board";
 import type { BoardRepo } from "./repo";
 
 export type ApiResult = { status: number; body?: unknown };
@@ -18,8 +18,22 @@ export async function putBoard(repo: BoardRepo, uid: string, id: string, raw: st
   if (b?.id !== id) return { status: 400, body: { error: "Board id mismatch" } };
   const num = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? v : d);
   const v = b.view ?? {};
-  const board: Board = { id, title: String(b.title ?? "Untitled board").slice(0, 200), ...(typeof b.emoji === "string" && b.emoji ? { emoji: String(b.emoji).slice(0, 8) } : {}), ...(typeof b.note === "string" && b.note ? { note: String(b.note).slice(0, 20000) } : {}), createdAt: num(b.createdAt, Date.now()), updatedAt: num(b.updatedAt, Date.now()), doc: sanitizeDoc(b.doc), view: { x: num(v.x, 0), y: num(v.y, 0), zoom: Math.min(6, Math.max(0.1, num(v.zoom, 1))) } };
+  const board: Board = { id, title: String(b.title ?? "Untitled board").slice(0, 200), ...(typeof b.emoji === "string" && b.emoji ? { emoji: String(b.emoji).slice(0, 8) } : {}), ...(typeof b.note === "string" && b.note ? { note: String(b.note).slice(0, 20000) } : {}), ...(ACCESS.includes(b.access) ? { access: b.access } : {}), createdAt: num(b.createdAt, Date.now()), updatedAt: num(b.updatedAt, Date.now()), doc: sanitizeDoc(b.doc), view: { x: num(v.x, 0), y: num(v.y, 0), zoom: Math.min(6, Math.max(0.1, num(v.zoom, 1))) } };
   await repo.put(uid, board); return { status: 200, body: { ok: true } };
+}
+/** Anyone-with-the-link read: only boards whose owner set access to view or edit. */
+export async function getPublicBoard(repo: BoardRepo, id: string): Promise<ApiResult> {
+  if (!ID.test(id)) return { status: 400, body: { error: "Bad board id" } };
+  const hit = await repo.getPublic(id); if (!hit || !hit.board.access || hit.board.access === "none") return { status: 404, body: { error: "Not found" } };
+  return { status: 200, body: { board: hit.board, access: hit.board.access } };
+}
+/** Anyone-with-the-link write: only when the owner chose "Can edit". The owner's access setting cannot be changed this way. */
+export async function putPublicBoard(repo: BoardRepo, id: string, raw: string): Promise<ApiResult> {
+  if (!ID.test(id)) return { status: 400, body: { error: "Bad board id" } };
+  const hit = await repo.getPublic(id); if (!hit || hit.board.access !== "edit") return { status: 404, body: { error: "Not found" } };
+  const r = await putBoard(repo, hit.uid, id, raw); if (r.status !== 200) return r;
+  const saved = await repo.get(hit.uid, id); if (saved && saved.access !== "edit") await repo.put(hit.uid, { ...saved, access: "edit" });
+  return r;
 }
 export async function deleteBoard(repo: BoardRepo, uid: string, id: string): Promise<ApiResult> {
   if (!ID.test(id)) return { status: 400, body: { error: "Bad board id" } };

@@ -25,7 +25,8 @@ export type ObjType = Obj["type"];
 /** Objects by id plus z-order (first = back). Frames always render behind everything else. */
 export interface Doc { objects: Record<Id, Obj>; order: Id[] }
 export interface View { x: number; y: number; zoom: number } // x,y = world point at the screen centre
-export interface Board { id: string; title: string; createdAt: number; updatedAt: number; doc: Doc; view: View; emoji?: string; note?: string }
+export interface Board { id: string; title: string; createdAt: number; updatedAt: number; doc: Doc; view: View; emoji?: string; note?: string; access?: BoardAccess }
+export type BoardAccess = "none" | "view" | "edit";
 export interface BoardMeta { id: string; title: string; createdAt: number; updatedAt: number; objectCount: number; emoji?: string }
 
 export const STICKY_COLORS = ["#FFF8A7", "#FFC9A3", "#FFB8C6", "#D9D2FF", "#BCD4FF", "#B5EEEA", "#C3F4D6", "#E4E6EC"] as const;

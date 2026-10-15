@@ -13,6 +13,7 @@ const num = (v: unknown, d = 0) => (typeof v === "number" && Number.isFinite(v) 
 const str = (v: unknown, d = "", max = 20_000) => (typeof v === "string" ? v.slice(0, max) : d);
 const bool = (v: unknown, d = false) => (typeof v === "boolean" ? v : d);
 const color = (v: unknown, d: string) => (typeof v === "string" && /^#[0-9a-fA-F]{3,8}$/.test(v) ? v : d);
+export const ACCESS = ["none", "view", "edit"];
 const SHAPES = ["rect", "round", "ellipse", "diamond", "triangle"], STYLES = ["elbow", "straight", "curve"], SIDES = ["n", "e", "s", "w"];
 
 function cleanEnd(e: any) {
@@ -47,6 +48,6 @@ export function parseBoard(json: string): Board {
   let raw: any; try { raw = JSON.parse(json); } catch { throw new Error("That file isn't valid JSON."); }
   if (raw?.format !== FORMAT) throw new Error("That doesn't look like a MiroIsDead board file.");
   const t = Date.now(), v = raw.view ?? {};
-  return { id: nid(), title: str(raw.title, "Imported board", 200) || "Imported board", createdAt: t, updatedAt: t, ...(typeof raw.emoji === "string" ? { emoji: str(raw.emoji, "", 8) } : {}), ...(typeof raw.note === "string" ? { note: str(raw.note, "", 20000) } : {}), doc: sanitizeDoc(raw.doc), view: { x: num(v.x), y: num(v.y), zoom: Math.min(6, Math.max(0.1, num(v.zoom, 1))) } };
+  return { id: nid(), title: str(raw.title, "Imported board", 200) || "Imported board", createdAt: t, updatedAt: t, ...(typeof raw.emoji === "string" ? { emoji: str(raw.emoji, "", 8) } : {}), ...(typeof raw.note === "string" ? { note: str(raw.note, "", 20000) } : {}), ...(ACCESS.includes(raw.access) ? { access: raw.access } : {}), doc: sanitizeDoc(raw.doc), view: { x: num(v.x), y: num(v.y), zoom: Math.min(6, Math.max(0.1, num(v.zoom, 1))) } };
 }
 export { isBox };

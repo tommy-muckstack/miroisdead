@@ -50,10 +50,11 @@ Last full pass: 2026-10-15. Scope per the owner: the logged-out surface is the h
 | Board | Keyboard map (S shapes, L line, C comment, ⌥1/⌥2, G grid, ⌘G group, ⌘⇧L lock, fn↑/↓ order, ⌘K palette) | differs | S1 | PR shortcuts |
 | Board | Comments (C tool, pins with count/initials, thread popover with reply/resolve/delete, comments panel Open/Resolved, ⇧C hides, context-menu Add comment) | match | S3 | Comments are excluded from exports like Miro. PR #5 |
 | Board | Keyboard: L = connection line, C = comment (Miro's map) | match | — | PR #5 |
+| Share | Public viewer (`/b/{id}`): view-only or guest editing, embed mode, start on first frame | match | S3 | Guests see a "View only / Editing as a guest" bar; the rail/AI bar hide in view-only. PR #6 |
 | Board | Collaborator cursors, real-time sync, presentation mode, images/upload | missing | S1 | Follow-up PRs (presentation next; multiplayer needs a sync channel). |
-| Share | Invite tab | match | S3 | Placeholder copy. PR share |
-| Share | Embed tab (private notice, start view, preview, copy code/link) | differs | S2 | PR share |
-| Share | Publish tab (Miroverse / custom template cards) | differs | S2 | PR share |
+| Share | Invite tab (email field, link row with Can edit/view, Copy team invite link, Board access, Anyone with the link) | match | — | "Anyone with the link" really works: No access / Can view / Can edit persisted on the board; public URL `/b/{id}` with a read-only viewer or guest editing. Emails aren't sent (no mail service); the link is copied for you to send. PR #6 |
+| Share | Embed tab (private notice, start view Board/First frame, View only, preview, Embed code, Copy code / Copy link) | match | — | iframe embeds the public viewer (`?embed=1`). PR #6 |
+| Share | Publish tab (community template / custom template cards) | match | S3 | Custom templates are free (saved locally); community publishing opens a GitHub issue. PR #6 |
 | Perf | 500+ objects, input latency, first load | untested | — | To measure. |
 | States | 404 / offline / loading / error | partial | S2 | Loading + not-found exist; offline falls back to device storage. |
 

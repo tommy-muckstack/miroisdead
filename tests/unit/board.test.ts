@@ -64,3 +64,19 @@ describe("boards API logic", () => {
     expect((await deleteBoard(repo, "alice", b.id)).status).toBe(200); expect((await getBoard(repo, "alice", b.id)).status).toBe(404);
   });
 });
+
+describe("anyone-with-the-link access", () => {
+  it("serves and accepts public reads/writes only as the owner's access setting allows", async () => {
+    const { getPublicBoard, putPublicBoard } = await import("@/lib/server/boards-api");
+    const repo = new MemoryRepo(); const b = { ...newBoard("Shared", addObjects({ objects: {}, order: [] }, [sticky(1, 2, { id: "s1", text: "hi" })])), id: "board-pub1" };
+    await putBoard(repo, "alice", b.id, JSON.stringify(b));
+    expect((await getPublicBoard(repo, b.id)).status).toBe(404); // private by default
+    await putBoard(repo, "alice", b.id, JSON.stringify({ ...b, access: "view" }));
+    const r = await getPublicBoard(repo, b.id); expect(r.status).toBe(200); expect((r.body as any).access).toBe("view");
+    expect((await putPublicBoard(repo, b.id, JSON.stringify({ ...b, title: "Hacked" }))).status).toBe(404); // view links cannot write
+    await putBoard(repo, "alice", b.id, JSON.stringify({ ...b, access: "edit" }));
+    expect((await putPublicBoard(repo, b.id, JSON.stringify({ ...b, title: "Edited by guest", access: "none" }))).status).toBe(200);
+    const after = await repo.get("alice", b.id); expect(after?.title).toBe("Edited by guest"); expect(after?.access).toBe("edit"); // guests cannot flip access off
+    expect((await getPublicBoard(repo, "nope-0000")).status).toBe(404);
+  });
+});
