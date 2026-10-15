@@ -80,6 +80,7 @@ export function Editor({ initial, store, who, signOutAction, readOnly = false, g
   const [access, setAccess] = useState<BoardAccess>(initial.access ?? "none");
   const [fly, setFly] = useState<"" | "shapes" | "more">("");
   const [share, setShare] = useState<"" | ShareTab>("");
+  useEffect(() => { if (location.hash === "#share" && !guest) { setShare("Invite"); history.replaceState(null, "", location.pathname + location.search); } }, [guest]); // dashboard row menu › Share
   const [prof, setProf] = useState(false);
   const [chips, setChips] = useState(true);
   const [main, setMain] = useState(false);

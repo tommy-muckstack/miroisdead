@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Board, BoardMeta } from "@/lib/canvas/types";
 import { CloudBoardStore, LocalBoardStore, type BoardStore } from "@/lib/store";
 import { boardFromTemplate, TEMPLATES, type TemplateId } from "@/lib/canvas/templates";
-import { newBoard, parseBoard, serialize } from "@/lib/canvas/board";
+import { metaOf, newBoard, parseBoard, serialize } from "@/lib/canvas/board";
 import { nid } from "@/lib/canvas/doc";
 import { Editor } from "@/components/board/Editor";
 import { Mark } from "@/components/board/icons";
@@ -20,8 +20,38 @@ import { track, identify, resetIdentity, EVENTS } from "@/lib/analytics";
 
 export type Who = { kind: "demo" | "firebase" | "guest"; uid: string; name: string };
 export function makeStore(who: Who): BoardStore { const local = new LocalBoardStore(who.uid); return who.kind === "firebase" ? new CloudBoardStore(BP, local) : local; }
-/** Miro shows a date for older boards and a relative time for today's. */
-const when = (t: number) => { const s = Math.max(1, Math.round((Date.now() - t) / 1000)); if (s < 60) return "just now"; if (s < 3600) return `${Math.round(s / 60)} min ago`; if (s < 86400) return `${Math.round(s / 3600)} h ago`; return new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
+/** Miro's "Last opened" column: Today / Yesterday, then a date. */
+export const when = (t: number, now = Date.now()) => { const day = (x: number) => { const d = new Date(x); return Math.floor((x - d.getTimezoneOffset() * 60000) / 86400000); }; const diff = day(now) - day(t); if (diff <= 0) return "Today"; if (diff === 1) return "Yesterday"; return new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
+const fullDate = (t: number) => new Date(t).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+type Dlg = { kind: "rename"; m: BoardMeta } | { kind: "delete"; m: BoardMeta } | { kind: "details"; m: BoardMeta; b: Board | null } | { kind: "space" } | { kind: "moveTeam"; m: BoardMeta };
+/** Styled dialog (Miro uses modals, not native prompt/confirm, for board actions). */
+function Dialog({ title, onClose, children, testid }: { title: string; onClose: () => void; children: React.ReactNode; testid?: string }) {
+  useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } }; window.addEventListener("keydown", k, true); return () => window.removeEventListener("keydown", k, true); }, [onClose]);
+  return <div className="mx-scrim mx-dlg-scrim" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="mx-dlg" role="dialog" aria-modal="true" aria-label={title} data-testid={testid}>
+      <div className="mx-dlg-h"><h3>{title}</h3><button className="mx-ic sm" aria-label="Close" onClick={onClose}>{X.close}</button></div>
+      {children}
+    </div>
+  </div>;
+}
+function RenameDialog({ m, onClose, onSave }: { m: BoardMeta; onClose: () => void; onSave: (t: string) => void }) {
+  const [t, setT] = useState(m.title);
+  return <Dialog title="Rename board" onClose={onClose} testid="rename-dialog">
+    <form onSubmit={e => { e.preventDefault(); if (t.trim()) onSave(t.trim()); }}>
+      <label className="mx-dlg-field">Board name<input autoFocus value={t} onChange={e => setT(e.target.value)} onFocus={e => e.target.select()} maxLength={120} /></label>
+      <div className="mx-dlg-acts"><button type="button" className="mx-btn" onClick={onClose}>Cancel</button><button type="submit" className="mx-btn primary" disabled={!t.trim()}>Save</button></div>
+    </form>
+  </Dialog>;
+}
+function NameDialog({ title, label, initial, cta, onClose, onSave }: { title: string; label: string; initial: string; cta: string; onClose: () => void; onSave: (t: string) => void }) {
+  const [t, setT] = useState(initial);
+  return <Dialog title={title} onClose={onClose} testid="name-dialog">
+    <form onSubmit={e => { e.preventDefault(); if (t.trim()) onSave(t.trim()); }}>
+      <label className="mx-dlg-field">{label}<input autoFocus value={t} onChange={e => setT(e.target.value)} onFocus={e => e.target.select()} maxLength={80} /></label>
+      <div className="mx-dlg-acts"><button type="button" className="mx-btn" onClick={onClose}>Cancel</button><button type="submit" className="mx-btn primary" disabled={!t.trim()}>{cta}</button></div>
+    </form>
+  </Dialog>;
+}
 const GREETINGS = ["Let’s build", "Together again", "Welcome back", "Good to see you", "Ready when you are"];
 /** Per-user dashboard preferences (stars, spaces, dismissed banners) on this device. */
 type Prefs = { starred: string[]; spaces: { id: string; name: string; emoji?: string }[]; spaceOf: Record<string, string>; banner?: boolean; promo?: boolean; workspace?: string };
@@ -114,13 +144,20 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
   const open = (id: string) => router.push(`/app/board/${id}`);
   const create = async (t: TemplateId, space?: string, source = "strip") => { const b = boardFromTemplate(t); await store.save(b).catch(() => {}); if (space) setPrefs(p => ({ ...p, spaceOf: { ...p.spaceOf, [b.id]: space } })); track(EVENTS.app_board_created, { template: t, source, in_space: !!space }); open(b.id); };
   const createCustom = async (t: CustomTemplate) => { try { const b = parseBoard(t.board); b.title = t.name; await store.save(b); track(EVENTS.app_board_created, { template: "custom", source: "custom_template" }); open(b.id); } catch (e) { setErr((e as Error).message); } };
-  const rename = async (m: BoardMeta) => { const t = window.prompt("Rename board", m.title); if (!t?.trim()) return; const b = await store.load(m.id); if (b) { await store.save({ ...b, title: t.trim(), updatedAt: Date.now() }); track(EVENTS.app_board_renamed); refresh(); } };
-  const copy = async (m: BoardMeta) => { const b = await store.load(m.id); if (b) { await store.save({ ...b, id: nid(), title: `${b.title} copy`, createdAt: Date.now(), updatedAt: Date.now() }); track(EVENTS.app_board_duplicated); refresh(); } };
-  const remove = async (m: BoardMeta) => { if (!window.confirm(`Delete “${m.title}”? This can't be undone.`)) return; await store.remove(m.id).catch(() => setErr("Couldn't delete that board.")); track(EVENTS.app_board_deleted); refresh(); };
+  const [dlg, setDlg] = useState<Dlg | null>(null);
+  const [toast, setToast] = useState(""); useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(""), 2200); return () => clearTimeout(t); }, [toast]);
+  // The list is updated in state right away (Miro refreshes instantly); refresh() then reconciles with the store.
+  const rename = async (m: BoardMeta, title: string) => { setDlg(null); const b = await store.load(m.id); if (!b) return; const n = { ...b, title, updatedAt: Date.now() }; setBoards(l => (l ?? []).map(x => x.id === m.id ? { ...x, title, updatedAt: n.updatedAt } : x)); await store.save(n).catch(() => setErr("Couldn't rename that board.")); track(EVENTS.app_board_renamed); refresh(); };
+  const copy = async (m: BoardMeta) => { const b = await store.load(m.id); if (!b) return; const n: Board = { ...b, id: nid(), title: `${b.title} copy`, createdAt: Date.now(), updatedAt: Date.now() }; setBoards(l => [metaOf(n), ...(l ?? [])]); await store.save(n).catch(() => setErr("Couldn't duplicate that board.")); track(EVENTS.app_board_duplicated); refresh(); };
+  const remove = async (m: BoardMeta) => { setDlg(null); setBoards(l => (l ?? []).filter(x => x.id !== m.id)); await store.remove(m.id).catch(() => setErr("Couldn't delete that board.")); track(EVENTS.app_board_deleted); refresh(); };
+  const copyLink = (m: BoardMeta) => { const u = `${location.origin}${BP}/app/board/${m.id}`; navigator.clipboard?.writeText(u).catch(() => {}); setToast("Board link copied"); };
+  const setPrivate = async (m: BoardMeta, priv: boolean) => { const b = await store.load(m.id); if (!b) return; const n = { ...b, access: priv ? "none" as const : "view" as const, updatedAt: Date.now() }; setBoards(l => (l ?? []).map(x => x.id === m.id ? { ...x, access: n.access } : x)); await store.save(n).catch(() => setErr("Couldn't update that board.")); setToast(priv ? "Only you can open this board now" : "Anyone with the link can view this board"); refresh(); };
+  const details = async (m: BoardMeta) => { setDlg({ kind: "details", m, b: null }); const b = await store.load(m.id); setDlg(d => d?.kind === "details" && d.m.id === m.id ? { ...d, b } : d); };
   const exportJson = async (m: BoardMeta) => { const b = await store.load(m.id); if (!b) return; const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([serialize(b)], { type: "application/json" })); a.download = `${b.title}.miroisdead.json`; a.click(); track(EVENTS.app_board_exported, { format: "json" }); };
   const onImport = async (f: File | undefined) => { if (!f) return; setErr(""); try { const b = parseBoard(await f.text()); await store.save(b); track(EVENTS.app_board_created, { template: "import", source: "import" }); open(b.id); } catch (e) { setErr((e as Error).message); } };
   const star = (id: string) => { track(EVENTS.app_board_starred, { starred: !prefs.starred.includes(id) }); setPrefs(p => ({ ...p, starred: p.starred.includes(id) ? p.starred.filter(x => x !== id) : [...p.starred, id] })); };
-  const newSpace = () => { const name = window.prompt("Name your space", "New space"); if (!name?.trim()) return; const sp = { id: nid(), name: name.trim() }; setPrefs(p => ({ ...p, spaces: [...p.spaces, sp] })); track(EVENTS.app_space_created); setNav({ space: sp.id }); };
+  const newSpace = () => setDlg({ kind: "space" });
+  const createSpace = (name: string, moveBoard?: string) => { setDlg(null); const sp = { id: nid(), name }; setPrefs(p => ({ ...p, spaces: [...p.spaces, sp], spaceOf: moveBoard ? { ...p.spaceOf, [moveBoard]: sp.id } : p.spaceOf })); track(EVENTS.app_space_created); setNav({ space: sp.id }); };
   const moveTo = (bid: string, sid: string | null) => setPrefs(p => { const spaceOf = { ...p.spaceOf }; if (sid) spaceOf[bid] = sid; else delete spaceOf[bid]; return { ...p, spaceOf }; });
   const user = who.name.split("@")[0];
   const initials = (user.slice(0, 2) || "me").toUpperCase();
@@ -178,16 +215,20 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
                 {view === "list" && <div className="mx-th"><span>Name</span><span>Online users</span><span>Space</span><span>Last opened</span><span>Owner</span></div>}
                 {shown.map(m => <article key={m.id} className="mx-rowb" data-testid="board-card">
                   <Link href={`/app/board/${m.id}`} className="mx-name" onClick={() => track(EVENTS.app_board_opened, { source: nav === "home" ? "recents" : nav === "starred" ? "starred" : nav === "browse" ? "browse" : "space" })}><span className="mx-bic">{m.emoji ? <span className="mx-emoji">{m.emoji}</span> : <Thumb store={store} id={m.id} />}</span><span><b>{m.title}</b><small>Modified by {user}</small></span></Link>
-                  <span className="mx-c">{""}</span><span className="mx-c">{spaceName(prefs.spaceOf[m.id])}</span><span className="mx-c">{when(m.updatedAt)}</span><span className="mx-c">{user}</span>
+                  <span className="mx-c">{""}</span><span className="mx-c">{spaceName(prefs.spaceOf[m.id])}</span><span className="mx-c">{when(m.updatedAt)}</span><span className="mx-c mx-own" title={who.name}>{user}</span>
                   <div className="mx-acts" data-menu>
                     <button className={"mx-ic sm" + (prefs.starred.includes(m.id) ? " starred" : "")} aria-label={prefs.starred.includes(m.id) ? "Unstar" : "Star"} aria-pressed={prefs.starred.includes(m.id)} onClick={() => star(m.id)}>{X.star}</button>
                     <span className="mx-menuwrap"><button className="mx-ic sm" aria-label="Board options" aria-haspopup="menu" aria-expanded={rowMenu === m.id} onClick={() => setRowMenu(r => r === m.id ? null : m.id)}>{X.kebab}</button>
                       {rowMenu === m.id && <Pop className="mx-rowpop" onClose={() => setRowMenu(null)}>
                         <Item icon={X.board} label="Open in new tab" onClick={() => { window.open(`${BP}/app/board/${m.id}`, "_blank"); setRowMenu(null); }} />
-                        <Item icon={X.pen2} label="Rename" onClick={() => { setRowMenu(null); void rename(m); }} /><Item icon={X.copy} label="Duplicate" onClick={() => { setRowMenu(null); void copy(m); }} />
+                        <Item icon={X.pen2} label="Rename" onClick={() => { setRowMenu(null); setDlg({ kind: "rename", m }); }} /><Item icon={X.copy} label="Duplicate" onClick={() => { setRowMenu(null); void copy(m); }} />
+                        <Item icon={X.info} label="Board details" onClick={() => { setRowMenu(null); void details(m); }} />
+                        <Item icon={X.invite} label="Share" onClick={() => { setRowMenu(null); router.push(`/app/board/${m.id}#share`); }} /><Item icon={X.link} label="Copy board link" onClick={() => { setRowMenu(null); copyLink(m); }} />
+                        <Item icon={X.lock} label={m.access && m.access !== "none" ? "Make board private" : "Make board public"} onClick={() => { setRowMenu(null); void setPrivate(m, !!m.access && m.access !== "none"); }} />
                         <Item icon={X.star} label={prefs.starred.includes(m.id) ? "Remove from starred" : "Add to starred"} onClick={() => { setRowMenu(null); star(m.id); }} />
-                        {prefs.spaces.length > 0 && <><Hr />{prefs.spaces.map(s => <Item key={s.id} icon={X.space} label={prefs.spaceOf[m.id] === s.id ? `In ${s.name}` : `Move to ${s.name}`} on={prefs.spaceOf[m.id] === s.id} onClick={() => { setRowMenu(null); moveTo(m.id, prefs.spaceOf[m.id] === s.id ? null : s.id); }} />)}</>}
-                        <Hr /><Item icon={X.download} label="Download board backup" onClick={() => { setRowMenu(null); void exportJson(m); }} /><Item icon={X.trash2} label="Delete" onClick={() => { setRowMenu(null); void remove(m); }} />
+                        <Hr />{prefs.spaceOf[m.id] ? <Item icon={X.space} label="Move to Team" onClick={() => { setRowMenu(null); moveTo(m.id, null); }} /> : <Item icon={X.space} label="Move to Space" onClick={() => { setRowMenu(null); setDlg({ kind: "moveTeam", m }); }} />}
+                        {prefs.spaces.filter(s => prefs.spaceOf[m.id] !== s.id).map(s => <Item key={s.id} icon={X.space} label={`Move to ${s.name}`} onClick={() => { setRowMenu(null); moveTo(m.id, s.id); }} />)}
+                        <Hr /><Item icon={X.download} label="Download board backup" onClick={() => { setRowMenu(null); void exportJson(m); }} /><Item icon={X.trash2} label="Delete" onClick={() => { setRowMenu(null); setDlg({ kind: "delete", m }); }} />
                       </Pop>}</span>
                   </div>
                 </article>)}</div>}
@@ -195,6 +236,19 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
         </div>
       </main>
     </div>
+    {dlg?.kind === "rename" && <RenameDialog m={dlg.m} onClose={() => setDlg(null)} onSave={t => void rename(dlg.m, t)} />}
+    {dlg?.kind === "space" && <NameDialog title="Create a space" label="Space name" initial="New space" cta="Create" onClose={() => setDlg(null)} onSave={t => createSpace(t)} />}
+    {dlg?.kind === "moveTeam" && (prefs.spaces.length === 0 ? <NameDialog title="Move to a new space" label="Space name" initial="New space" cta="Create and move" onClose={() => setDlg(null)} onSave={t => createSpace(t, dlg.m.id)} /> :
+      <Dialog title="Move to Space" onClose={() => setDlg(null)} testid="move-dialog"><div className="mx-dlg-list">{prefs.spaces.map(s => <button key={s.id} className="mx-btn" onClick={() => { moveTo(dlg.m.id, s.id); setDlg(null); }}>{X.space} {s.name}</button>)}</div></Dialog>)}
+    {dlg?.kind === "delete" && <Dialog title="Delete board?" onClose={() => setDlg(null)} testid="delete-dialog">
+      <p className="mx-dlg-p">“{dlg.m.title}” will be deleted for everyone who has access to it. This can’t be undone, so download a backup first if you might need it later.</p>
+      <div className="mx-dlg-acts"><button className="mx-btn" onClick={() => setDlg(null)}>Cancel</button><button className="mx-btn danger" onClick={() => void remove(dlg.m)}>Delete</button></div>
+    </Dialog>}
+    {dlg?.kind === "details" && <Dialog title="Board details" onClose={() => setDlg(null)} testid="details-dialog">
+      <dl className="mx-dlg-dl"><dt>Name</dt><dd>{dlg.m.title}</dd><dt>Owner</dt><dd>{who.name}</dd><dt>Created</dt><dd>{fullDate(dlg.m.createdAt)}</dd><dt>Last modified</dt><dd>{fullDate(dlg.m.updatedAt)}</dd><dt>Space</dt><dd>{spaceName(prefs.spaceOf[dlg.m.id]) || "Team"}</dd><dt>Objects</dt><dd>{dlg.b ? dlg.b.doc.order.length : "…"}</dd><dt>Link access</dt><dd>{dlg.m.access === "edit" ? "Anyone with the link can edit" : dlg.m.access === "view" ? "Anyone with the link can view" : "Only you"}</dd></dl>
+      <div className="mx-dlg-acts"><button className="mx-btn primary" onClick={() => setDlg(null)}>Done</button></div>
+    </Dialog>}
+    {toast && <div className="mx-toast" role="status">{toast}</div>}
     {tm && <TemplatesModal onClose={() => setTm(false)} onPick={t => { setTm(false); void create(t, curSpace); }} onPickCustom={t => { setTm(false); void createCustom(t); }} />}
   </div>;
 }
