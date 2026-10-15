@@ -9,6 +9,8 @@ export type LiveMsg =
   | { t: "leave"; id?: string; from?: Peer };
 export const PEER_COLORS = ["#4262FF", "#DA3B01", "#0A7A3D", "#8A3FFC", "#D17A00", "#0E8F8F", "#C2185B", "#5C6BC0"];
 export class LiveChannel {
+  /** Optional peer-to-peer mesh (lib/rtc.ts); messages fan out to it too. */
+  mesh: { send: (d: string) => void; on: (h: (d: string) => void) => () => void; close: () => void } | null = null;
   private ws: WebSocket | null = null; private bc: BroadcastChannel | null = null; private closed = false; private delay = 1000; private opened = false; private failures = 0;
   private handlers = new Set<(m: LiveMsg) => void>();
   constructor(private url: string, private key: string, public me: Peer) {
@@ -27,7 +29,8 @@ export class LiveChannel {
   }
   private recv(m: LiveMsg) { if (!m || (m as { from?: Peer }).from?.id === this.me.id) return; for (const h of this.handlers) h(m); }
   on(h: (m: LiveMsg) => void) { this.handlers.add(h); return () => { this.handlers.delete(h); }; }
-  send(m: LiveMsg) { const s = JSON.stringify(m); try { this.bc?.postMessage(m); } catch { /* ignore */ } if (this.ws?.readyState === 1) this.ws.send(s); }
+  send(m: LiveMsg) { const s = JSON.stringify(m); try { this.bc?.postMessage(m); } catch { /* ignore */ } if (this.ws?.readyState === 1) this.ws.send(s); this.mesh?.send(s); }
+  attachMesh(mesh: NonNullable<LiveChannel["mesh"]>) { this.mesh = mesh; mesh.on(d => { try { this.recv(JSON.parse(d)); } catch { /* ignore */ } }); }
   get connected() { return this.ws?.readyState === 1; }
-  close() { this.closed = true; this.send({ t: "leave", from: this.me }); this.ws?.close(); this.bc?.close(); }
+  close() { this.closed = true; this.send({ t: "leave", from: this.me }); this.ws?.close(); this.bc?.close(); this.mesh?.close(); }
 }

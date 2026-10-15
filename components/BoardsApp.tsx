@@ -195,12 +195,12 @@ export function Dashboard({ who, signOutAction }: { who: Who; signOutAction: () 
   </div>;
 }
 
-export function BoardPage({ who, id, signOutAction }: { who: Who; id: string; signOutAction: () => void | Promise<void> }) {
+export function BoardPage({ who, id, signOutAction, rtc = null }: { who: Who; id: string; signOutAction: () => void | Promise<void>; rtc?: import("@/lib/isdead-auth/config").FirebaseClientConfig | null }) {
   const store = useMemo(() => makeStore(who), [who]);
   const [board, setBoard] = useState<Board | null | undefined>(undefined);
   useEffect(() => { store.load(id).then(b => setBoard(b), () => setBoard(null)); }, [store, id]);
   if (board === undefined) return <div className="mi-loading">Loading board…</div>;
   if (board === null) return <div className="mi-loading"><h1 className="ids-h2">Board not found</h1><p className="ids-muted">It may have been deleted, or it lives on another device.</p><Link className="ids-btn ids-btn--primary" href="/app">Back to boards</Link></div>;
-  return <Editor initial={board} store={store} who={who.name} signOutAction={signOutAction} />;
+  return <Editor initial={board} store={store} who={who.name} signOutAction={signOutAction} rtc={who.kind === "firebase" ? rtc : null} />;
 }
 export { newBoard };

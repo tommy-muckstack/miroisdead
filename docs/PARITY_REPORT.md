@@ -54,7 +54,7 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 | Board | Presentation mode (Present button / Frames panel: full screen, frame-by-frame with arrows/space, bottom bar, Esc exits) | match | S3 | PR #8 |
 | Board | Grouping (⌘G / ⌘⇧G, toolbar button, click selects the group, click again drills into a member) | match | — | PR #8 |
 | Board | ⌘K command palette (create, view, edit, board, facilitation, help commands) | match | S3 | PR #8 |
-| Board | Live collaboration: collaborator cursors with name chips, avatar stack in the header, selection highlights, document relay | match | S3 | Zero-cost design: WebSocket relay in a Vercel Function with in-memory rooms (nothing stored, session-only) + BroadcastChannel for same-browser tabs; a reconnect or a new instance re-syncs from the saved board. Last-writer-wins. PR #10 |
+| Board | Live collaboration: collaborator cursors with name chips, avatar stack, selection highlights, document relay | match | S3 | Zero-cost design: WebRTC data-channel mesh between signed-in collaborators (Firestore carries only a few signalling docs per session), BroadcastChannel for same-browser tabs, plus the WebSocket relay route as a best-effort extra. Nothing persisted; last-writer-wins. Needs the `miroisdead_live` rules from `firestore.rules` on the shared project. PR #10, #14 |
 | Board | Rotation handle (bottom-left like Miro, snaps near 45°), rotated selection chrome and hit-testing | match | S3 | Resize handles stay axis-aligned for rotated objects. PR #12 |
 | Board | Images: Upload (tools panel), drag-and-drop, paste; compressed client-side and stored inside the board (no file storage) | match | S3 | ≤ ~250 KB per image; boards over ~700 KB warn (Firestore 1 MiB doc cap). PR #12 |
 | Board | Stickers, Emoji and GIFs panel | match | S3 | Emoji sets insert as large text objects; GIF/sticker packs need a paid API (exception). PR #12 |
@@ -72,7 +72,7 @@ Last full pass: 2026-10-15 (PRs #1–#9, stacked in order). Scope per the owner:
 - Paid Miro features are built as free equivalents; Upgrade/Free-plan chrome stays for look only and never gates anything.
 
 ## Open items needing a human decision
-1. **Multiplayer**: built as a session-only WebSocket relay on Vercel Functions (PR #10). Rooms live in function memory, so with heavy load collaborators can land on different instances; for guaranteed rooms at scale add a Redis pub/sub behind `app/api/live` (costs money, so not wired).
+1. **Multiplayer**: the Vercel WebSocket relay turned out to put every connection on its own instance (Vercel's docs point to Redis for rooms, which costs), so live sync now runs as a WebRTC mesh with Firestore signalling (PR #14). One-time step: add the `miroisdead_live` block from `firestore.rules` to the shared `yourappisdead` ruleset (the repo file is MiroIsDead-only; deploying it alone would drop the other apps' rules). Guests who aren't signed in get tab-sync only; ~10% of networks without TURN can't connect peer-to-peer.
 2. **Mega-menus**: built in PR #11.
 3. **Logos, photos and store badges**: text stand-ins instead of third-party marks (trademark). Keep, or commission original illustrations.
 4. **Email invites**: no mail service; the Share dialog copies the link instead. Wire a provider only if you accept the cost.
