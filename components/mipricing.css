@@ -1,3 +1,4 @@
+.mpr-mob{display:none}
 /* Pricing page mirrored from miro.com/pricing (desktop 1440 + phone 390). */
 .mpr-page{background:#fafafc;position:relative}
 .mpr-page::before{content:"";position:absolute;left:0;right:0;top:72px;height:828px;background:#f0f0f0 radial-gradient(#dcdce0 1px,transparent 1.2px) 0 0/16px 16px;z-index:0}
@@ -83,4 +84,19 @@
 .mpr-sec .g{grid-template-columns:1fr;gap:24px;margin-top:46px}.mpr-sec .card{min-height:239px}.mpr-sec .card:nth-child(n+4){min-height:263px}
 .mpr-faq{margin-top:63px;padding-bottom:64px}.mpr-faq h2{font-size:34px;line-height:40px;height:96px}
 .mpr-faq .l{gap:16px}.mpr-faq .q button{min-height:105px;font-size:22px;line-height:28.8px;padding:19px 0}.mpr-faq .a p{font-size:16px;line-height:22px}
+
+.mpr-h h1{letter-spacing:-.03em}
+.mpr-h{height:175px}.mpr-tog{margin:-4px 0 68px 24px}
+.mpr-plan .d{height:44px;margin-top:16px}.mpr-plan:not(#mp-free) .d{height:63px}
+.mpr-price{margin-top:-3px}.mpr-price .s{white-space:nowrap;letter-spacing:-.015em}
+.mpr-show{display:block;height:auto;margin:28px 0 0;padding:28px 0 0;border-top:1px solid #e8e8ec;width:100%;text-align:left;line-height:14px}
+.mpr-try+.mpr-show{margin-top:28px}
+.mpr-dsk{display:none}.mpr-mob{display:inline}
+
+.mpr-guard h2{font-size:32px;line-height:36.8px}.mpr-guard p{width:292px;font-size:18px;line-height:24.3px;margin-top:16px}.mpr-guard .mpr-btn{font-size:16px}
+.mpr-trust{height:257px;padding-top:22px;margin-top:104px}.mpr-trust h2{font-size:28px;line-height:32.2px;width:264px}.mpr-trust .lg{margin-top:40px;height:96px}
+.mpr-sec{margin-top:40px}.mpr-sec h2{font-size:28px;line-height:32.2px;padding-top:22px;width:158px;margin:0 auto}.mpr-sec>p{font-size:22px;line-height:29.7px;width:280px;margin-top:14px}.mpr-sec>.mpr-btn{margin-top:24px}
+.mpr-sec .g{margin-top:47px}.mpr-sec .card{padding:30px 24px 33px;justify-content:flex-start}.mpr-sec .card i{margin-bottom:10px}.mpr-sec .card h3{font-size:20px;line-height:24px}.mpr-sec .card p{margin-top:18px;font-size:18px;max-width:none}
+.mpr-faq{margin-top:63px;padding-bottom:63px}.mpr-faq h2{font-size:40px;line-height:46px;height:172px;margin:0 auto;width:342px}
+.mpr-faq .q{padding:0 24px}.mpr-faq .q button{min-height:0;padding:22px 0;font-size:24px}.mpr-faq .q button span{max-width:240px}.mpr-faq .q.open{padding-bottom:22px}.mpr-faq .q.open button{min-height:0}.mpr-faq .a p{font-size:18px;line-height:24.3px}.mpr-faq .q button em{margin-left:0}
 }

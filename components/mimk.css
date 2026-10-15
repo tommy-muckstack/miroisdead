@@ -48,3 +48,11 @@
 .mk-hero::after{content:"SONY        PayPal";display:block;text-align:center;font:700 26px var(--ids-font-sans);color:#b4b4ba;letter-spacing:.06em;padding:26px 0 8px}
 }
 @media (max-width:900px){.mk-art{height:577px}.mk-art .mk-c:nth-of-type(3){top:386px!important}.mk-prompt{top:200px}.mk-tabsec{padding-bottom:128px}}
+
+.mk-burger,.mk-mmenu{display:none}
+@media (max-width:900px){
+.mk-nav{padding:0 14px}.mk-act{display:none}
+.mk-burger{display:grid;gap:5px;align-content:center;width:40px;height:40px;border:0;background:none;padding:10px 8px;margin-right:6px;cursor:pointer}.mk-burger i{display:block;height:2px;background:#1c1c1e;border-radius:1px}
+.mk-logo{margin-right:0;font-size:28px}.mk-logo svg{width:40px;height:40px}
+.mk-mmenu{display:grid;position:absolute;left:0;right:0;top:72px;background:#fff;padding:8px 24px 20px;box-shadow:0 8px 16px rgba(28,28,30,.12);gap:2px}.mk-mmenu a{padding:12px 0;font-size:18px;font-weight:500;color:#1c1c1e;text-decoration:none}.mk-mmenu .mk-cta{margin-top:10px;justify-content:center;color:#fff}
+}
