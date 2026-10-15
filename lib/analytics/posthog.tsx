@@ -10,6 +10,7 @@ let ph: PH | null = null; let loading: Promise<PH | null> | null = null;
 const KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const UI_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.posthog.com";
 export const analyticsEnabled = !!KEY;
+const surfaceOf = (path: string): Surface => (path.startsWith(`${BP}/app`) || path.startsWith(`${BP}/b/`) ? "app" : "site");
 
 async function client(): Promise<PH | null> {
   if (!KEY || typeof window === "undefined") return null;
@@ -22,13 +23,15 @@ async function client(): Promise<PH | null> {
       capture_pageview: false, capture_pageleave: true, autocapture: false, disable_session_recording: true,
       persistence: "localStorage+cookie", person_profiles: "identified_only", debug, opt_out_useragent_filter: debug,
     });
-    p.register({ app: APP, app_family: APP_FAMILY, base_path: BP, env: process.env.NODE_ENV === "production" ? "production" : "development" });
+    p.register({ app: APP, app_family: APP_FAMILY, base_path: BP, env: process.env.NODE_ENV === "production" ? "production" : "development",
+      // Shared-project taxonomy (yourappisdead/ANALYTICS.md): product/surface/platform are persisted super properties, so set them
+      // here or the hub's values (product=yourappisdead) leak onto this app's events via the shared cookie.
+      product: APP, surface: surfaceOf(location.pathname) === "app" ? "app" : "landing", platform: "web" });
     ph = p; if (process.env.NODE_ENV !== "production") (window as unknown as { __posthog?: PH }).__posthog = p;
     return p;
   }).catch(err => { if (process.env.NODE_ENV !== "production") console.warn("[analytics] PostHog failed to start", err); return null; });
   return loading;
 }
-const surfaceOf = (path: string): Surface => (path.startsWith(`${BP}/app`) || path.startsWith(`${BP}/b/`) ? "app" : "site");
 /** Fire a taxonomy event. Safe to call anywhere on the client; drops silently when analytics is off. */
 export function track(event: EventName, props: Record<string, string | number | boolean | null | undefined> = {}) {
   void client().then(p => p?.capture(event, { surface: surfaceOf(location.pathname), ...props }));
