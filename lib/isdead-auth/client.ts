@@ -23,18 +23,10 @@ export async function signInWithEmail(config: FirebaseClientConfig, sessionUrl: 
   await exchange(sessionUrl, await c.user.getIdToken());
 }
 export async function signUpWithEmail(config: FirebaseClientConfig, sessionUrl: string, email: string, password: string, name?: string) {
-  const { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } = await import("firebase/auth");
+  const { createUserWithEmailAndPassword, updateProfile } = await import("firebase/auth");
   const c = await createUserWithEmailAndPassword(await clientAuth(config), email, password);
   if (name) await updateProfile(c.user, { displayName: name });
-  sendEmailVerification(c.user).catch(() => {});
   await exchange(sessionUrl, await c.user.getIdToken(true));
-}
-/** Re-reads the signed-in user and says whether the verification link was clicked. */
-export async function isEmailVerified(config: FirebaseClientConfig): Promise<boolean> {
-  const a = await clientAuth(config); const u = a.currentUser; if (!u) return false; await u.reload().catch(() => {}); return !!a.currentUser?.emailVerified;
-}
-export async function resendVerification(config: FirebaseClientConfig) {
-  const { sendEmailVerification } = await import("firebase/auth"); const u = (await clientAuth(config)).currentUser; if (u) await sendEmailVerification(u);
 }
 export async function setDisplayName(config: FirebaseClientConfig, name: string) {
   const { updateProfile } = await import("firebase/auth"); const u = (await clientAuth(config)).currentUser; if (u) await updateProfile(u, { displayName: name });

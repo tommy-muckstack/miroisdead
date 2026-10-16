@@ -15,6 +15,5 @@ await p.goto(`${BASE}/login`); await p.getByText("Sign in with the demo account 
 await p.goto(`${BASE}/pricing`); await p.waitForTimeout(300); console.log("nav signed-in:", await p.locator(".mk-act").textContent());
 await p.goto(`${BASE}/`); await p.waitForTimeout(300); console.log("home nav signed-in:", await p.locator(".mk-act").textContent());
 await p.context().clearCookies();
-await p.goto(`${BASE}/signup?preview=verify`); await p.waitForTimeout(400); console.log("verify step:", await p.getByTestId("verify-step").count()); await p.screenshot({ path: `${OUT}/04-signup-verify-after.png` });
 await p.goto(`${BASE}/signup?preview=onboard`); await p.waitForTimeout(400); console.log("onboard step:", await p.getByTestId("onboard-step").count()); await p.getByRole("button", { name: "Engineering" }).click(); await p.getByRole("button", { name: "2–10" }).click(); await p.screenshot({ path: `${OUT}/04-signup-onboarding-after.png` });
 await b.close();
