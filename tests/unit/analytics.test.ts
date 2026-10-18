@@ -8,3 +8,10 @@ describe("analytics taxonomy", () => {
 describe("analytics taxonomy keys", () => {
   it("keys every event by its own name", () => { for (const [k, v] of Object.entries(EVENTS)) expect(k).toBe(v); });
 });
+import { scrub } from "@/lib/analytics/posthog";
+describe("analytics privacy", () => {
+  it("strips query strings, hashes and titles", () => {
+    const e = scrub({ event: "$pageview", properties: { $current_url: "https://yourappisdead.com/x/app?url=https://secret.example#frag", $referrer: "https://google.com/search?q=me", title: "My private doc" } });
+    expect(e.properties.$current_url).toBe("https://yourappisdead.com/x/app"); expect(e.properties.$referrer).toBe("https://google.com/search"); expect("title" in e.properties).toBe(false);
+  });
+});

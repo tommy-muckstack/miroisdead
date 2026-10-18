@@ -16,6 +16,16 @@ export const analyticsEnabled = !!KEY;
 // MiroIsDead: /app (dashboard + editor) and /b/<id> (public board links) are the product.
 const surfaceOf = (pathname: string): Surface => (/^\/(app|b)(\/|$)/.test(pathname.slice(BP.length)) ? "app" : "landing");
 
+// Privacy: URL properties keep only origin + path (query strings and hashes can hold user content like prefilled links),
+// path segments listed in PRIVATE_PATHS are masked (tokens/ids that work like passwords), and the page title is dropped
+// (it can be a user's own page or document name).
+// Board ids: a /b/<id> link opens the board for anyone who has it, so it works like a password.
+const PRIVATE_PATHS: RegExp[] = [/(\/b\/)[^/?#]+/, /(\/app\/board\/)[^/?#]+/];
+const URL_PROPS = ["$current_url", "$referrer", "$initial_current_url", "$initial_referrer", "$prev_pageview_pathname", "$pathname"];
+const cleanUrl = (v: unknown) => { if (typeof v !== "string" || !v || v === "$direct") return v; let u = v.split(/[?#]/)[0]!; for (const re of PRIVATE_PATHS) u = u.replace(re, "$1:id"); return u; };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function scrub(e: any) { if (!e?.properties) return e; for (const k of URL_PROPS) if (k in e.properties) e.properties[k] = cleanUrl(e.properties[k]); delete e.properties.title; if (e.$set) for (const k of URL_PROPS) if (k in e.$set) e.$set[k] = cleanUrl(e.$set[k]); if (e.$set_once) for (const k of URL_PROPS) if (k in e.$set_once) e.$set_once[k] = cleanUrl(e.$set_once[k]); return e; }
+
 async function client(): Promise<PH | null> {
   if (!KEY || typeof window === "undefined") return null;
   if (ph) return ph;
@@ -25,7 +35,7 @@ async function client(): Promise<PH | null> {
     const debug = process.env.NODE_ENV !== "production" && typeof localStorage !== "undefined" && localStorage.getItem("isdead_ph_debug") === "1";
     p.init(KEY, {
       api_host: `${location.origin}${BP}/ingest`, ui_host: UI_HOST,
-      capture_pageview: false, capture_pageleave: true, autocapture: false, disable_session_recording: true,
+      capture_pageview: false, capture_pageleave: true, autocapture: false, disable_session_recording: true, capture_heatmaps: false, capture_performance: false, before_send: scrub,
       persistence: "localStorage+cookie", person_profiles: "always", debug, opt_out_useragent_filter: debug,
     });
     // Every IsDead app shares the yourappisdead.com cookie, and super properties persist in it: clear other apps'
@@ -54,6 +64,6 @@ export function resetIdentity() { void client().then(p => { p?.reset(); p?.regis
 /** Mount once in the root layout: boots the client and sends a $pageview per route change. */
 export function Analytics() {
   const path = usePathname();
-  useEffect(() => { if (!path) return; void client().then(p => { if (!p) return; p.register({ surface: surfaceOf(location.pathname) }); p.capture("$pageview", { $current_url: location.href }); }); }, [path]);
+  useEffect(() => { if (!path) return; void client().then(p => { if (!p) return; p.register({ surface: surfaceOf(location.pathname) }); p.capture("$pageview"); }); }, [path]);
   return null;
 }

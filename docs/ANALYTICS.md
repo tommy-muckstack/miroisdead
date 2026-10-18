@@ -7,6 +7,7 @@ One PostHog project (US cloud, project **666931**) collects the hub and every Is
 - `NEXT_PUBLIC_POSTHOG_KEY` = the project's publishable token (safe in the browser); `NEXT_PUBLIC_POSTHOG_HOST=https://us.posthog.com`. No key → analytics is a no-op.
 - Reverse proxy through the app's own origin: `/miroisdead/ingest/*` → `us.i.posthog.com` (rewrites in `next.config.mjs`, with `skipTrailingSlashRedirect: true` so `/ingest/e/` is passed through unchanged).
 - `<Analytics />` is mounted once in `app/layout.tsx`; it boots the client and sends PostHog's built-in `$pageview` per route change (`capture_pageview` off, autocapture off, session replay off).
+- Privacy: `before_send` (`scrub` in `lib/analytics/posthog.tsx`) keeps only origin + path of every URL property (query strings and hashes dropped), masks board ids in `/b/<id>` and `/app/board/<id>` as `:id` (a public board link works like a password) and drops the page `title`. Heatmaps, performance capture and autocapture are off.
 - posthog-js drops events from bots and automated browsers, so Playwright never produces captures. In dev, `localStorage.isdead_ph_debug = "1"` turns on verbose logs and lets automated browsers capture; production keeps the bot filter.
 
 ## Super properties (registered on every event)
