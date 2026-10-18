@@ -38,7 +38,7 @@ export function MegaNav() {
   return <nav aria-label="Main" className="mk-mega" onMouseLeave={() => setOpen(null)}>
     {Object.entries(MENUS).map(([name, cols]) => <div key={name} className={"mk-mi" + (open === name ? " open" : "")} onMouseEnter={() => setOpen(name)}>
       <button type="button" aria-haspopup="true" aria-expanded={open === name} onClick={() => setOpen(o => o === name ? null : name)} onFocus={() => setOpen(name)}>{name} <Chev /></button>
-      {open === name && <div className="mk-panel" role="menu"><div className="mk-panel-in">{cols.map(c => <div key={c.title} className="mk-col"><h4>{c.title}</h4>{c.items.map(([l, h]) => <a key={l} role="menuitem" href={href(h)} onClick={() => track(EVENTS.site_nav_clicked, { menu: name, item: l })}>{l}</a>)}</div>)}</div></div>}
+      {open === name && <div className="mk-panel" role="menu"><div className="mk-panel-in">{cols.map(c => <div key={c.title} className="mk-col"><h4>{c.title}</h4>{c.items.map(([l, h]) => <a key={l} role="menuitem" href={href(h)} onClick={() => track(EVENTS.landing_nav_clicked, { menu: name, item: l })}>{l}</a>)}</div>)}</div></div>}
     </div>)}
     <Link href="/pricing">Pricing</Link>
   </nav>;

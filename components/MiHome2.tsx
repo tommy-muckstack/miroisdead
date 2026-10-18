@@ -71,7 +71,7 @@ export function MiFlow() {
 }
 export function MiPlatform() {
   return <section className="mh-plat" id="solutions"><Cursor name="Bea" color="#0e8f8f" bg="#c6f3ee" x={1185} y={70} />
-    <h2>The AI platform<br />for teamwork</h2><p>Move beyond individual AI productivity to team and cross-team collaboration with AI</p><Link href="/app" className="mh-plat-btn" onClick={() => track(EVENTS.site_cta_clicked, { cta: "platform_explore" })}>Explore the solution</Link>
+    <h2>The AI platform<br />for teamwork</h2><p>Move beyond individual AI productivity to team and cross-team collaboration with AI</p><Link href="/app" className="mh-plat-btn" onClick={() => track(EVENTS.landing_cta_clicked, { target: "platform_explore" })}>Explore the solution</Link>
     <div className="mh-platart" aria-hidden><div className="mh-pgrid">{Array.from({ length: 9 }, (_, i) => <div key={i} className={"pc c" + (i % 3)} />)}</div><span className="mh-play">▶</span></div></section>;
 }
 export function MiHelp() {
