@@ -21,9 +21,12 @@ const surfaceOf = (pathname: string): Surface => (/^\/(app|b)(\/|$)/.test(pathna
 // (it can be a user's own page or document name).
 // Board ids: a /b/<id> link opens the board for anyone who has it, so it works like a password.
 const PRIVATE_PATHS: RegExp[] = [/(\/b\/)[^/?#]+/, /(\/app\/board\/)[^/?#]+/];
-const URL_PROPS = ["$current_url", "$referrer", "$initial_current_url", "$initial_referrer", "$prev_pageview_pathname", "$pathname", "$initial_pathname", "$session_entry_url", "$session_entry_pathname"];
+// Any key ending in url / referrer / pathname (posthog-js has many: $current_url, $session_entry_url, $initial_referrer, …),
+// at the top level and inside $set / $set_once, wherever those sit.
+const URL_KEY = /(url|referrer|pathname)$/i;
 const cleanUrl = (v: unknown) => { if (typeof v !== "string" || !v || v === "$direct") return v; let u = v.split(/[?#]/)[0]!; for (const re of PRIVATE_PATHS) u = u.replace(re, "$1:id"); return u; };
-export function scrub(e: any) { if (!e?.properties) return e; for (const k of URL_PROPS) if (k in e.properties) e.properties[k] = cleanUrl(e.properties[k]); delete e.properties.title; if (e.$set) for (const k of URL_PROPS) if (k in e.$set) e.$set[k] = cleanUrl(e.$set[k]); if (e.$set_once) for (const k of URL_PROPS) if (k in e.$set_once) e.$set_once[k] = cleanUrl(e.$set_once[k]); return e; }
+const cleanBag = (bag: unknown) => { if (!bag || typeof bag !== "object") return; const o = bag as Record<string, unknown>; for (const k of Object.keys(o)) if (URL_KEY.test(k)) o[k] = cleanUrl(o[k]); };
+export function scrub(e: any) { if (!e) return e; for (const bag of [e.properties, e.$set, e.$set_once, e.properties?.$set, e.properties?.$set_once]) cleanBag(bag); if (e.properties) delete e.properties.title; return e; }
 
 async function client(): Promise<PH | null> {
   if (!KEY || typeof window === "undefined") return null;
