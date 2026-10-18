@@ -8,7 +8,7 @@ import { GOOGLE_G_SVG } from "@/vendor/isdead-design/src/google";
 import { Mark } from "@/components/board/icons";
 import { X } from "@/components/mxi";
 import "./miauth.css";
-import { track, EVENTS } from "@/lib/analytics";
+import { track, trackNow, EVENTS } from "@/lib/analytics";
 type Props = { config: FirebaseClientConfig | null; demo: boolean; to: string; mode: "signin" | "signup"; guestUid?: string | null };
 const Bld = () => <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#1c1c1e" strokeWidth="1.4" aria-hidden><rect x="3.5" y="2.5" width="10" height="14" /><path d="M13.5 8.5h3v8h-3M6 5.5h1.5M9.5 5.500H11M6 8.500h1.500M9.5 8.500H11M6 11.500h1.500M9.5 11.500H11" /></svg>;
 export function MiAuth({ config, demo, to, mode, guestUid = null }: Props) {
@@ -20,12 +20,14 @@ export function MiAuth({ config, demo, to, mode, guestUid = null }: Props) {
   const [name, setName] = useState(""), [use, setUse] = useState(""), [team, setTeam] = useState("");
   const session = `${BP}/api/session`; const done = () => { if (guestUid) { try { localStorage.setItem("miroisdead:migrate-from", guestUid); } catch {} } window.location.assign(to); };
   const authMode = su ? "signup" : "signin";
-  const run = async (f: () => Promise<void>, method?: string) => { setBusy(true); setErr(""); setNote(""); if (method) track(EVENTS.auth_started, { method, mode: authMode }); try { await f(); if (method) track(EVENTS.auth_completed, { method, mode: authMode }); } catch (e) { if (method) track(EVENTS.auth_failed, { method, mode: authMode, reason: String((e as { code?: string })?.code ?? "error") }); setErr(authErrorMessage(e)); } finally { setBusy(false); } };
+  // Success events are sent with trackNow (awaited) because done() navigates away straight after.
+  const signedIn = (method: "password" | "google" | "demo", isNew = su && method === "password") => trackNow(isNew ? EVENTS.app_signed_up : EVENTS.app_signed_in, { method });
+  const run = async (f: () => Promise<void>, method?: string) => { setBusy(true); setErr(""); setNote(""); if (method) track(EVENTS.app_auth_started, { method, mode: authMode }); try { await f(); } catch (e) { if (method) track(EVENTS.app_auth_failed, { method, mode: authMode, reason: String((e as { code?: string })?.code ?? "error") }); setErr(authErrorMessage(e)); } finally { setBusy(false); } };
   const submit = (e: React.FormEvent) => { e.preventDefault(); if (!config) { setErr("Sign-in isn't configured on this deployment yet."); return; }
     if (reset) return run(async () => { await resetPassword(config, email); setNote("If that email has an account, a reset link is on its way."); setReset(false); });
     if (step === 0) { if (email) setStep(1); return; }
-    run(async () => { if (su) { await signUpWithEmail(config, session, email, pw); setAfter("onboard"); } else { await signInWithEmail(config, session, email, pw); done(); } }, "email"); };
-  const finishOnboarding = (skipped: boolean) => { track(EVENTS.auth_onboarding_completed, { use: use || "unset", team_size: team || "unset", skipped }); try { localStorage.setItem("miroisdead:onboarding", JSON.stringify({ name, use, team, at: Date.now() })); } catch { /* ignore */ } if (!skipped && name.trim() && config) void setDisplayName(config, name.trim()).catch(() => {}); done(); };
+    run(async () => { if (su) { await signUpWithEmail(config, session, email, pw); await signedIn("password"); setAfter("onboard"); } else { await signInWithEmail(config, session, email, pw); await signedIn("password"); done(); } }, "password"); };
+  const finishOnboarding = (skipped: boolean) => { track(EVENTS.app_onboarding_completed, { use: use || "unset", team_size: team || "unset", skipped }); try { localStorage.setItem("miroisdead:onboarding", JSON.stringify({ name, use, team, at: Date.now() })); } catch { /* ignore */ } if (!skipped && name.trim() && config) void setDisplayName(config, name.trim()).catch(() => {}); done(); };
   const USES: [string, string][] = [["product", "Product management"], ["design", "Design & UX"], ["engineering", "Engineering"], ["marketing", "Marketing"], ["education", "Education"], ["personal", "Personal projects"]];
   const TEAMS: [string, string][] = [["1", "Just me"], ["2-10", "2–10"], ["11-50", "11–50"], ["51+", "51 or more"]];
   const onboardCard = <main className="ma-card" data-testid="onboard-step">
@@ -40,8 +42,8 @@ export function MiAuth({ config, demo, to, mode, guestUid = null }: Props) {
     </form>
     <p className="ma-alt"><a href="#" onClick={e => { e.preventDefault(); finishOnboarding(true); }}>→ Skip these questions</a></p>
   </main>;
-  const demoLogin = () => run(async () => { const r = await fetch(`${BP}/api/session/demo`, { method: "POST" }); if (!r.ok) throw new Error("Demo sign-in failed"); done(); }, "demo");
-  const google = () => config ? run(async () => { await signInWithGoogle(config, session); done(); }, "google") : setErr("Sign-in isn't configured on this deployment yet.");
+  const demoLogin = () => run(async () => { const r = await fetch(`${BP}/api/session/demo`, { method: "POST" }); if (!r.ok) throw new Error("Demo sign-in failed"); await signedIn("demo"); done(); }, "demo");
+  const google = () => config ? run(async () => { await signInWithGoogle(config, session); await signedIn("google"); done(); }, "google") : setErr("Sign-in isn't configured on this deployment yet.");
   const G = <span dangerouslySetInnerHTML={{ __html: GOOGLE_G_SVG }} style={{ display: "inline-flex" }} />;
   const form = <form onSubmit={submit} noValidate={false}>
     <label className="ma-l" htmlFor="ma-email">{su ? "Enter your work email" : "Email"}</label>

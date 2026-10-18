@@ -24,7 +24,7 @@ export function ShareModal({ tab, setTab, onClose, who, doc, title, boardId, acc
   // Hand the link to a person: OS share sheet where there is one (mobile, Safari, Edge), clipboard elsewhere.
   const send = async (via: "invite_form" | "copy_button", to?: string) => {
     const r = await shareLink({ title: `${title || "Untitled"} · MiroIsDead`, text: access === "none" ? `Join me on MiroIsDead: ${title || "Untitled"}` : `${to ? to + ", you're" : "You're"} invited to "${title || "Untitled"}" on MiroIsDead (${access === "edit" ? "can edit" : "can view"})`, url: link });
-    track(EVENTS.board_link_shared, { method: r === "shared" ? "share_sheet" : "clipboard", via, access, result: r });
+    track(EVENTS.app_shared, { object: "board", method: r === "shared" ? "share_sheet" : "clipboard", via, access, result: r });
     if (r === "shared") flash("Shared"); else if (r === "copied") flash(access === "none" ? "Board link copied (only you can open it until link access is on)" : "Team invite link copied. Send it to them; no email leaves MiroIsDead."); else if (r === "failed") flash("Couldn't share or copy");
     if (r !== "dismissed" && via === "invite_form") setInvite("");
   };

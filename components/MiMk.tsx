@@ -10,7 +10,7 @@ export function MiNav({ signedIn = false }: { signedIn?: boolean } = {}) {
   const [menu, setMenu] = useState(false);
   return <header className="mk-nav"><button className="mk-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><i /><i /><i /></button><Link href="/" className="mk-logo"><Mark size={40} />MiroIsDead</Link>
     <MegaNav />
-    <div className="mk-act">{signedIn ? <><a className="mk-ghost" href="https://github.com/tommy-muckstack/miroisdead">View source</a><Link className="mk-cta" href="/app" onClick={() => track(EVENTS.site_cta_clicked, { cta: "nav_go_to_dashboard" })}>Go to dashboard</Link></> : <><Link href="/login" className="mk-login">Login</Link><a className="mk-ghost" href="https://github.com/tommy-muckstack/miroisdead">View source</a><Link className="mk-cta" href="/signup" onClick={() => track(EVENTS.site_cta_clicked, { cta: "nav_get_started" })}>Get started free</Link></>}</div>
+    <div className="mk-act">{signedIn ? <><a className="mk-ghost" href="https://github.com/tommy-muckstack/miroisdead">View source</a><Link className="mk-cta" href="/app" onClick={() => track(EVENTS.landing_cta_clicked, { target: "nav_go_to_dashboard" })}>Go to dashboard</Link></> : <><Link href="/login" className="mk-login">Login</Link><a className="mk-ghost" href="https://github.com/tommy-muckstack/miroisdead">View source</a><Link className="mk-cta" href="/signup" onClick={() => track(EVENTS.landing_cta_clicked, { target: "nav_get_started" })}>Get started free</Link></>}</div>
     {menu && <div className="mk-mmenu"><a href={BP + "/#product"}>Product</a><a href={BP + "/#templates"}>Use Cases</a><a href={BP + "/#solutions"}>Solutions</a><a href={BP + "/#resources"}>Resources</a><a href={BP + "/pricing"}>Pricing</a>{signedIn ? <Link className="mk-cta" href="/app">Go to dashboard</Link> : <><Link href="/login">Login</Link><Link className="mk-cta" href="/signup">Get started free</Link></>}</div>}</header>;
 }
 const Card = ({ x, y, w, children, t, icon }: { x: number; y: number; w: number; children?: React.ReactNode; t: string; icon?: string }) => <div className="mk-c" style={{ left: x, top: y, width: w }}><span className="mk-ct"><i style={{ background: icon ?? "#2e8b57" }} />{t}</span><div className="mk-cb">{children}</div></div>;
@@ -30,13 +30,13 @@ export function HeroArt() {
   </div>;
 }
 export function HeroForm() {
-  return <form className="mk-form" action={BP + "/signup"} onSubmit={() => track(EVENTS.site_cta_clicked, { cta: "hero_form" })}><input aria-label="Work email" placeholder="Enter your work email" /><button type="submit">Get Started Free</button></form>;
+  return <form className="mk-form" action={BP + "/signup"} onSubmit={() => track(EVENTS.landing_cta_clicked, { target: "hero_form" })}><input aria-label="Work email" placeholder="Enter your work email" /><button type="submit">Get Started Free</button></form>;
 }
 /** Cookie notice. MiroIsDead sets no analytics cookies; the choice is stored locally so the banner stays dismissed. */
 export function CookieBar() {
   const [open, setOpen] = useState(false);
   useEffect(() => { try { if (!localStorage.getItem("mi_cookie_choice")) setOpen(true); } catch { setOpen(true); } }, []);
-  const choose = (v: string) => { try { localStorage.setItem("mi_cookie_choice", v); } catch { } track(EVENTS.site_cookie_choice, { choice: v }); setOpen(false); };
+  const choose = (v: string) => { try { localStorage.setItem("mi_cookie_choice", v); } catch { } track(EVENTS.landing_cookie_choice_made, { choice: v }); setOpen(false); };
   if (!open) return null;
   return <div className="mk-cookie" role="dialog" aria-label="Cookies"><div className="mk-cookie-t"><h2>Cookies, anyone?</h2><p>By clicking “Accept All Cookies”, you agree to the storing of cookies on your device to enhance site navigation, analyze site usage, and assist in our marketing efforts. MiroIsDead only stores your sign-in session and this choice.</p></div>
     <div className="mk-cookie-b"><button className="plain" onClick={() => choose("reject")}>Reject All</button><button onClick={() => choose("settings")}>Cookies Settings</button><button onClick={() => choose("accept")}>Accept All Cookies</button></div></div>;

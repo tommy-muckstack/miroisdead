@@ -12,9 +12,9 @@ const TABS = [
 export function HeroTabs() {
   const [i, setI] = useState(0); const t = TABS[i];
   return <div className="mk-tabs">
-    <div className="mk-pill" role="tablist" aria-label="Use cases">{TABS.map((x, n) => <button key={x.id} role="tab" aria-selected={n === i} aria-controls="mi-tabpanel" className={n === i ? "on" : ""} onClick={() => { setI(n); track(EVENTS.site_use_case_tab_selected, { tab: x.id }); }}>{x.label}</button>)}</div>
+    <div className="mk-pill" role="tablist" aria-label="Use cases">{TABS.map((x, n) => <button key={x.id} role="tab" aria-selected={n === i} aria-controls="mi-tabpanel" className={n === i ? "on" : ""} onClick={() => { setI(n); track(EVENTS.landing_use_case_tab_selected, { tab: x.id }); }}>{x.label}</button>)}</div>
     <div className="mk-split" id="mi-tabpanel" role="tabpanel" data-testid="tabpanel">
-      <div><h2>{t.h}</h2><ul>{t.ps.map(p => <li key={p}>{p}</li>)}</ul><Link className="mk-dark" href="/signup" onClick={() => track(EVENTS.site_cta_clicked, { cta: "use_case_" + t.id })}>{t.cta}</Link></div>
+      <div><h2>{t.h}</h2><ul>{t.ps.map(p => <li key={p}>{p}</li>)}</ul><Link className="mk-dark" href="/signup" onClick={() => track(EVENTS.landing_cta_clicked, { target: "use_case_" + t.id })}>{t.cta}</Link></div>
       <img className="mi-shot" src={`${BP}/home/${t.img}`} alt={`A MiroIsDead board for ${t.label.toLowerCase()}`} width={1440} height={900} />
     </div>
   </div>;
