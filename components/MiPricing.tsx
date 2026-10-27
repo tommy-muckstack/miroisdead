@@ -81,7 +81,7 @@ const FAQ: [string, string][] = [
   ["Are these MiroIsDead's prices?", "No. The plans above are Miro's, shown for comparison. MiroIsDead has no paid plans: every feature is free for everyone."],
   ["Is MiroIsDead free? What are the limits?", "Yes, it is free. There are no plans, seats, trials or paid add-ons."],
   ["Do I need a credit card?", "No. There is no checkout and no payment form."],
-  ["Does MiroIsDead have AI features or integrations?", "No. It is a whiteboard: stickies, shapes, text, pen, frames and connectors, with templates and SVG or JSON export."],
+  ["Does MiroIsDead have AI features or integrations?", "No. It is a whiteboard: stickies, shapes, text, pen, frames and connectors, with templates and PNG, PDF, CSV or JSON export."],
   ["Where are my boards stored?", "Signed-in boards autosave to Firestore through the server, locked to your account, with a copy in your browser as an offline fallback. The demo account stays in your browser."],
   ["Is it open source?", "Yes. The code is Apache-2.0 on GitHub, so you can read exactly how boards are stored."],
 ];
