@@ -196,7 +196,7 @@ test.describe("marketing page", () => {
     await page.getByRole("tab", { name: "Diagrams" }).click();
     await expect(page.getByTestId("tabpanel").locator("img")).toHaveAttribute("src", /diagrams\.png$/);
     await page.goto("/miroisdead/pricing");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Where teams and AI work as one");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("plans, for comparison");
   });
   test("every homepage CTA leads to login and the images resolve", async ({ page, request }) => {
     await page.goto("/miroisdead");

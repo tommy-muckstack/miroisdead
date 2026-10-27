@@ -53,7 +53,7 @@ const DESC: Record<string, string> = {
 };
 type Plan = { name: string; desc: string; price: string; sub?: string; cta: string; href: string; head: string; items: Item[]; extra?: Item[]; tag?: string; id: string };
 const PLANS: Plan[] = [
-  { id: "free", name: "Free", desc: "For small teams getting started with MiroIsDead", price: "$0", cta: "Start for free", href: "/signup", head: "Key features:", items: [{ t: "3 boards" }, { t: "Templates" }, { t: "Formats incl. Docs, Tables, Slides, and Kanban" }, { t: "Explore AI" }, { t: "250+ integrations", ics: DOCS }] },
+  { id: "free", name: "Free", desc: "For small teams getting started with Miro", price: "$0", cta: "Start for free", href: "/signup", head: "Key features:", items: [{ t: "3 boards" }, { t: "Templates" }, { t: "Formats incl. Docs, Tables, Slides, and Kanban" }, { t: "Explore AI" }, { t: "250+ integrations", ics: DOCS }] },
   { id: "starter", name: "Starter", desc: "For small teams collaborating regularly with unlimited boards", price: "$8", sub: "/month per member, billed yearly", cta: "Buy this plan", href: "/signup", head: "Everything in Free, plus:", items: [{ t: "Unlimited & private boards" }, { t: "Visitor editing" }, { t: "High-resolution exports" }, { t: "Unlimited project spaces & blueprints" }, { t: "Timer and voting" }, { t: "25 AI credits/member/month" }, { t: "500 MCP calls per day", ics: AI }, { t: "Custom fonts & styles" }] },
   { id: "business", name: "Business", tag: "Best for teams and consultants", desc: "For growing organizations and consultants to streamline workflows with AI", price: "$20", sub: "/month per member, billed yearly", cta: "Buy now", href: "/signup", head: "Everything in Starter, plus:", items: [{ t: "Unlimited workspaces" }, { t: "Unlimited guests" }, { t: "Visualize processes & technical systems" }, { t: "Data tables for roadmapping, projects, & more" }, { t: "Engage activities incl. polls and 2x2 matrix", vid: true }, { t: "Interactive prototypes", vid: true }, { t: "AI workflows & agents", vid: true }, { t: "50 AI credits/member/month" }, { t: "2,000 MCP calls per day", ics: AI }, { t: "Two-way integrations", ics: [["#2f7cf6", "Jr"], ["#e0472f", "Az"], ["#1c1c1e", "No"], ["#e03e6f", "As"], ["#2b6df0", "Li"]] }, { t: "User groups" }, { t: "Single Sign-On (SSO)" }] },
   { id: "enterprise", name: "Enterprise", desc: "For large organizations that need security, governance, and AI at scale", price: "", cta: "Contact sales", href: "https://yourappisdead.com", head: "Everything in Business, plus:", items: [{ t: "Licenses built for Enterprise scale" }, { t: "Enterprise-grade security" }, { t: "Regional data hosting" }, { t: "Centralized user management & analytics" }, { t: "Admin controls for AI" }, { t: "Starts from 2500 credits per month" }, { t: "10,000 MCP calls per day", ics: AI }, { t: "SCIM provisioning" }, { t: "Org-wide controls for third party integrations" }, { t: "Sandbox" }, { t: "Customer success program" }], extra: [{ t: "Add Enterprise Guard" }, { t: "Add Premium support" }] },
@@ -78,22 +78,14 @@ function PlanCard({ p }: { p: Plan }) {
 }
 
 const FAQ: [string, string][] = [
-  ["Who counts as a paid member?", "Anyone who can edit boards in a paid workspace counts as a member. Visitors and guests do not."],
-  ["How does MiroIsDead's pricing work?", "MiroIsDead plans are priced per member per month, billed yearly or monthly."],
-  ["Is MiroIsDead free? What are the Free plan's limits?", "Yes. The Free plan includes 3 editable boards and the ability to try AI features."],
-  ["What are AI Credits and how are they counted?", "AI credits are used each time you run an AI action. Credits are pooled per member each month."],
-  ["What happens if I add or remove members mid-cycle? Or about re-sizing mid-cycle?", "Changes are prorated for the remainder of your billing cycle."],
-  ["What payment and billing options do you offer?", "Credit card for Starter and Business; invoicing is available on Enterprise."],
-  ["How do I upgrade, downgrade, or cancel?", "Manage your plan from your account's billing settings at any time."],
-  ["Do you offer discounts for education or nonprofits?", "Yes, education and nonprofit discounts are available."],
-  ["Do you offer discounts for startups?", "Yes, eligible startups can apply for a startup program discount."],
-  ["Can I try a paid plan before buying?", "Yes. Try the Business plan free for 14 days."],
-  ["Does MiroIsDead work with my other AI tools?", "Yes. Connect Claude, Cursor, Copilot and more via the MCP server."],
-  ["How does MiroIsDead handle AI and data security?", "MiroIsDead AI is built with enterprise-grade security, and admins control which AI features are available."],
-  ["Does MiroIsDead use my data to train AI?", "No. Your content is not used to train third-party models."],
-  ["We need additional help on documentation (like an MSA or security questionnaire). Who can I reach out to?", "Contact our sales team and we will help with any security or legal documentation."],
+  ["Are these MiroIsDead's prices?", "No. The plans above are Miro's, shown for comparison. MiroIsDead has no paid plans: every feature is free for everyone."],
+  ["Is MiroIsDead free? What are the limits?", "Yes, it is free. There are no plans, seats, trials or paid add-ons."],
+  ["Do I need a credit card?", "No. There is no checkout and no payment form."],
+  ["Does MiroIsDead have AI features or integrations?", "No. It is a whiteboard: stickies, shapes, text, pen, frames and connectors, with templates and PNG, PDF, CSV or JSON export."],
+  ["Where are my boards stored?", "Signed-in boards autosave to Firestore through the server, locked to your account, with a copy in your browser as an offline fallback. The demo account stays in your browser."],
+  ["Is it open source?", "Yes. The code is Apache-2.0 on GitHub, so you can read exactly how boards are stored."],
 ];
-const SEC: [string, string, string][] = [["ISO/IEC 27001", "ISO/IEC Security Management", "bsi"], ["SOC 2 Type II", "SOC for Service Organizations", "AICPA SOC 2"], ["SOC 3", "SOC for Service Organizations", "SOC 3"], ["NIST", "National Institute of Standards and Technology", "NIST"], ["TISAX", "Trusted Information Security Assessment Exchange", "TISAX"], ["GDPR", "General Data Protection Regulation", "★"]];
+const SEC: [string, string, string][] = [["Open source", "Read every line of code on GitHub", "Apache-2.0"], ["Owner-only boards", "Database rules lock each board to its owner", "Firestore"], ["Offline fallback", "A copy of your boards is kept in your browser", "Local"]];
 const cell = (v: string) => v === "Included" ? <span className="ck">✓</span> : v === "Not included" ? null : v === "Paid add-on" ? <span className="pa">Paid add-on</span> : v;
 
 export function MiPricing() {
@@ -101,11 +93,11 @@ export function MiPricing() {
   const [cmp, setCmp] = useState(true);
   const [faq, setFaq] = useState(0);
   return <main className="mpr">
-    <header className="mpr-h"><h1>Where teams and AI work as one</h1></header>
+    <header className="mpr-h"><h1>Miro&apos;s plans, for comparison</h1></header>
     <div className="mpr-tog"><button className={!yearly ? "on" : ""} onClick={() => setYearly(false)}>Monthly</button><button className={yearly ? "on" : ""} onClick={() => setYearly(true)}>Yearly (save 20%)</button></div>
     <section className="mpr-plans">{PLANS.map(p => <PlanCard key={p.id} p={p} />)}</section>
     <section className="mpr-wrap">
-      <div className="mpr-guard"><h2>Enterprise Guard</h2><p>Enterprise Guard is a security and governance tool for managing sensitive content in MiroIsDead boards.</p><div><a className="mpr-btn pri sm" href="https://yourappisdead.com">Contact us</a><a className="mpr-btn sm" href="https://github.com/tommy-muckstack/miroisdead">Learn more</a></div></div>
+      <div className="mpr-guard"><h2>Enterprise Guard</h2><p>Miro sells Enterprise Guard as a security and governance add-on. MiroIsDead has no paid add-ons.</p><div><a className="mpr-btn pri sm" href="https://yourappisdead.com">Contact us</a><a className="mpr-btn sm" href="https://github.com/tommy-muckstack/miroisdead">Learn more</a></div></div>
       <div className="mpr-cmp">
         <button className="mpr-cmph" onClick={() => setCmp(!cmp)} aria-expanded={cmp}>Compare all features<svg className={"mpr-chev" + (cmp ? " up" : "")} width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#1c1c1e" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10l4-4 4 4" /></svg></button>
         {cmp && <div className="mpr-mx">
@@ -113,15 +105,14 @@ export function MiPricing() {
             <div className="c"><b>Free</b><Link className="mpr-btn sm" href="/signup">Start for free</Link></div><div className="c"><b>Starter</b><Link className="mpr-btn sm" href="/signup">Buy this plan</Link></div><div className="c"><b>Business</b><Link className="mpr-btn pri sm" href="/signup">Try for free</Link></div><div className="c"><b>Enterprise ⓘ</b><a className="mpr-btn sm" href="https://yourappisdead.com">Contact sales</a></div></div>
           {MATRIX.map(([g, hh, rows]) => <div key={g} className="mpr-g"><div className="gh" style={{ height: hh }}><b>{g}</b></div>
             {rows.map(r => { const h = Number(r[5]); return <div key={String(r[0])} className="row" style={{ height: h < 50 ? 48.2 : h }}><span className="l">{r[0]}</span>{r.slice(1, 5).map((v, i) => <span key={i} className="v">{cell(String(v))}</span>)}</div>; })}</div>)}
-          <p className="note">* Existing Enterprise customers on a different license may have varying feature availability. Contact your account team for details.</p>
-          <p className="note">** Migration fees apply for existing customers moving from EU to the US, Australia, or Japan data residency.</p>
+          <p className="note">Plans, prices and limits in this table are Miro&apos;s, shown for comparison. MiroIsDead is free, with no plans or paid add-ons.</p>
         </div>}
       </div>
-      <div className="mpr-trust"><h2>Trusted by the world&apos;s most innovative companies</h2><div className="lg"><span>asos</span><span>contentful</span><span>UBISOFT</span><span>PEPSICO</span><span>★macy&apos;s</span><span className="f">Whi</span></div></div>
-      <div className="mpr-sec"><h2>Security and compliance</h2><p>Rest easy knowing we&apos;re fully certified by numerous organizations.</p><a className="mpr-btn sm" href="https://github.com/tommy-muckstack/miroisdead/blob/main/SECURITY.md">Learn more</a>
+      <div className="mpr-trust"><h2>Built in the open</h2><div className="lg"><span>Free</span><span>Open source</span><span>Apache-2.0</span><span>No plans</span><span>No card</span></div></div>
+      <div className="mpr-sec"><h2>Security</h2><p>MiroIsDead holds no security certifications. It is open source, so you can check how your boards are stored.</p><a className="mpr-btn sm" href="https://github.com/tommy-muckstack/miroisdead/blob/main/SECURITY.md">Learn more</a>
         <div className="g">{SEC.map(([t, s, b]) => <div key={t} className="card"><i>{b}</i><h3>{t}</h3><p>{s}</p></div>)}</div></div>
       <div className="mpr-faq"><h2>Frequently asked questions</h2>
-        <div className="l"><div className={"q" + (faq === 0 ? " open" : "")}><button onClick={() => setFaq(faq === 0 ? -1 : 0)}><span>How do I pick the right plan?</span><em>{faq === 0 ? "−" : "+"}</em></button>{faq === 0 && <div className="a"><p>Free is for small teams just getting started with MiroIsDead including 3 editable boards and ability to try AI features. Starter adds unlimited boards (including private ones), more AI credits, and visitors who can access boards too without needing an account.</p><p>Business plan is for growing organizations and consultants who want to streamline end-to-end workflows with AI. With the full AI suite, deep two-way integrations, and purpose-built capabilities, it covers the critical workflows including designing user experiences, process and technical system design, and portfolio and program management.</p><p>Enterprise is for larger organizations that need advanced security, compliance, and custom controls in order to scale MiroIsDead and AI across their whole business.</p><p>Still unsure what plan is right for you? Try Business plan free for 14 days and decide from there.</p></div>}</div>
+        <div className="l"><div className={"q" + (faq === 0 ? " open" : "")}><button onClick={() => setFaq(faq === 0 ? -1 : 0)}><span>Which plan do I need?</span><em>{faq === 0 ? "−" : "+"}</em></button>{faq === 0 && <div className="a"><p>There is nothing to pick. MiroIsDead is free for everyone, with no plans, seats or trials. The plans on this page are Miro&apos;s, shown for comparison.</p></div>}</div>
           {FAQ.map(([q, a], i) => <div key={q} className={"q" + (faq === i + 1 ? " open" : "")}><button onClick={() => setFaq(faq === i + 1 ? -1 : i + 1)}><span>{q}</span><em>{faq === i + 1 ? "−" : "+"}</em></button>{faq === i + 1 && <div className="a"><p>{a}</p></div>}</div>)}</div></div>
     </section>
   </main>;
